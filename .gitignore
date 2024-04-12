@@ -1,0 +1,26 @@
+# directories
+cache
+node_modules
+out
+
+
+# files
+*.env
+*.log
+.DS_Store
+.pnp.*
+lcov.info
+yarn.lock
+
+# broadcasts
+!broadcast
+broadcast/*
+broadcast/*/31337/
+
+./frontend/.env
+./frontend/.next
+./frontend/out
+./frontend/node_modules
+./frontend/.DS_Store
+
+ignoredir
