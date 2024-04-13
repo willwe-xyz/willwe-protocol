@@ -12,6 +12,10 @@ import {Endpoints} from "./Endpoint.sol";
 import {IFun, SafeTx, SignatureQueue, SQState, MovementType, Movement} from "./interfaces/IFun.sol";
 import {ISafe} from "./interfaces/ISafe.sol";
 
+///////////////////////////////////////////////
+////////////////////////////////////
+import {console} from "forge-std/console.sol";
+
 /// @title Fungido
 /// @author Bogdan Arsene | parseb
 contract Execution is Endpoints {
@@ -19,8 +23,6 @@ contract Execution is Endpoints {
 
     address public RootValueToken;
     address FunAddress;
-    // bytes4(keccak256("isValidSignature(bytes32,bytes)")
-
     bytes4 internal constant EIP1271_MAGICVALUE = 0x1626ba7e;
     IFun SelfFungi;
 
@@ -43,6 +45,7 @@ contract Execution is Endpoints {
     error OnlyFun();
     error EXEC_SQInvalid();
     error EXEC_NoType();
+    error EXEC_NoDescription();
 
     /// events
     event NewMovementCreated(bytes32 indexed movementHash, uint256 indexed node_);
@@ -83,18 +86,31 @@ contract Execution is Endpoints {
         bytes32 descriptionHash,
         SafeTx memory data
     ) external virtual returns (bytes32 movementHash) {
+        console.log("exec.proposeM 11111");
+
         if (msg.sender != FunAddress) revert OnlyFun();
+        console.log("exec.proposeM 2222");
 
         if (typeOfMovement > 2) revert NoType();
         if (!SelfFungi.isMember(origin, node_)) revert NotNodeMember();
 
-        if (!((typeOfMovement * node_ * expiresInDays * uint256(descriptionHash) == 0))) revert EmptyUnallowed();
+        console.log("exec.proposeM 333");
+
+        if (((typeOfMovement * node_ * expiresInDays) == 0)) revert EmptyUnallowed();
+        if (uint256(descriptionHash) == 0) revert EXEC_NoDescription();
+
+        console.log("passed checks 1111");
 
         address[] memory members;
 
         if (executingAccount == address(0)) {
+            console.log("exeacc is zero... creating node enpoint");
             executingAccount = createNodeEndpoint(origin, node_);
+            console.log("edone node enpoint");
+
             engineOwner[executingAccount] = node_;
+
+            console.log("createdNode entpodingg ------");
 
             if (typeOfMovement == 1) {
                 members = SelfFungi.allMembersOf(node_);
@@ -103,6 +119,7 @@ contract Execution is Endpoints {
                 members = new address[](1);
                 members[0] = address(this);
             }
+
             ISafe(executingAccount).setup(
                 members,
                 members.length / 2 + 1,

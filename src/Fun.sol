@@ -3,9 +3,13 @@ pragma solidity 0.8.18;
 
 import {Fungido} from "./Fungido.sol";
 import {IExecution, SignatureQueue} from "./interfaces/IExecution.sol";
-
+import {SafeTx} from "./interfaces/IFun.sol";
 /// @title Fungido
 /// @author   parseb
+
+///////////////////////////////////////////////
+////////////////////////////////////
+import {console} from "forge-std/console.sol";
 
 contract Fun is Fungido {
     /// @notice stores an users option for change: node + user * value -> [ wanted value, lastExpressedAt ]
@@ -165,8 +169,9 @@ contract Fun is Fungido {
         uint256 expiresInDays,
         address executingAccount,
         bytes32 descriptionHash,
-        bytes memory data
+        SafeTx memory data
     ) external returns (bytes32 movementHash) {
+        console.log("calling execution..propose..");
         return IExecution(executionAddress).proposeMovement(
             _msgSender(), typeOfMovement, node_, expiresInDays, executingAccount, descriptionHash, data
         );

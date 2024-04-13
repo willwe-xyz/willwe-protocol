@@ -3,7 +3,7 @@ pragma solidity 0.8.18;
 
 library SafeFactoryAddresses {
     function factoryAddressForChainId(uint256 chainID_) external pure returns (address) {
-        if (chainID_ == 666666666) return 0x914d7Fec6aaC8cd542e72Bca78B30650d45643d7;
+        if (chainID_ == 666666666) return 0xa6B71E26C5e0845f74c812102Ca7114b6a896AB2;
         ///0x4e1DCf7AD4e460CfD30791CCC4F9c8a4f820ec67
         if (chainID_ == 8453) return 0x4e1DCf7AD4e460CfD30791CCC4F9c8a4f820ec67;
         if (chainID_ == 1) return 0xa6B71E26C5e0845f74c812102Ca7114b6a896AB2;
@@ -127,7 +127,7 @@ library SafeFactoryAddresses {
 
     /// L2
     function getSingletonAddressForChainID(uint256 chainID_) external pure returns (address) {
-        if (chainID_ == 666666666) return 0x41675C099F32341bf84BFc5382aF534df5C7461a;
+        if (chainID_ == 666666666) return 0x3E5c63644E683549055b9Be8653de26E0B4CD36E;
         if (chainID_ == 8453) return 0x29fcB43b46531BcA003ddC8FCB67FFE91900C762;
         if (chainID_ == 84532) return 0x29fcB43b46531BcA003ddC8FCB67FFE91900C762;
         if (chainID_ == 1) return 0x3E5c63644E683549055b9Be8653de26E0B4CD36E;

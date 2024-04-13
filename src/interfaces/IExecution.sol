@@ -1,44 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.18;
 
-enum SQState {
-    None,
-    Initialized,
-    Valid,
-    Executed,
-    Stale
-}
-
-enum MovementType {
-    Revert, // none
-    AgentMajority, // 1 member 1 vote
-    EnergeticMajority // 1 node share 1 vote
-
-}
-
-struct Movement {
-    MovementType category;
-    /// proposer
-    address initiatior;
-    /// safe or similar execution environment
-    address exeAccount;
-    /// fid
-    uint256 viaNode;
-    /// signature expires - skip if expired
-    uint256 expiresAt;
-    bytes32 descriptionHash;
-    /// calldata
-    bytes data;
-}
-
-/// human view
-
-struct SignatureQueue {
-    SQState state;
-    Movement Action;
-    address[] Signers;
-    bytes[] Sigs;
-}
+import "./IFun.sol";
 
 interface IExecution {
     function createEndpointForOwner(address origin, uint256 nodeId_, address owner)
@@ -57,7 +20,7 @@ interface IExecution {
         uint256 expiresInDays,
         address executingAccount,
         bytes32 descriptionHash,
-        bytes memory data
+        SafeTx memory data
     ) external returns (bytes32 movementHash);
 
     function isValidSignature(bytes32 _hash, bytes memory _signature) external view returns (bytes4);

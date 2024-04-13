@@ -9,13 +9,17 @@ import "./interfaces/IExecution.sol";
 import {IERC1155Receiver} from "openzeppelin-contracts/contracts/token/ERC1155/IERC1155Receiver.sol";
 import {IRVT} from "./interfaces/IRVT.sol";
 
+///////////////////////////////////////////////
+////////////////////////////////////
+import {console} from "forge-std/console.sol";
+
 /// @title Fungido
 /// @author Bogdan A. | parseb
 
 contract Fungido is ERC1155("fungido.xyz"), Membranes {
     uint256 immutable initTime = block.timestamp;
     address virtualAccount;
-    uint256 entityCount;
+    uint256 public entityCount;
     address public executionAddress;
     address public RVT;
 
@@ -151,9 +155,9 @@ contract Fungido is ERC1155("fungido.xyz"), Membranes {
         }
 
         newID = (fid_ - block.timestamp - childrenOf[fid_].length) - entityCount;
+        console.log(block.timestamp, entityCount, childrenOf[fid_].length); //////////////###############################
 
         _localizeNode(newID, fid_);
-
         _giveMembership(_msgSender(), newID);
 
         emit NewEntityCreated(fid_, newID);
@@ -194,7 +198,7 @@ contract Fungido is ERC1155("fungido.xyz"), Membranes {
 
     /// @notice retrieves token path id array from root to target id
     /// @param fid_ target fid to trace path to from root
-    /// @return fid lineage in chronologic order
+    /// @return fids lineage in chronologic order
     function getFidPath(uint256 fid_) public view returns (uint256[] memory fids) {
         uint256 fidCount;
         uint256 parent = 1;

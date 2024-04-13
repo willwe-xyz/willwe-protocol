@@ -8,7 +8,7 @@ import {SignatureQueue} from "../src/interfaces/IExecution.sol";
 import {TokenPrep} from "./mock/Tokens.sol";
 
 import {SignatureQueue, SQState, MovementType} from "../src/interfaces/IExecution.sol";
-
+import {Movement, SafeTx} from "../src/interfaces/IFun.sol";
 import {ISafe} from "../src/interfaces/ISafe.sol";
 import {IERC20} from "openzeppelin/token/ERC20/IERC20.sol";
 
@@ -39,13 +39,16 @@ contract Endpoints is Test, TokenPrep, InitTest {
         T1.approve(address(F), type(uint256).max);
         vm.prank(A1);
         T2.approve(address(F), type(uint256).max);
+
         vm.prank(A2);
-        T2.approve(address(F), type(uint256).max);
+        T1.approve(address(F), type(uint256).max);
         vm.prank(A2);
         T2.approve(address(F), type(uint256).max);
 
-        vm.prank(address(1));
+        vm.prank(A3);
         T1.approve(address(F), type(uint256).max);
+        vm.prank(A3);
+        T2.approve(address(F), type(uint256).max);
 
         vm.startPrank(A1);
         rootBranchID = F.spawnRootBranch(address(T1));
@@ -85,7 +88,8 @@ contract Endpoints is Test, TokenPrep, InitTest {
     }
 
     function testEnergTxIni() public {
-
+        vm.skip(false);
+        /// nothing tested
         vm.prank(address(1));
         T1.transfer(A1, 1 ether);
 
@@ -97,20 +101,33 @@ contract Endpoints is Test, TokenPrep, InitTest {
 
         /// ##########
 
-        vm.prank(A1);
+        vm.startPrank(A1);
+
         F.mint(rootBranchID, 1 ether);
+        F.mint(B1, 0.9 ether);
+        vm.stopPrank();
 
+        vm.startPrank(A2);
+        F.mint(rootBranchID, 1 ether);
+        F.mint(B1, 1 ether);
+        vm.stopPrank();
 
+        vm.startPrank(A3);
+        F.mint(rootBranchID, 2 ether);
+        F.mint(B1, 1.2 ether);
+        vm.stopPrank();
+
+        /// ############
     }
 
-    function testProposesNewMovement() public {
-        if (block.chainid != 59140) return;
-
+    function testProposesNewMovement() public returns (bytes32 moveHash) {
+        // if (block.chainid != 59140) return moveHash;
+        if (block.chainid == 31337) return moveHash;
         testSimpleDeposit();
         console.log("########### new movement________________");
 
         bytes32 description = keccak256("this is a description");
-        bytes memory data = abi.encodePacked("calldata");
+        SafeTx memory data;
 
         vm.startPrank(A1);
 
@@ -155,7 +172,7 @@ contract Endpoints is Test, TokenPrep, InitTest {
         vm.startPrank(A1);
 
         bytes32 description = keccak256("this is a description");
-        bytes memory data = abi.encodePacked("calldata");
+        SafeTx memory data;
 
         bytes32 moveHash = F.proposeMovement(1, rootBranchID, 12, address(0), description, data);
         SignatureQueue memory SQ = F.getSigQueue(moveHash);
@@ -169,7 +186,6 @@ contract Endpoints is Test, TokenPrep, InitTest {
         console.log("###################  AGAIN with prev exe______________");
         skip(block.timestamp + 10);
         description = keccak256("this is a description");
-        data = abi.encodePacked("calldata");
 
         moveHash = F.proposeMovement(1, rootBranchID, 12, SQ.Action.exeAccount, description, data);
         SQ = F.getSigQueue(moveHash);
@@ -183,7 +199,6 @@ contract Endpoints is Test, TokenPrep, InitTest {
         console.log("###################  Again with exe type 2______________");
         skip(block.timestamp + 10);
         description = keccak256("this is a description");
-        data = abi.encodePacked("calldata");
 
         moveHash = F.proposeMovement(2, rootBranchID, 12, SQ.Action.exeAccount, description, data);
         SQ = F.getSigQueue(moveHash);
@@ -218,11 +233,36 @@ contract Endpoints is Test, TokenPrep, InitTest {
         vm.stopPrank();
     }
 
-    function testExecutesSignatureQueue() public {
-        ///---
+    function _signHash(uint256 signerPVK_, bytes32 hashToSign) public returns (bytes memory signature) {
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(signerPVK_, hashToSign);
+        signature = abi.encodePacked(v, r, s);
     }
 
-    function testSubmitsSignatures() public {
+    // function _getStructsForHash(bytes32 sqHash)
+    //     public
+    //     returns (SignatureQueue memory SQ, Movement memory M, SafeTx memory STX)
+    // {
+    //     bytes32 move = testProposesNewMovement();
+
+    //     assertTrue(uint256(move) > 0, "no hash");
+
+    //     SQ = F.getSigQueue(move);
+    //     M = SQ.Action;
+    //     STX = M.txData;
+
+    //     assertTrue(M.exeAccount != address(0), "safe is 0x0");
+    //     assertTrue(keccak256(abi.encode(STX)) == sqHash, "hash movement mismatch");
+    // }
+
+    // function testSubmitsSignatures() public {
+    //     bytes32 move = testProposesNewMovement();
+    //     (SignatureQueue memory SQ, Movement memory M, SafeTx memory STX) = _getStructsForHash(move);
+
+    //     assertTrue(uint256(keccak256(abi.encode(STX))) == uint256(move));
+    // }
+
+    function testExecutesSignatureQueue() public {
+        vm.skip(true);
         ///---
     }
 }

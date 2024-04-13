@@ -31,8 +31,6 @@ contract BranchTests is Test, TokenPrep, InitTest {
     }
 
     function testCreateInstance() public {
-        if (block.chainid == 59140) return;
-
         vm.startPrank(address(1));
         uint256 B1 = F.spawnRootBranch(T20addr);
 
@@ -42,12 +40,13 @@ contract BranchTests is Test, TokenPrep, InitTest {
         uint256 i0 = F.spawnBranch(B1);
         assertTrue(i0 > 0, "i0 is 0");
 
-        vm.warp(100);
+        vm.warp(block.timestamp + 100);
         uint256 i1 = F.spawnBranch(i0);
 
         uint256 ii2 = F.spawnBranch(i1);
 
         uint256 ix = F.spawnBranch(B1);
+        console.log("i0, ix", i0, ix);
         assertTrue(i0 > ix, "i0 is 0 2");
 
         vm.stopPrank();

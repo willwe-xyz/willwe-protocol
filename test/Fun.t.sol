@@ -2,7 +2,6 @@
 pragma solidity 0.8.18;
 
 import "forge-std/Test.sol";
-
 import {Fun} from "../src/Fun.sol";
 import {TokenPrep} from "./mock/Tokens.sol";
 
@@ -16,7 +15,6 @@ import {Fun} from "../src/Fun.sol";
 import {IERC20} from "openzeppelin/token/ERC20/IERC20.sol";
 
 import {InitTest} from "./Init.t.sol";
-
 
 contract FunTests is Test, TokenPrep, InitTest {
     IERC20 T1;
@@ -245,11 +243,12 @@ contract FunTests is Test, TokenPrep, InitTest {
         assertTrue((UI1[1][0] + UI1[1][1]) == 2, "not memberships");
     }
 
-    function testSkip123() public {
-    vm. skip(true);
-    /// This revert will not be reached as this test will be skipped.
-    revert("Should not reach this revert");
-}
-
-
+    function testFidLineage() public {
+        vm.skip(true);
+        // /// @notice retrieves token path id array from root to target id
+        // /// @param fid_ target fid to trace path to from root
+        // /// @return fid lineage in chronologic order
+        // function getFidPath(uint256 fid_) public view returns (uint256[] memory fids) {
+        assert(true);
+    }
 }
