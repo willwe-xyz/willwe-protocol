@@ -85,6 +85,7 @@ contract Endpoints is Test, TokenPrep, InitTest {
     }
 
     function testEnergTxIni() public {
+
         vm.prank(address(1));
         T1.transfer(A1, 1 ether);
 
@@ -95,6 +96,11 @@ contract Endpoints is Test, TokenPrep, InitTest {
         T1.transfer(A3, 3 ether);
 
         /// ##########
+
+        vm.prank(A1);
+        F.mint(rootBranchID, 1 ether);
+
+
     }
 
     function testProposesNewMovement() public {
