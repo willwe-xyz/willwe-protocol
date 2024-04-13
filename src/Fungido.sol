@@ -61,9 +61,9 @@ contract Fungido is ERC1155("fungido.xyz"), Membranes {
     ////////////////////////////////////////////////
     //////______ERRORS______///////////////////////
 
-    error UninstantiatedMembrane();
-    error BaseOrNonFungible();
-    error AlreadyMember();
+    error Fdo_UniniMembrane();
+    error Fdo_BaseOrNonFungible();
+    error Fdo_AlreadyMember();
     error BranchNotFound();
     error Unqualified();
     error MintE20TransferFailed();
@@ -99,6 +99,7 @@ contract Fungido is ERC1155("fungido.xyz"), Membranes {
     //////________MODIFIER________/////////////////
 
     modifier localGas() {
+        /// @todo _msgSig()
         uint256 startGas = gasleft();
         _;
         if (address(RVT) != address(0)) {
@@ -159,7 +160,7 @@ contract Fungido is ERC1155("fungido.xyz"), Membranes {
     }
 
     function spawnBranchWithMembrane(uint256 fid_, uint256 membraneID_) public virtual returns (uint256 newID) {
-        if (getMembraneById[membraneID_].tokens.length == 0) revert UninstantiatedMembrane();
+        if (getMembraneById[membraneID_].tokens.length == 0) revert Fdo_UniniMembrane();
         newID = spawnBranch(fid_);
         inUseMembraneId[newID][0] = membraneID_;
         inUseMembraneId[newID][1] = block.timestamp;
@@ -170,7 +171,7 @@ contract Fungido is ERC1155("fungido.xyz"), Membranes {
     function mintMembership(uint256 fid_, address to_) public virtual returns (uint256 mID) {
         if (parentOf[fid_] == 0) revert BranchNotFound();
         mID = membershipID(fid_);
-        if (isMember(to_, fid_)) revert AlreadyMember();
+        if (isMember(to_, fid_)) revert Fdo_AlreadyMember();
         if (!gCheck(to_, mID)) revert Unqualified();
 
         _giveMembership(to_, fid_);
@@ -182,8 +183,35 @@ contract Fungido is ERC1155("fungido.xyz"), Membranes {
         _mint(_msgSender(), fid_, amount_, abi.encodePacked("fungible"));
     }
 
+    ///  @dev _msgSig();
+    // function mintFullPath(uint256 fid_, uint256 amount_) public virtual {
+    //     uint256[] memory fids = getFidPath(fid_);
+    //     uint256 i;
+    //     for (i; i < fids.length; ++i;) {
+    //         mint(fids[i], amount_);
+    //     }
+    // }
+
+    /// @notice retrieves token path id array from root to target id
+    /// @param fid_ target fid to trace path to from root
+    /// @return fid lineage in chronologic order
+    function getFidPath(uint256 fid_) public view returns (uint256[] memory fids) {
+        uint256 fidCount;
+        uint256 parent = 1;
+        while (parent >= 1) {
+            ++fidCount;
+            parent = parentOf[fid_];
+        }
+        fids = new uint256[](fidCount);
+
+        for (parent; parent < fids.length; ++parent) {
+            fids[fids.length - parent - 1] = parentOf[fid_];
+            fid_ = parentOf[fid_];
+        }
+    }
+
     function burn(uint256 fid_, uint256 amount_) public virtual returns (bool) {
-        if (parentOf[fid_] == 0) revert BaseOrNonFungible();
+        if (parentOf[fid_] == 0) revert Fdo_BaseOrNonFungible();
         _burn(_msgSender(), fid_, amount_);
 
         emit Burned(fid_, amount_, _msgSender());

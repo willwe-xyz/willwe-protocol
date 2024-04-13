@@ -28,11 +28,6 @@ contract Endpoints is Test, TokenPrep, InitTest {
 
     function setUp() public override {
         super.setUp();
-        address[] memory founders = new address[](1);
-        uint256[] memory amounts = new uint256[](1);
-
-        founders[0] = address(A1);
-        amounts[0] = 1 ether * 10_000_000;
 
         T1 = IERC20(makeReturnERC20());
         vm.label(address(T1), "Token1");
@@ -67,6 +62,7 @@ contract Endpoints is Test, TokenPrep, InitTest {
     function testSimpleDeposit() public {
         vm.prank(address(1));
         T1.transfer(A1, 1 ether + 1);
+
         assertTrue(B1 > 1);
         assertTrue(F.balanceOf(A1, rootBranchID) == 0, "unexpected balance");
         assertTrue(F.isMember(A1, rootBranchID), "branch creator should be member");
@@ -86,6 +82,19 @@ contract Endpoints is Test, TokenPrep, InitTest {
         console.log(before, aaafter, before - aaafter);
         ///@dev tax applied
         // assertTrue(before == aaafter, "before as after");
+    }
+
+    function testEnergTxIni() public {
+        vm.prank(address(1));
+        T1.transfer(A1, 1 ether);
+
+        vm.prank(address(1));
+        T1.transfer(A2, 2.1 ether);
+
+        vm.prank(address(1));
+        T1.transfer(A3, 3 ether);
+
+        /// ##########
     }
 
     function testProposesNewMovement() public {
