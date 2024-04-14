@@ -41,7 +41,6 @@ struct Movement {
     /// signature expires - skip if expired
     uint256 expiresAt;
     bytes32 descriptionHash;
-    address targetContract;
     /// calldata
     SafeTx txData;
 }

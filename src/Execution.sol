@@ -46,6 +46,8 @@ contract Execution is Endpoints {
     error EXEC_SQInvalid();
     error EXEC_NoType();
     error EXEC_NoDescription();
+    error EXEC_ZeroLen();
+    error EXEC_A0sig();
 
     /// events
     event NewMovementCreated(bytes32 indexed movementHash, uint256 indexed node_);
@@ -134,6 +136,7 @@ contract Execution is Endpoints {
             if (!(engineOwner[executingAccount] == node_)) revert NotExeAccOwner();
         }
 
+        
         Movement memory M;
         M.initiatior = msg.sender;
         M.viaNode = node_;
@@ -156,18 +159,7 @@ contract Execution is Endpoints {
         emit NewMovementCreated(movementHash, node_);
     }
 
-    //     address to,
-    //     uint256 value,
-    //     bytes calldata data,
-    //     Enum.Operation operation,
-    //     uint256 safeTxGas,
-    //     uint256 baseGas,
-    //     uint256 gasPrice,
-    //     address gasToken,
-    //     address payable refundReceiver,
-    //     bytes memory signatures
 
-    /// dev this should be callable
     function executeQueue(bytes32 SignatureQueueHash_) public virtual returns (bool s) {
         if (msg.sender != FunAddress) revert OnlyFun();
 
@@ -176,7 +168,6 @@ contract Execution is Endpoints {
         if (SQ.state != SQState.Valid) revert InvalidQueue();
         if (SQ.Action.expiresAt <= block.timestamp) revert ExpiredMovement();
 
-        /// execute
 
         Movement memory M = SQ.Action;
         s = ISafe(SQ.Action.exeAccount).execTransaction(
@@ -192,23 +183,39 @@ contract Execution is Endpoints {
             abi.encodePacked(SignatureQueueHash_)
         );
 
-        /// cleanup
         SQ.state = SQState.Executed;
         getSigQueueByHash[SignatureQueueHash_] = SQ;
     }
 
     function submitSignatures(bytes32 sigHash, address[] memory signers, bytes[] memory signatures) external {
+        console.log("huh 1"); /////////////////////
+
         if (msg.sender != FunAddress) revert OnlyFun();
+        console.log("huh 1"); /////////////////////
 
         SignatureQueue memory SQ = getSigQueueByHash[sigHash];
+        console.log("huh 2"); //////////////
+        if (signers.length * signatures.length == 0) revert EXEC_ZeroLen();
         if (signers.length != signatures.length) revert LenErr();
+        console.log("passed eq1");
         uint256 i;
         uint256[] memory validIndexes = new uint256[](signers.length);
 
         for (i; i < signers.length;) {
-            if (hasEndpointOrInteraction[uint256(sigHash) - uint160(signers[i])]) continue;
+                    console.log("in loop 1", i);
+            if (signers[i] == address(0)) revert EXEC_A0sig();
+
+            if (hasEndpointOrInteraction[uint256(sigHash) - uint160(signers[i])]) {
+
+                ++i;
+                continue;
+            }
             /// skip if already signed
-            if (!(SelfFungi.isMember(signers[i], SQ.Action.viaNode))) continue;
+            
+            if (!(SelfFungi.isMember(signers[i], SQ.Action.viaNode))) {
+                ++ i;
+                continue;
+            }
             /// skip if not member
 
             if (
@@ -262,6 +269,8 @@ contract Execution is Endpoints {
                 ++i;
             }
         }
+
+                    console.log("end assign"); /////////////////////////////////
 
         SQ.Signers = newSigners;
         SQ.Sigs = newSignatures;

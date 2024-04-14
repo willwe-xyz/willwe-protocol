@@ -10,7 +10,7 @@ interface IExecution {
 
     function executeQueue(address origin, bytes32 SignatureQueueHash_) external returns (bool s);
 
-    function submitSignatures(address origin, bytes32 sigHash, address[] memory signers, bytes[] memory signatures)
+    function submitSignatures(bytes32 sigHash, address[] memory signers, bytes[] memory signatures)
         external;
 
     function proposeMovement(

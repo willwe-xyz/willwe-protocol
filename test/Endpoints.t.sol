@@ -122,7 +122,7 @@ contract Endpoints is Test, TokenPrep, InitTest {
 
     function testProposesNewMovement() public returns (bytes32 moveHash) {
         // if (block.chainid != 59140) return moveHash;
-        if (block.chainid == 31337) return moveHash;
+        if (block.chainid == 31337) vm.skip(true);
         testSimpleDeposit();
         console.log("########### new movement________________");
 
@@ -141,14 +141,11 @@ contract Endpoints is Test, TokenPrep, InitTest {
         assertTrue(members.length > 0, "shoudl have members for majority");
 
         bytes32 moveHash = F.proposeMovement(2, rootBranchID, 12, address(0), description, data);
-        bytes32 empty;
-        assertTrue(empty != moveHash, "empty");
+        assertTrue(uint256(moveHash) > 0, "empty hash returned");
         SignatureQueue memory SQ = F.getSigQueue(moveHash);
         assertTrue(SQ.state == SQState.Initialized, "expected intiailized");
         assertTrue(SQ.Action.descriptionHash == description, "description mism");
         assertTrue(SQ.Action.exeAccount != address(0), "no exe account");
-
-        //   MovementType.AgentMajority : MovementType.EnergeticMajority;
         assertTrue(SQ.Action.category == MovementType.EnergeticMajority, "not type 2");
 
         address safe = SQ.Action.exeAccount;
@@ -160,9 +157,10 @@ contract Endpoints is Test, TokenPrep, InitTest {
         assertTrue(ooo.length == 1, "more than one owner for energetic type");
         assertTrue(ooo[0] == address(F.executionAddress()), "owner not ExeEngine");
         assertTrue(threshold == 1, "not 1 threshold");
-
         vm.stopPrank();
+        return moveHash;
     }
+
 
     function testCreatesNodeEndpoint() public {
         if (block.chainid != 59140) return;
@@ -238,28 +236,61 @@ contract Endpoints is Test, TokenPrep, InitTest {
         signature = abi.encodePacked(v, r, s);
     }
 
-    // function _getStructsForHash(bytes32 sqHash)
-    //     public
-    //     returns (SignatureQueue memory SQ, Movement memory M, SafeTx memory STX)
-    // {
-    //     bytes32 move = testProposesNewMovement();
+    function _getStructsForHash()
+        public
+        returns (SignatureQueue memory SQ, Movement memory M, SafeTx memory STX, bytes32 move)
+    {
+        move = testProposesNewMovement();
+        console.log(vm.toString(move));
+        assertTrue(uint256(move) > 0, "no hash");
 
-    //     assertTrue(uint256(move) > 0, "no hash");
+        SQ = F.getSigQueue(move);
+        M = SQ.Action;
+        STX = M.txData;
 
-    //     SQ = F.getSigQueue(move);
-    //     M = SQ.Action;
-    //     STX = M.txData;
 
-    //     assertTrue(M.exeAccount != address(0), "safe is 0x0");
-    //     assertTrue(keccak256(abi.encode(STX)) == sqHash, "hash movement mismatch");
-    // }
+        assertTrue(M.exeAccount != address(0), "safe is 0x0");
+    }
 
-    // function testSubmitsSignatures() public {
-    //     bytes32 move = testProposesNewMovement();
-    //     (SignatureQueue memory SQ, Movement memory M, SafeTx memory STX) = _getStructsForHash(move);
+    function testSubmitsSignatures() public {
+        (SignatureQueue memory SQ, Movement memory M, SafeTx memory STX, bytes32 move) = _getStructsForHash();
+        assertTrue(uint256(keccak256(abi.encode(M))) == uint256(move));
 
-    //     assertTrue(uint256(keccak256(abi.encode(STX))) == uint256(move));
-    // }
+        bytes[] memory signatures;
+        address[] memory signers;
+        
+        //// submit empty signatures (0)
+        vm.expectRevert(Execution.EXEC_ZeroLen.selector);
+        F.submitSignatures(move, signers, signatures);
+
+        signers = new address[](3);
+        signatures = new bytes[](3);
+
+        //// submit empty signatures (0)
+        vm.expectRevert(Execution.EXEC_A0sig.selector);
+        F.submitSignatures(move, signers, signatures);
+
+        bytes memory sigA1 =_signHash(A1pvk, move);
+        bytes memory sigA2 = _signHash(A2pvk, move);
+        bytes memory sigA3 = _signHash(A3pvk, move);
+
+        signers[0] = A1;
+        signers[1] = A2;
+        signers[2] = A3;
+
+        signatures[0] = sigA1;
+        signatures[1] = sigA2;
+        signatures[2] = sigA3;
+
+        //// submit empty signatures (0)
+        F.submitSignatures(move, signers, signatures);
+
+
+
+        // console.log(vm.toString(sigA1), vm.toString(sigA1), vm.toString(sigA1));
+
+
+    }
 
     function testExecutesSignatureQueue() public {
         vm.skip(true);

@@ -194,7 +194,7 @@ contract Fun is Fungido {
     }
 
     function submitSignatures(bytes32 sigHash, address[] memory signers, bytes[] memory signatures) external {
-        return IExecution(executionAddress).submitSignatures(_msgSender(), sigHash, signers, signatures);
+        return IExecution(executionAddress).submitSignatures( sigHash, signers, signatures);
     }
 
     function isValidSignature(bytes32 _hash, bytes memory _signature) external view returns (bytes4) {
