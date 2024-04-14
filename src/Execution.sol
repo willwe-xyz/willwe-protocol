@@ -188,21 +188,15 @@ contract Execution is Endpoints {
     }
 
     function submitSignatures(bytes32 sigHash, address[] memory signers, bytes[] memory signatures) external {
-        console.log("huh 1"); /////////////////////
-
         if (msg.sender != FunAddress) revert OnlyFun();
-        console.log("huh 1"); /////////////////////
 
         SignatureQueue memory SQ = getSigQueueByHash[sigHash];
-        console.log("huh 2"); //////////////
         if (signers.length * signatures.length == 0) revert EXEC_ZeroLen();
         if (signers.length != signatures.length) revert LenErr();
-        console.log("passed eq1");
         uint256 i;
-        uint256[] memory validIndexes = new uint256[](signers.length);
+        uint256[] memory validIndexes = new uint256[](signers.length + 1);
 
         for (i; i < signers.length;) {
-                    console.log("in loop 1", i);
             if (signers[i] == address(0)) revert EXEC_A0sig();
 
             if (hasEndpointOrInteraction[uint256(sigHash) - uint160(signers[i])]) {
@@ -210,17 +204,16 @@ contract Execution is Endpoints {
                 ++i;
                 continue;
             }
-            /// skip if already signed
             
             if (!(SelfFungi.isMember(signers[i], SQ.Action.viaNode))) {
                 ++ i;
                 continue;
             }
-            /// skip if not member
 
             if (
                 !(SignatureChecker.isValidSignatureNow(signers[i], ECDSA.toEthSignedMessageHash(sigHash), signatures[i]))
             ) {
+                console.log("NOT VALID SIG - ", i);
                 validIndexes[i] = 0;
                 unchecked {
                     ++i;
@@ -228,7 +221,7 @@ contract Execution is Endpoints {
                 continue;
             }
 
-            validIndexes[i] = i;
+            i == 0 ? validIndexes[validIndexes.length - 1]= type(uint256).max : validIndexes[i] = i;
 
             unchecked {
                 ++i;
@@ -237,8 +230,8 @@ contract Execution is Endpoints {
 
         delete i;
         uint256 len;
-        for (i; i < validIndexes.length;) {
-            if (validIndexes[i] > 0) {
+        for (i; i < validIndexes.length; ) {
+            if (validIndexes[i] > 0 ) {
                 unchecked {
                     ++len;
                 }
@@ -257,20 +250,32 @@ contract Execution is Endpoints {
         delete len;
 
         for (i; i < validIndexes.length;) {
-            if (validIndexes[i] > 0) {
-                newSigners[len] = signers[validIndexes[i]];
-                newSignatures[len] = signatures[validIndexes[i]];
+            
+            uint256 val = validIndexes[i];
+            if (val > 0 && val < type(uint256).max ) {
+                
+                newSigners[len] = signers[val];
+                newSignatures[len] = signatures[val];
                 unchecked {
                     ++len;
                 }
-            }
+            } else {
+                
+                newSigners[len] = signers[validIndexes[0]];
+                newSignatures[len] = signatures[validIndexes[0]];
+                break;
+                unchecked {
+                    ++len;
+                }
+                }
+
+            
+            
 
             unchecked {
                 ++i;
             }
         }
-
-                    console.log("end assign"); /////////////////////////////////
 
         SQ.Signers = newSigners;
         SQ.Sigs = newSignatures;

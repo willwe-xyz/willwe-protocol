@@ -35,4 +35,6 @@ interface IExecution {
     function setSelfFungi() external;
 
     function RootValueToken() external view returns (address);
+
+     function isQueueValid(bytes32 sigHash) external view returns (bool);
 }

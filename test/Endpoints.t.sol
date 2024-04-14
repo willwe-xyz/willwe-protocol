@@ -14,6 +14,8 @@ import {IERC20} from "openzeppelin/token/ERC20/IERC20.sol";
 
 import {Fungo} from "../src/Fungo.sol";
 import {InitTest} from "./Init.t.sol";
+import {ECDSA} from "openzeppelin/utils/cryptography/ECDSA.sol";
+
 
 contract Endpoints is Test, TokenPrep, InitTest {
     IERC20 T1;
@@ -28,7 +30,7 @@ contract Endpoints is Test, TokenPrep, InitTest {
 
     function setUp() public override {
         super.setUp();
-
+        
         T1 = IERC20(makeReturnERC20());
         vm.label(address(T1), "Token1");
 
@@ -60,6 +62,13 @@ contract Endpoints is Test, TokenPrep, InitTest {
         B2 = F.spawnBranch(rootBranchID);
 
         vm.stopPrank();
+
+        vm.prank(A2);
+        F.mintMembership(rootBranchID, A2);
+
+        vm.prank(A3);
+        F.mintMembership(rootBranchID, A3);
+
     }
 
     function testSimpleDeposit() public {
@@ -232,8 +241,9 @@ contract Endpoints is Test, TokenPrep, InitTest {
     }
 
     function _signHash(uint256 signerPVK_, bytes32 hashToSign) public returns (bytes memory signature) {
+        hashToSign = ECDSA.toEthSignedMessageHash(hashToSign);
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(signerPVK_, hashToSign);
-        signature = abi.encodePacked(v, r, s);
+        signature = abi.encodePacked(r, s, v);
     }
 
     function _getStructsForHash()
@@ -277,13 +287,24 @@ contract Endpoints is Test, TokenPrep, InitTest {
         signers[0] = A1;
         signers[1] = A2;
         signers[2] = A3;
-
         signatures[0] = sigA1;
         signatures[1] = sigA2;
         signatures[2] = sigA3;
 
+        uint256 snap = vm.snapshot();
         //// submit empty signatures (0)
         F.submitSignatures(move, signers, signatures);
+
+        bytes memory sigb;
+        
+        SQ = F.getSigQueue(move);
+        
+        assertTrue(SQ.Signers.length == SQ.Sigs.length, 'len mism');
+        assertTrue(SQ.Signers.length == 3, 'unexp sig len');
+
+        assertFalse(F.isValidSignature(move, sigb) == 0x1626ba7e, 'sig not valid');
+        assertTrue(F.isQueueValid(move), "sq not valid");
+
 
 
 

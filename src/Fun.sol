@@ -185,6 +185,10 @@ contract Fun is Fungido {
         return IExecution(executionAddress).getSigQueue(hash_);
     }
 
+     function isQueueValid(bytes32 sigHash) public view returns (bool) {
+        return IExecution(executionAddress).isQueueValid(sigHash);
+     }
+
     function createEndpointForOwner(uint256 nodeId_, address owner) external returns (address endpoint) {
         return IExecution(executionAddress).createEndpointForOwner(_msgSender(), nodeId_, owner);
     }
