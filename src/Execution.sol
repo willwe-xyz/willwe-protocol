@@ -3,6 +3,7 @@ pragma solidity 0.8.18;
 
 import {SignatureChecker} from "openzeppelin-contracts/contracts/utils/cryptography/SignatureChecker.sol";
 import {Address} from "openzeppelin-contracts/contracts/utils/Address.sol";
+import {Strings} from "openzeppelin-contracts/contracts/utils/Strings.sol";
 
 import {Strings, ECDSA} from "openzeppelin-contracts/contracts/utils/cryptography/ECDSA.sol";
 
@@ -20,10 +21,15 @@ import {console} from "forge-std/console.sol";
 /// @author Bogdan Arsene | parseb
 contract Execution is Endpoints {
     using Address for address;
+    using Strings for string;
 
     address public RootValueToken;
     address FunAddress;
-    bytes4 internal constant EIP1271_MAGICVALUE = 0x1626ba7e;
+
+    bytes32 currentTxHash;
+    bytes4 constant internal EIP1271_MAGICVALUE = 0x1626ba7e;
+        // bytes4(keccak256("isValidSignature(bytes,bytes)")
+    bytes4 constant internal EIP1271_MAGIC_VALUE_LEGACY = 0x20c13b0b;
     IFun SelfFungi;
 
     /// errors
@@ -48,6 +54,9 @@ contract Execution is Endpoints {
     error EXEC_NoDescription();
     error EXEC_ZeroLen();
     error EXEC_A0sig();
+    error EXEC_OnlyMore();
+    error EXEC_OnlySigner();
+    error EXEC_SafeExeF();
 
     /// events
     event NewMovementCreated(bytes32 indexed movementHash, uint256 indexed node_);
@@ -168,8 +177,21 @@ contract Execution is Endpoints {
         if (SQ.state != SQState.Valid) revert InvalidQueue();
         if (SQ.Action.expiresAt <= block.timestamp) revert ExpiredMovement();
 
-
+        bytes memory sig =abi.encode(address(this),65,0,SignatureQueueHash_.length,SignatureQueueHash_);
         Movement memory M = SQ.Action;
+
+        currentTxHash = keccak256(ISafe(SQ.Action.exeAccount).encodeTransactionData(
+             M.txData.to,
+            M.txData.value,
+            M.txData.data,
+            M.txData.operation,
+            M.txData.safeTxGas,
+            M.txData.baseGas,
+            M.txData.gasPrice,
+            M.txData.gasToken,
+            RootValueToken,            
+             ISafe(SQ.Action.exeAccount).nonce()));
+
         s = ISafe(SQ.Action.exeAccount).execTransaction(
             M.txData.to,
             M.txData.value,
@@ -179,10 +201,13 @@ contract Execution is Endpoints {
             M.txData.baseGas,
             M.txData.gasPrice,
             M.txData.gasToken,
-            payable(SelfFungi.RVT()),
-            abi.encodePacked(SignatureQueueHash_)
+            RootValueToken,
+            sig
         );
-
+        
+        if (!s) revert EXEC_SafeExeF();
+        
+        delete currentTxHash;
         SQ.state = SQState.Executed;
         getSigQueueByHash[SignatureQueueHash_] = SQ;
     }
@@ -191,6 +216,8 @@ contract Execution is Endpoints {
         if (msg.sender != FunAddress) revert OnlyFun();
 
         SignatureQueue memory SQ = getSigQueueByHash[sigHash];
+
+        if (signatures.length < SQ.Sigs.length) revert EXEC_OnlyMore();
         if (signers.length * signatures.length == 0) revert EXEC_ZeroLen();
         if (signers.length != signatures.length) revert LenErr();
         uint256 i;
@@ -241,6 +268,9 @@ contract Execution is Endpoints {
             }
         }
 
+        console.log("leeen", len);
+        console.log("validindex", validIndexes.length);
+
         i = len + SQ.Sigs.length;
 
         address[] memory newSigners = new address[](i);
@@ -250,9 +280,11 @@ contract Execution is Endpoints {
         delete len;
 
         for (i; i < validIndexes.length;) {
-            
+            console.log("i setting signers", i, len);
             uint256 val = validIndexes[i];
             if (val > 0 && val < type(uint256).max ) {
+
+                console.log("AAAA - over 0");
                 
                 newSigners[len] = signers[val];
                 newSignatures[len] = signatures[val];
@@ -260,12 +292,14 @@ contract Execution is Endpoints {
                     ++len;
                 }
             } else {
-                
+                if ( val == type(uint256).max) {
+                console.log("BBB - 0", i, len);
                 newSigners[len] = signers[validIndexes[0]];
                 newSignatures[len] = signatures[validIndexes[0]];
-                break;
+                
                 unchecked {
                     ++len;
+                }
                 }
                 }
 
@@ -280,7 +314,21 @@ contract Execution is Endpoints {
         SQ.Signers = newSigners;
         SQ.Sigs = newSignatures;
 
-        getSigQueueByHash[sigHash] = SQ;
+        getSigQueueByHash[sigHash].Signers = newSigners;
+        getSigQueueByHash[sigHash].Sigs = newSignatures;
+
+    }
+
+    function removeSignature(bytes32 sigHash_, uint256 index_, address who_) external {
+        if (msg.sender != FunAddress) revert OnlyFun();
+        SignatureQueue memory SQ = getSigQueueByHash[sigHash_];
+
+        if (SQ.Signers[index_] != who_)  revert EXEC_OnlySigner();
+            delete SQ.Sigs[index_];
+            delete SQ.Signers[index_];
+            getSigQueueByHash[sigHash_] = SQ;
+        
+
     }
 
     function createEndpointForOwner(address origin, uint256 nodeId_, address owner)
@@ -333,6 +381,10 @@ contract Execution is Endpoints {
         bytes32 signedHash = ECDSA.toEthSignedMessageHash(sigHash);
 
         for (i; i < signatures.length;) {
+            if (signers[i] == address(0)) {
+                ++i;
+                continue;
+            }
             if (!SignatureChecker.isValidSignatureNow(signers[i], signedHash, signatures[i])) return false;
 
             if (SQM.Action.category == MovementType.EnergeticMajority) {
@@ -380,6 +432,14 @@ contract Execution is Endpoints {
     function isValidSignature(bytes32 _hash, bytes memory _signature) public view returns (bytes4) {
         if (getSigQueueByHash[_hash].state == SQState.Valid) return EIP1271_MAGICVALUE;
     }
+
+    function isValidSignature(bytes memory a ,bytes memory b) external view returns (bytes4) {
+        console.log(string(a), string(b)) ;
+
+        if (currentTxHash == keccak256(a)) {
+            return EIP1271_MAGIC_VALUE_LEGACY;
+        }
+    } 
 
     /// @notice retrieves the node or agent  that owns the execution account
     /// @param endpointAddress execution account for which to retrieve owner

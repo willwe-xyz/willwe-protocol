@@ -8,10 +8,9 @@ interface IExecution {
         external
         returns (address endpoint);
 
-    function executeQueue(address origin, bytes32 SignatureQueueHash_) external returns (bool s);
+    function executeQueue(bytes32 SignatureQueueHash_) external returns (bool s);
 
-    function submitSignatures(bytes32 sigHash, address[] memory signers, bytes[] memory signatures)
-        external;
+    function submitSignatures(bytes32 sigHash, address[] memory signers, bytes[] memory signatures) external;
 
     function proposeMovement(
         address origin,
@@ -34,7 +33,9 @@ interface IExecution {
 
     function setSelfFungi() external;
 
+     function removeSignature(bytes32 sigHash_, uint256 index_, address who_) external;
+
     function RootValueToken() external view returns (address);
 
-     function isQueueValid(bytes32 sigHash) external view returns (bool);
+    function isQueueValid(bytes32 sigHash) external view returns (bool);
 }

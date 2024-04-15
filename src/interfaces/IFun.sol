@@ -52,6 +52,7 @@ struct SignatureQueue {
     Movement Action;
     address[] Signers;
     bytes[] Sigs;
+    bytes32 exeSig;
 }
 
 interface IFun is IERC1155 {

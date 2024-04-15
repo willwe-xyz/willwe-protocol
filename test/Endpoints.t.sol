@@ -28,6 +28,11 @@ contract Endpoints is Test, TokenPrep, InitTest {
     uint256 B11;
     uint256 B12;
 
+    address receiver;
+
+    uint256 snapSig1;
+    uint256 snapSig2;
+
     function setUp() public override {
         super.setUp();
         
@@ -68,6 +73,8 @@ contract Endpoints is Test, TokenPrep, InitTest {
 
         vm.prank(A3);
         F.mintMembership(rootBranchID, A3);
+
+        receiver = address(bytes20(type(uint160).max / 2));
 
     }
 
@@ -136,7 +143,7 @@ contract Endpoints is Test, TokenPrep, InitTest {
         console.log("########### new movement________________");
 
         bytes32 description = keccak256("this is a description");
-        SafeTx memory data;
+        SafeTx memory data =_getSafeTxData();
 
         vm.startPrank(A1);
 
@@ -170,6 +177,17 @@ contract Endpoints is Test, TokenPrep, InitTest {
         return moveHash;
     }
 
+   function _getSafeTxData() public returns (SafeTx memory S) {
+        
+
+    S.to = address(T1);
+    S.data = abi.encodeWithSelector(IERC20.transfer.selector, receiver, 0.1 ether); //0xa9059cbb000000 
+    S.operation = 0;
+    
+
+
+    }
+
 
     function testCreatesNodeEndpoint() public {
         if (block.chainid != 59140) return;
@@ -179,7 +197,9 @@ contract Endpoints is Test, TokenPrep, InitTest {
         vm.startPrank(A1);
 
         bytes32 description = keccak256("this is a description");
-        SafeTx memory data;
+        SafeTx memory data = _getSafeTxData();
+
+        
 
         bytes32 moveHash = F.proposeMovement(1, rootBranchID, 12, address(0), description, data);
         SignatureQueue memory SQ = F.getSigQueue(moveHash);
@@ -213,6 +233,8 @@ contract Endpoints is Test, TokenPrep, InitTest {
         assertTrue(SQ.state == SQState.Initialized, "expected intiailized");
         assertTrue(SQ.Action.descriptionHash == description, "description mism");
         assertTrue(SQ.Action.exeAccount != address(0), "no exe account");
+
+        
 
         assertTrue(SQ.Action.category == MovementType.EnergeticMajority, "not type 1");
 
@@ -257,13 +279,18 @@ contract Endpoints is Test, TokenPrep, InitTest {
         SQ = F.getSigQueue(move);
         M = SQ.Action;
         STX = M.txData;
+    
 
 
         assertTrue(M.exeAccount != address(0), "safe is 0x0");
+        vm.prank(address(1));
+        T1.transfer(M.exeAccount, 3 ether);
+
     }
 
-    function testSubmitsSignatures() public {
-        (SignatureQueue memory SQ, Movement memory M, SafeTx memory STX, bytes32 move) = _getStructsForHash();
+    function testSubmitsSignatures() public  returns (bytes32 move){
+        (SignatureQueue memory SQ, Movement memory M, SafeTx memory STX, bytes32 move_) = _getStructsForHash();
+        move = move_;
         assertTrue(uint256(keccak256(abi.encode(M))) == uint256(move));
 
         bytes[] memory signatures;
@@ -291,7 +318,7 @@ contract Endpoints is Test, TokenPrep, InitTest {
         signatures[1] = sigA2;
         signatures[2] = sigA3;
 
-        uint256 snap = vm.snapshot();
+        snapSig1 = vm.snapshot();
         //// submit empty signatures (0)
         F.submitSignatures(move, signers, signatures);
 
@@ -302,19 +329,40 @@ contract Endpoints is Test, TokenPrep, InitTest {
         assertTrue(SQ.Signers.length == SQ.Sigs.length, 'len mism');
         assertTrue(SQ.Signers.length == 3, 'unexp sig len');
 
+        assertTrue(SQ.Signers[0] == A2, 'firs signer A2');
+        assertTrue(SQ.Signers[1] == A3, 'signer not A3');
+        assertTrue(SQ.Signers[2] == A1, 'signer not A1');
+
+        snapSig2 = vm.snapshot();
+
         assertFalse(F.isValidSignature(move, sigb) == 0x1626ba7e, 'sig not valid');
         assertTrue(F.isQueueValid(move), "sq not valid");
 
-
-
-
-        // console.log(vm.toString(sigA1), vm.toString(sigA1), vm.toString(sigA1));
-
-
+        console.log("----- Submitted Signatures");
     }
 
+
+
     function testExecutesSignatureQueue() public {
-        vm.skip(true);
-        ///---
+        bytes32 move = testSubmitsSignatures();
+                SignatureQueue memory SQ = F.getSigQueue(move);
+
+
+        uint256 safeNonce = ISafe(SQ.Action.exeAccount).nonce();
+        assertTrue(T1.balanceOf(receiver) == 0, "has balance exp 0");
+
+
+        F.executeQueue(move);
+
+        assertTrue(T1.balanceOf(receiver) == 0.1 ether, "has expected balance");
+        assertTrue(safeNonce < ISafe(SQ.Action.exeAccount).nonce(), "nonce not ++");
+
+        SQ = F.getSigQueue(move);
+        assertTrue(SQ.state == SQState.Executed, "expected executed");
+
+
+
+
+
     }
 }

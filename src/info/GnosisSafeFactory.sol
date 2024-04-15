@@ -127,7 +127,7 @@ library SafeFactoryAddresses {
 
     /// L2
     function getSingletonAddressForChainID(uint256 chainID_) external pure returns (address) {
-        if (chainID_ == 666666666) return 0x3E5c63644E683549055b9Be8653de26E0B4CD36E;
+        if (chainID_ == 666666666) return 0x29fcB43b46531BcA003ddC8FCB67FFE91900C762;
         if (chainID_ == 8453) return 0x29fcB43b46531BcA003ddC8FCB67FFE91900C762;
         if (chainID_ == 84532) return 0x29fcB43b46531BcA003ddC8FCB67FFE91900C762;
         if (chainID_ == 1) return 0x3E5c63644E683549055b9Be8653de26E0B4CD36E;
