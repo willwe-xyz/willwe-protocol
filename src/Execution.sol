@@ -27,9 +27,9 @@ contract Execution is Endpoints {
     address FunAddress;
 
     bytes32 currentTxHash;
-    bytes4 constant internal EIP1271_MAGICVALUE = 0x1626ba7e;
-        // bytes4(keccak256("isValidSignature(bytes,bytes)")
-    bytes4 constant internal EIP1271_MAGIC_VALUE_LEGACY = 0x20c13b0b;
+    bytes4 internal constant EIP1271_MAGICVALUE = 0x1626ba7e;
+    // bytes4(keccak256("isValidSignature(bytes,bytes)")
+    bytes4 internal constant EIP1271_MAGIC_VALUE_LEGACY = 0x20c13b0b;
     IFun SelfFungi;
 
     /// errors
@@ -97,31 +97,20 @@ contract Execution is Endpoints {
         bytes32 descriptionHash,
         SafeTx memory data
     ) external virtual returns (bytes32 movementHash) {
-        console.log("exec.proposeM 11111");
-
         if (msg.sender != FunAddress) revert OnlyFun();
-        console.log("exec.proposeM 2222");
 
         if (typeOfMovement > 2) revert NoType();
         if (!SelfFungi.isMember(origin, node_)) revert NotNodeMember();
 
-        console.log("exec.proposeM 333");
-
         if (((typeOfMovement * node_ * expiresInDays) == 0)) revert EmptyUnallowed();
         if (uint256(descriptionHash) == 0) revert EXEC_NoDescription();
-
-        console.log("passed checks 1111");
 
         address[] memory members;
 
         if (executingAccount == address(0)) {
-            console.log("exeacc is zero... creating node enpoint");
             executingAccount = createNodeEndpoint(origin, node_);
-            console.log("edone node enpoint");
 
             engineOwner[executingAccount] = node_;
-
-            console.log("createdNode entpodingg ------");
 
             if (typeOfMovement == 1) {
                 members = SelfFungi.allMembersOf(node_);
@@ -145,7 +134,6 @@ contract Execution is Endpoints {
             if (!(engineOwner[executingAccount] == node_)) revert NotExeAccOwner();
         }
 
-        
         Movement memory M;
         M.initiatior = msg.sender;
         M.viaNode = node_;
@@ -168,7 +156,6 @@ contract Execution is Endpoints {
         emit NewMovementCreated(movementHash, node_);
     }
 
-
     function executeQueue(bytes32 SignatureQueueHash_) public virtual returns (bool s) {
         if (msg.sender != FunAddress) revert OnlyFun();
 
@@ -177,20 +164,23 @@ contract Execution is Endpoints {
         if (SQ.state != SQState.Valid) revert InvalidQueue();
         if (SQ.Action.expiresAt <= block.timestamp) revert ExpiredMovement();
 
-        bytes memory sig =abi.encode(address(this),65,0,SignatureQueueHash_.length,SignatureQueueHash_);
+        bytes memory sig = abi.encode(address(this), 65, 0, SignatureQueueHash_.length, SignatureQueueHash_);
         Movement memory M = SQ.Action;
 
-        currentTxHash = keccak256(ISafe(SQ.Action.exeAccount).encodeTransactionData(
-             M.txData.to,
-            M.txData.value,
-            M.txData.data,
-            M.txData.operation,
-            M.txData.safeTxGas,
-            M.txData.baseGas,
-            M.txData.gasPrice,
-            M.txData.gasToken,
-            RootValueToken,            
-             ISafe(SQ.Action.exeAccount).nonce()));
+        currentTxHash = keccak256(
+            ISafe(SQ.Action.exeAccount).encodeTransactionData(
+                M.txData.to,
+                M.txData.value,
+                M.txData.data,
+                M.txData.operation,
+                M.txData.safeTxGas,
+                M.txData.baseGas,
+                M.txData.gasPrice,
+                M.txData.gasToken,
+                RootValueToken,
+                ISafe(SQ.Action.exeAccount).nonce()
+            )
+        );
 
         s = ISafe(SQ.Action.exeAccount).execTransaction(
             M.txData.to,
@@ -204,9 +194,9 @@ contract Execution is Endpoints {
             RootValueToken,
             sig
         );
-        
+
         if (!s) revert EXEC_SafeExeF();
-        
+
         delete currentTxHash;
         SQ.state = SQState.Executed;
         getSigQueueByHash[SignatureQueueHash_] = SQ;
@@ -227,20 +217,18 @@ contract Execution is Endpoints {
             if (signers[i] == address(0)) revert EXEC_A0sig();
 
             if (hasEndpointOrInteraction[uint256(sigHash) - uint160(signers[i])]) {
-
                 ++i;
                 continue;
             }
-            
+
             if (!(SelfFungi.isMember(signers[i], SQ.Action.viaNode))) {
-                ++ i;
+                ++i;
                 continue;
             }
 
             if (
                 !(SignatureChecker.isValidSignatureNow(signers[i], ECDSA.toEthSignedMessageHash(sigHash), signatures[i]))
             ) {
-                console.log("NOT VALID SIG - ", i);
                 validIndexes[i] = 0;
                 unchecked {
                     ++i;
@@ -248,7 +236,7 @@ contract Execution is Endpoints {
                 continue;
             }
 
-            i == 0 ? validIndexes[validIndexes.length - 1]= type(uint256).max : validIndexes[i] = i;
+            i == 0 ? validIndexes[validIndexes.length - 1] = type(uint256).max : validIndexes[i] = i;
 
             unchecked {
                 ++i;
@@ -257,8 +245,8 @@ contract Execution is Endpoints {
 
         delete i;
         uint256 len;
-        for (i; i < validIndexes.length; ) {
-            if (validIndexes[i] > 0 ) {
+        for (i; i < validIndexes.length;) {
+            if (validIndexes[i] > 0) {
                 unchecked {
                     ++len;
                 }
@@ -267,9 +255,6 @@ contract Execution is Endpoints {
                 ++i;
             }
         }
-
-        console.log("leeen", len);
-        console.log("validindex", validIndexes.length);
 
         i = len + SQ.Sigs.length;
 
@@ -280,31 +265,23 @@ contract Execution is Endpoints {
         delete len;
 
         for (i; i < validIndexes.length;) {
-            console.log("i setting signers", i, len);
             uint256 val = validIndexes[i];
-            if (val > 0 && val < type(uint256).max ) {
-
-                console.log("AAAA - over 0");
-                
+            if (val > 0 && val < type(uint256).max) {
                 newSigners[len] = signers[val];
                 newSignatures[len] = signatures[val];
                 unchecked {
                     ++len;
                 }
             } else {
-                if ( val == type(uint256).max) {
-                console.log("BBB - 0", i, len);
-                newSigners[len] = signers[validIndexes[0]];
-                newSignatures[len] = signatures[validIndexes[0]];
-                
-                unchecked {
-                    ++len;
-                }
-                }
-                }
+                if (val == type(uint256).max) {
+                    newSigners[len] = signers[validIndexes[0]];
+                    newSignatures[len] = signatures[validIndexes[0]];
 
-            
-            
+                    unchecked {
+                        ++len;
+                    }
+                }
+            }
 
             unchecked {
                 ++i;
@@ -316,19 +293,16 @@ contract Execution is Endpoints {
 
         getSigQueueByHash[sigHash].Signers = newSigners;
         getSigQueueByHash[sigHash].Sigs = newSignatures;
-
     }
 
     function removeSignature(bytes32 sigHash_, uint256 index_, address who_) external {
         if (msg.sender != FunAddress) revert OnlyFun();
         SignatureQueue memory SQ = getSigQueueByHash[sigHash_];
 
-        if (SQ.Signers[index_] != who_)  revert EXEC_OnlySigner();
-            delete SQ.Sigs[index_];
-            delete SQ.Signers[index_];
-            getSigQueueByHash[sigHash_] = SQ;
-        
-
+        if (SQ.Signers[index_] != who_) revert EXEC_OnlySigner();
+        delete SQ.Sigs[index_];
+        delete SQ.Signers[index_];
+        getSigQueueByHash[sigHash_] = SQ;
     }
 
     function createEndpointForOwner(address origin, uint256 nodeId_, address owner)
@@ -433,13 +407,11 @@ contract Execution is Endpoints {
         if (getSigQueueByHash[_hash].state == SQState.Valid) return EIP1271_MAGICVALUE;
     }
 
-    function isValidSignature(bytes memory a ,bytes memory b) external view returns (bytes4) {
-        console.log(string(a), string(b)) ;
-
+    function isValidSignature(bytes memory a, bytes memory b) external view returns (bytes4) {
         if (currentTxHash == keccak256(a)) {
             return EIP1271_MAGIC_VALUE_LEGACY;
         }
-    } 
+    }
 
     /// @notice retrieves the node or agent  that owns the execution account
     /// @param endpointAddress execution account for which to retrieve owner

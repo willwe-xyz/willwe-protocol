@@ -16,7 +16,6 @@ import {Fungo} from "../src/Fungo.sol";
 import {InitTest} from "./Init.t.sol";
 import {ECDSA} from "openzeppelin/utils/cryptography/ECDSA.sol";
 
-
 contract Endpoints is Test, TokenPrep, InitTest {
     IERC20 T1;
     IERC20 T2;
@@ -35,7 +34,7 @@ contract Endpoints is Test, TokenPrep, InitTest {
 
     function setUp() public override {
         super.setUp();
-        
+
         T1 = IERC20(makeReturnERC20());
         vm.label(address(T1), "Token1");
 
@@ -75,7 +74,6 @@ contract Endpoints is Test, TokenPrep, InitTest {
         F.mintMembership(rootBranchID, A3);
 
         receiver = address(bytes20(type(uint160).max / 2));
-
     }
 
     function testSimpleDeposit() public {
@@ -143,7 +141,7 @@ contract Endpoints is Test, TokenPrep, InitTest {
         console.log("########### new movement________________");
 
         bytes32 description = keccak256("this is a description");
-        SafeTx memory data =_getSafeTxData();
+        SafeTx memory data = _getSafeTxData();
 
         vm.startPrank(A1);
 
@@ -177,17 +175,11 @@ contract Endpoints is Test, TokenPrep, InitTest {
         return moveHash;
     }
 
-   function _getSafeTxData() public returns (SafeTx memory S) {
-        
-
-    S.to = address(T1);
-    S.data = abi.encodeWithSelector(IERC20.transfer.selector, receiver, 0.1 ether); //0xa9059cbb000000 
-    S.operation = 0;
-    
-
-
+    function _getSafeTxData() public returns (SafeTx memory S) {
+        S.to = address(T1);
+        S.data = abi.encodeWithSelector(IERC20.transfer.selector, receiver, 0.1 ether); //0xa9059cbb000000
+        S.operation = 0;
     }
-
 
     function testCreatesNodeEndpoint() public {
         if (block.chainid != 59140) return;
@@ -198,8 +190,6 @@ contract Endpoints is Test, TokenPrep, InitTest {
 
         bytes32 description = keccak256("this is a description");
         SafeTx memory data = _getSafeTxData();
-
-        
 
         bytes32 moveHash = F.proposeMovement(1, rootBranchID, 12, address(0), description, data);
         SignatureQueue memory SQ = F.getSigQueue(moveHash);
@@ -233,8 +223,6 @@ contract Endpoints is Test, TokenPrep, InitTest {
         assertTrue(SQ.state == SQState.Initialized, "expected intiailized");
         assertTrue(SQ.Action.descriptionHash == description, "description mism");
         assertTrue(SQ.Action.exeAccount != address(0), "no exe account");
-
-        
 
         assertTrue(SQ.Action.category == MovementType.EnergeticMajority, "not type 1");
 
@@ -279,23 +267,20 @@ contract Endpoints is Test, TokenPrep, InitTest {
         SQ = F.getSigQueue(move);
         M = SQ.Action;
         STX = M.txData;
-    
-
 
         assertTrue(M.exeAccount != address(0), "safe is 0x0");
         vm.prank(address(1));
         T1.transfer(M.exeAccount, 3 ether);
-
     }
 
-    function testSubmitsSignatures() public  returns (bytes32 move){
+    function testSubmitsSignatures() public returns (bytes32 move) {
         (SignatureQueue memory SQ, Movement memory M, SafeTx memory STX, bytes32 move_) = _getStructsForHash();
         move = move_;
         assertTrue(uint256(keccak256(abi.encode(M))) == uint256(move));
 
         bytes[] memory signatures;
         address[] memory signers;
-        
+
         //// submit empty signatures (0)
         vm.expectRevert(Execution.EXEC_ZeroLen.selector);
         F.submitSignatures(move, signers, signatures);
@@ -307,7 +292,7 @@ contract Endpoints is Test, TokenPrep, InitTest {
         vm.expectRevert(Execution.EXEC_A0sig.selector);
         F.submitSignatures(move, signers, signatures);
 
-        bytes memory sigA1 =_signHash(A1pvk, move);
+        bytes memory sigA1 = _signHash(A1pvk, move);
         bytes memory sigA2 = _signHash(A2pvk, move);
         bytes memory sigA3 = _signHash(A3pvk, move);
 
@@ -323,34 +308,30 @@ contract Endpoints is Test, TokenPrep, InitTest {
         F.submitSignatures(move, signers, signatures);
 
         bytes memory sigb;
-        
-        SQ = F.getSigQueue(move);
-        
-        assertTrue(SQ.Signers.length == SQ.Sigs.length, 'len mism');
-        assertTrue(SQ.Signers.length == 3, 'unexp sig len');
 
-        assertTrue(SQ.Signers[0] == A2, 'firs signer A2');
-        assertTrue(SQ.Signers[1] == A3, 'signer not A3');
-        assertTrue(SQ.Signers[2] == A1, 'signer not A1');
+        SQ = F.getSigQueue(move);
+
+        assertTrue(SQ.Signers.length == SQ.Sigs.length, "len mism");
+        assertTrue(SQ.Signers.length == 3, "unexp sig len");
+
+        assertTrue(SQ.Signers[0] == A2, "firs signer A2");
+        assertTrue(SQ.Signers[1] == A3, "signer not A3");
+        assertTrue(SQ.Signers[2] == A1, "signer not A1");
 
         snapSig2 = vm.snapshot();
 
-        assertFalse(F.isValidSignature(move, sigb) == 0x1626ba7e, 'sig not valid');
+        assertFalse(F.isValidSignature(move, sigb) == 0x1626ba7e, "sig not valid");
         assertTrue(F.isQueueValid(move), "sq not valid");
 
         console.log("----- Submitted Signatures");
     }
 
-
-
     function testExecutesSignatureQueue() public {
         bytes32 move = testSubmitsSignatures();
-                SignatureQueue memory SQ = F.getSigQueue(move);
-
+        SignatureQueue memory SQ = F.getSigQueue(move);
 
         uint256 safeNonce = ISafe(SQ.Action.exeAccount).nonce();
         assertTrue(T1.balanceOf(receiver) == 0, "has balance exp 0");
-
 
         F.executeQueue(move);
 
@@ -359,10 +340,5 @@ contract Endpoints is Test, TokenPrep, InitTest {
 
         SQ = F.getSigQueue(move);
         assertTrue(SQ.state == SQState.Executed, "expected executed");
-
-
-
-
-
     }
 }

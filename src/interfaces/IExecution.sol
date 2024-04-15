@@ -33,7 +33,7 @@ interface IExecution {
 
     function setSelfFungi() external;
 
-     function removeSignature(bytes32 sigHash_, uint256 index_, address who_) external;
+    function removeSignature(bytes32 sigHash_, uint256 index_, address who_) external;
 
     function RootValueToken() external view returns (address);
 

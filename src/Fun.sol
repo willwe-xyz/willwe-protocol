@@ -194,16 +194,16 @@ contract Fun is Fungido {
     }
 
     function executeQueue(bytes32 SignatureQueueHash_) external returns (bool s) {
-        return IExecution(executionAddress).executeQueue( SignatureQueueHash_);
+        return IExecution(executionAddress).executeQueue(SignatureQueueHash_);
     }
 
     function submitSignatures(bytes32 sigHash, address[] memory signers, bytes[] memory signatures) external {
         return IExecution(executionAddress).submitSignatures(sigHash, signers, signatures);
     }
 
-     function removeSignature(bytes32 sigHash_, uint256 index_, address who_) external {
+    function removeSignature(bytes32 sigHash_, uint256 index_, address who_) external {
         IExecution(executionAddress).removeSignature(sigHash_, index_, who_);
-     }
+    }
 
     function isValidSignature(bytes32 _hash, bytes memory _signature) external view returns (bytes4) {
         return IExecution(executionAddress).isValidSignature(_hash, _signature);
