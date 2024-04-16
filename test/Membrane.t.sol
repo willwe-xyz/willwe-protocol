@@ -5,7 +5,7 @@ import "forge-std/Test.sol";
 import "../src/Fungido.sol";
 import {ERC20} from "openzeppelin-contracts/contracts/token/ERC20/ERC20.sol";
 import {ERC721} from "openzeppelin-contracts/contracts/token/ERC721/ERC721.sol";
-import {Fungo} from "../src/Fungo.sol";
+import {RVT} from "../src/RVT.sol";
 import {Execution} from "../src/Execution.sol";
 
 import {Fun} from "../src/Fun.sol";

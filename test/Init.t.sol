@@ -4,7 +4,7 @@ pragma solidity 0.8.18;
 import "forge-std/Test.sol";
 import "../src/Fungido.sol";
 
-import {Fungo} from "../src/Fungo.sol";
+import {RVT} from "../src/RVT.sol";
 import {Execution} from "../src/Execution.sol";
 
 import {Fun} from "../src/Fun.sol";
@@ -14,7 +14,7 @@ import {IFun} from "../src/interfaces/IFun.sol";
 import "forge-std/console.sol";
 
 contract InitTest is Test {
-    Fungo public F20;
+    RVT public F20;
     Fun public F;
     address public E;
 
@@ -36,7 +36,7 @@ contract InitTest is Test {
         founders[0] = address(A1);
         amounts[0] = 1 ether * 10_000_000;
 
-        F20 = new Fungo(10, 1, founders, amounts);
+        F20 = new RVT(10, 1, founders, amounts);
         E = address(new Execution(address(F20)));
         F = new Fun(E);
 

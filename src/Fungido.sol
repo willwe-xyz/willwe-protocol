@@ -44,6 +44,11 @@ contract Fungido is ERC1155("fungido.xyz"), Membranes {
     /// @notice membrane being used by entity
     mapping(uint256 => address[]) members;
 
+    /// @notice stores an users option for change: node + user * value -> [ wanted value, lastExpressedAt ]
+    mapping(bytes32 NodeXUserXValue => uint256[2] valueAtTime) options;
+
+    bytes constant REDIST = abi.encodePacked("redistribution");
+
     /// @notice root value balances | ERC20 -> Base Value Token (id) -> ERC20 balance
     mapping(address => mapping(uint256 => uint256)) E20bvtBalance;
 
@@ -52,12 +57,15 @@ contract Fungido is ERC1155("fungido.xyz"), Membranes {
     mapping(address => uint256[2]) taxAndGas;
     /// @dev ensure consistency of tax calculation such as enfocing a multiple of 100 on setting
 
+    address[2] control;
+
     constructor(address executionAddr) {
         /// default
         taxAndGas[address(0)] = [100_00, 2];
         executionAddress = executionAddr;
         /// @dev
         RVT = IExecution(executionAddr).RootValueToken();
+        control[0] = msg.sender;
 
         IRVT(RVT).pingInit();
     }
@@ -88,6 +96,8 @@ contract Fungido is ERC1155("fungido.xyz"), Membranes {
     error GasHogOrLightFx();
     error CoreGasTransferFailed();
     error UnallowedAmount();
+    error NoControl();
+    error Unautorised();
 
     ////////////////////////////////////////////////
     //////______EVENTS______///////////////////////
@@ -104,35 +114,35 @@ contract Fungido is ERC1155("fungido.xyz"), Membranes {
 
     modifier localGas() {
         /// @todo _msgSig()
-        uint256 startGas = gasleft();
-        _;
-        if (address(RVT) != address(0)) {
+        if (!((control[0] == control[1]) && (address(RVT) != address(0)))) {
+            _;
+        } else {
+            uint256 startGas = gasleft();
+            _;
             uint256 endGas = gasleft();
-            uint256 gasUsed = (startGas - endGas) * taxAndGas[address(0)][1];
-            // Retrieve the gas price from the transaction
+            uint256 multiplier = taxAndGas[_msgSender()][1] == 0 ? taxAndGas[address(0)][1] : taxAndGas[_msgSender()][1];
+            uint256 gasUsed = (startGas - endGas) * multiplier;
             uint256 gasPrice = tx.gasprice;
-            // Calculate the total gas cost in Ether
             uint256 gasCost = gasUsed * gasPrice / 1e18;
             uint256 perUnit = IRVT(RVT).burnReturns(1);
 
             gasCost = perUnit > gasCost ? 1 ether / (perUnit / gasCost) : gasCost / perUnit;
-
             endGas = gasleft();
-            if (!IRVT(RVT).transferGas(_msgSender(), address(this), gasCost)) revert CoreGasTransferFailed();
 
-            // if (endGas * 2 > gasUsed) revert GasHogOrLightFx();
+            if (!IRVT(RVT).transferGas(_msgSender(), address(this), gasCost)) revert CoreGasTransferFailed();
             emit GasUsedWithCost(_msgSender(), msg.sig, gasCost);
         }
     }
 
-    // function rule() external {
-    //             E20bvtBalance[RVT][ spawnBranch( spawnRootBranch(RVT) ) ] = type(uint256).max / 2;
-    // }
+    function setControl(address newController) external {
+        if (msg.sender != control[0]) revert NoControl();
+        control[0] == newController ? control[1] = newController : control[0] = newController;
+    }
 
     ////////////////////////////////////////////////
     //////______EXTERNAL______/////////////////////
 
-    function spawnRootBranch(address fungible20_) public virtual returns (uint256 fID) {
+    function spawnRootBranch(address fungible20_) public virtual localGas returns (uint256 fID) {
         if (fungible20_.code.length == 0) revert EOA();
         /// @dev constructor call
         fID = toID(fungible20_);
@@ -146,7 +156,7 @@ contract Fungido is ERC1155("fungido.xyz"), Membranes {
         emit NewRootRegistered(fungible20_);
     }
 
-    function spawnBranch(uint256 fid_) public virtual returns (uint256 newID) {
+    function spawnBranch(uint256 fid_) public virtual localGas returns (uint256 newID) {
         if (parentOf[fid_] == 0) revert UnregisteredFungible();
         if (!isMember(_msgSender(), fid_)) revert NotMember();
 
@@ -163,7 +173,12 @@ contract Fungido is ERC1155("fungido.xyz"), Membranes {
         emit NewEntityCreated(fid_, newID);
     }
 
-    function spawnBranchWithMembrane(uint256 fid_, uint256 membraneID_) public virtual returns (uint256 newID) {
+    function spawnBranchWithMembrane(uint256 fid_, uint256 membraneID_)
+        public
+        virtual
+        localGas
+        returns (uint256 newID)
+    {
         if (getMembraneById[membraneID_].tokens.length == 0) revert Fdo_UniniMembrane();
         newID = spawnBranch(fid_);
         inUseMembraneId[newID][0] = membraneID_;
@@ -172,7 +187,7 @@ contract Fungido is ERC1155("fungido.xyz"), Membranes {
         emit SpawnedWithMembrane(newID, membraneID_);
     }
 
-    function mintMembership(uint256 fid_, address to_) public virtual returns (uint256 mID) {
+    function mintMembership(uint256 fid_, address to_) public virtual localGas returns (uint256 mID) {
         if (parentOf[fid_] == 0) revert BranchNotFound();
         mID = membershipID(fid_);
         if (isMember(to_, fid_)) revert Fdo_AlreadyMember();
@@ -181,7 +196,7 @@ contract Fungido is ERC1155("fungido.xyz"), Membranes {
         _giveMembership(to_, fid_);
     }
 
-    function mint(uint256 fid_, uint256 amount_) public virtual {
+    function mint(uint256 fid_, uint256 amount_) public virtual localGas {
         if (amount_ <= 1) revert UnallowedAmount();
         if (parentOf[fid_] == 0) revert UnregisteredFungible();
         _mint(_msgSender(), fid_, amount_, abi.encodePacked("fungible"));
@@ -222,6 +237,10 @@ contract Fungido is ERC1155("fungido.xyz"), Membranes {
         return true;
     }
 
+
+    //// @notice enforces membership conditions on target
+    //// @param target agent subject
+    //// @param fid_ entity of belonging
     function membershipEnforce(address target, uint256 fid_) public virtual returns (bool s) {
         if (balanceOf(target, fid_) != 1) revert NotMember();
         if (members[fid_].length < 1) revert NoMembership();
@@ -249,9 +268,8 @@ contract Fungido is ERC1155("fungido.xyz"), Membranes {
         _mint(to, membershipID(id), 1, abi.encodePacked("membership"));
     }
 
-    /// @dev how dumb 1-10?
+
     function localizeEndpoint(address endpoint_, uint256 endpointParent_, address endpointOwner_) external {
-        // if (_msgSender() != address(this)) revert Internal();
         if (msg.sender != executionAddress) revert ExecutionOnly();
         _localizeNode(toID(endpoint_), endpointParent_);
 
@@ -262,12 +280,18 @@ contract Fungido is ERC1155("fungido.xyz"), Membranes {
         rootOf[newID] = rootOf[parentId];
         parentOf[newID] = parentId;
         if (parentId != newID) childrenOf[parentId].push(newID);
-
         inflSec[newID][0] = 1 gwei;
-
-        /// default inflation rate
         inflSec[newID][2] = block.timestamp;
-        /// @redistribution and inflation always couple
+    }
+
+    function taxPolicyPreference(address rootToken_, uint256 taxRate_) external {
+        if (_msgSender() != control[0]) revert Unautorised();
+        taxAndGas[rootToken_][0] = taxRate_;
+    }
+
+    function gasMultiplier(address sender, uint256 gasMultiplier) external {
+        if (_msgSender() != control[0]) revert Unautorised();
+        taxAndGas[sender][1] = gasMultiplier;
     }
 
     ////////////////////////////////////////////////
@@ -324,7 +348,7 @@ contract Fungido is ERC1155("fungido.xyz"), Membranes {
                 ) revert MembershipOp();
                 totalSupplyOf[currentID] = members[currentID].length;
 
-                /// @dev optimise - separate function selector by ord | likely stupid | just make sure to limit operations on membership ids
+                /// @dev can change basis not crystalclear
                 return;
             }
 
@@ -353,7 +377,6 @@ contract Fungido is ERC1155("fungido.xyz"), Membranes {
 
                     if (currentAmt < refundAmount) revert No();
                     E20bvtBalance[token20][currentID] -= currentAmt;
-                    /// taxing
 
                     uint256 taxAmount = taxAndGas[token20][0] == 0 ? taxAndGas[address(0)][0] : taxAndGas[token20][0];
                     taxAmount = refundAmount / taxAmount;

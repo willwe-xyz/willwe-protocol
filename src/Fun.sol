@@ -9,17 +9,10 @@ import {SafeTx} from "./interfaces/IFun.sol";
 
 ///////////////////////////////////////////////
 ////////////////////////////////////
-import {console} from "forge-std/console.sol";
 
 contract Fun is Fungido {
-    /// @notice stores an users option for change: node + user * value -> [ wanted value, lastExpressedAt ]
-    mapping(bytes32 NodeXUserXValue => uint256[2] valueAtTime) options;
-
-    bytes constant REDIST = abi.encodePacked("redistribution");
-
     constructor(address ExeAddr) Fungido(ExeAddr) {
         executionAddress = ExeAddr;
-
         IExecution(ExeAddr).setSelfFungi();
     }
 
@@ -36,10 +29,8 @@ contract Fun is Fungido {
     /// @param targetNode_ node for which to signal
     /// @param signals array of signaling values constructed starting with membrane, inflation, and [redistributive preferences for sub-entities]
 
-    function sendSignal(uint256 targetNode_, uint256[] memory signals) external returns (bool s) {
-        //// @dev could use one hash and substract to same effect for gas efficiency or precreate... naah.
+    function sendSignal(uint256 targetNode_, uint256[] memory signals) external localGas returns (bool s) {
         if (!isMember(_msgSender(), targetNode_)) revert NotMember();
-
         s = isMember(_msgSender(), targetNode_);
 
         mintInflation(targetNode_);
@@ -67,7 +58,6 @@ contract Fun is Fungido {
                     i = signals[i];
                     if (i < type(uint160).max) revert BadLen();
                     if (!(getMembraneById[i].tokens.length > 0)) revert membraneNotFound();
-                    /// membrane
 
                     if (options[userKey][1] > 0 && (inUseMembraneId[targetNode_][1] < options[userKey][1])) {
                         options[nodeKey][0] -= options[userKey][0];
@@ -88,7 +78,6 @@ contract Fun is Fungido {
                     delete i;
                 } else {
                     mintInflation(targetNode_);
-                    /// inflation | i == 1
                     i = signals[i];
                     if (options[userKey][1] > 0 && (inflSec[targetNode_][1] < options[userKey][1])) {
                         options[nodeKey][0] -= options[userKey][0];
@@ -114,17 +103,12 @@ contract Fun is Fungido {
                 }
                 continue;
             }
-            /// redistribution zone
             uint256[] memory children = childrenOf[targetNode_];
             if (children.length != (signals.length - 2)) revert BadLen();
-
             uint256 totalInflPerSec = inflSec[targetNode_][0];
-
             bytes32 userTargetedPreference = keccak256((abi.encodePacked(user, targetNode_, children[i - 2])));
 
-            //// 0 percentagee - 1 in units per sec
             if (!(options[userTargetedPreference][0] == signals[i])) {
-                //// expressed option differes from existing one
                 options[userTargetedPreference][0] = signals[i];
                 redistribute(children[i - 2]);
 
@@ -148,7 +132,9 @@ contract Fun is Fungido {
         }
     }
 
-    function redistribute(uint256 nodeId_) public returns (uint256 distributedAmt) {
+    //// @notice redistributes eligible acummulated inflationary flows
+    /// @param nodeId_ redistribution target group
+    function redistribute(uint256 nodeId_) public localGas returns (uint256 distributedAmt) {
         uint256 parent = parentOf[nodeId_];
         if (parent == 0) revert NoSoup();
         mintInflation(nodeId_);
@@ -159,59 +145,7 @@ contract Fun is Fungido {
         _mint(address(uint160(nodeId_)), parent, distributedAmt, REDIST);
     }
 
-    function taxPolicyPreference(address rootToken_, uint256 taxDivBy_) external returns (uint256 inForceTaxRate) {
-        return 1;
-    }
-
-    function proposeMovement(
-        uint256 typeOfMovement,
-        uint256 node_,
-        uint256 expiresInDays,
-        address executingAccount,
-        bytes32 descriptionHash,
-        SafeTx memory data
-    ) external returns (bytes32 movementHash) {
-        console.log("calling execution..propose..");
-        return IExecution(executionAddress).proposeMovement(
-            _msgSender(), typeOfMovement, node_, expiresInDays, executingAccount, descriptionHash, data
-        );
-    }
-
-    function _msgSender() internal view virtual override returns (address) {
-        return msg.sender;
-    }
-
-    function getSigQueue(bytes32 hash_) public view returns (SignatureQueue memory) {
-        return IExecution(executionAddress).getSigQueue(hash_);
-    }
-
-    function isQueueValid(bytes32 sigHash) public view returns (bool) {
-        return IExecution(executionAddress).isQueueValid(sigHash);
-    }
-
-    function createEndpointForOwner(uint256 nodeId_, address owner) external returns (address endpoint) {
-        return IExecution(executionAddress).createEndpointForOwner(_msgSender(), nodeId_, owner);
-    }
-
-    function executeQueue(bytes32 SignatureQueueHash_) external returns (bool s) {
-        return IExecution(executionAddress).executeQueue(SignatureQueueHash_);
-    }
-
-    function submitSignatures(bytes32 sigHash, address[] memory signers, bytes[] memory signatures) external {
-        return IExecution(executionAddress).submitSignatures(sigHash, signers, signatures);
-    }
-
-    function removeSignature(bytes32 sigHash_, uint256 index_, address who_) external {
-        IExecution(executionAddress).removeSignature(sigHash_, index_, who_);
-    }
-
-    function isValidSignature(bytes32 _hash, bytes memory _signature) external view returns (bytes4) {
-        return IExecution(executionAddress).isValidSignature(_hash, _signature);
-    }
-
-    function endpointOwner(address endpointAddress) external view returns (uint256) {
-        return IExecution(executionAddress).endpointOwner(endpointAddress);
-    }
+    /////////// Public
 
     function membershipEnforce(address target, uint256 fid_) public override returns (bool s) {
         return super.membershipEnforce(target, fid_);
@@ -243,5 +177,58 @@ contract Fun is Fungido {
 
     function spawnRootBranch(address fungible20_) public override returns (uint256 fID) {
         return super.spawnRootBranch(fungible20_);
+    }
+
+    /////////// External
+
+    function proposeMovement(
+        uint256 typeOfMovement,
+        uint256 node_,
+        uint256 expiresInDays,
+        address executingAccount,
+        bytes32 descriptionHash,
+        SafeTx memory data
+    ) external localGas returns (bytes32 movementHash) {
+        return IExecution(executionAddress).proposeMovement(
+            _msgSender(), typeOfMovement, node_, expiresInDays, executingAccount, descriptionHash, data
+        );
+    }
+
+    function createEndpointForOwner(uint256 nodeId_, address owner) external returns (address endpoint) {
+        return IExecution(executionAddress).createEndpointForOwner(_msgSender(), nodeId_, owner);
+    }
+
+    function executeQueue(bytes32 SignatureQueueHash_) external returns (bool s) {
+        return IExecution(executionAddress).executeQueue(SignatureQueueHash_);
+    }
+
+    function submitSignatures(bytes32 sigHash, address[] memory signers, bytes[] memory signatures) external {
+        return IExecution(executionAddress).submitSignatures(sigHash, signers, signatures);
+    }
+
+    function removeSignature(bytes32 sigHash_, uint256 index_, address who_) external {
+        IExecution(executionAddress).removeSignature(sigHash_, index_, who_);
+    }
+
+    /////////// View
+
+    function _msgSender() internal view virtual override returns (address) {
+        return msg.sender;
+    }
+
+    function getSigQueue(bytes32 hash_) public view returns (SignatureQueue memory) {
+        return IExecution(executionAddress).getSigQueue(hash_);
+    }
+
+    function isQueueValid(bytes32 sigHash) public view returns (bool) {
+        return IExecution(executionAddress).isQueueValid(sigHash);
+    }
+
+    function isValidSignature(bytes32 _hash, bytes memory _signature) external view returns (bytes4) {
+        return IExecution(executionAddress).isValidSignature(_hash, _signature);
+    }
+
+    function endpointOwner(address endpointAddress) external view returns (uint256) {
+        return IExecution(executionAddress).endpointOwner(endpointAddress);
     }
 }

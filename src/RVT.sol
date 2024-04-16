@@ -9,7 +9,7 @@ import {IFun} from "./interfaces/IFun.sol";
 /// @title Fungido
 /// @author Bogdan A. | parseb
 /// @notice this is the token of the protocol
-contract Fungo is ERC20ASG {
+contract RVT is ERC20ASG {
     address FungidoAddr;
 
     constructor(uint256 price_, uint256 pps_, address[] memory initMintAddrs_, uint256[] memory initMintAmts_)
@@ -18,6 +18,7 @@ contract Fungo is ERC20ASG {
 
     error TrippinFrFr();
     error InsufficentBalance();
+    error OnlyFun();
 
     function pingInit() external {
         if (FungidoAddr == address(0) && msg.sender.code.length == 0) {
@@ -57,7 +58,8 @@ contract Fungo is ERC20ASG {
         amtValReturned = burn(amountToBurn_);
     }
 
-    function transferGas(address from, address to, uint256 amount) public returns (bool) {
+    function transferGas(address from, address to, uint256 amount) external returns (bool) {
+        if (msg.sender != FungidoAddr) revert OnlyFun();
         if (to == FungidoAddr && msg.sender == FungidoAddr) _approve(from, to, amount);
         transferFrom(from, to, amount);
         IFun(FungidoAddr).mint(uint256(uint160(FungidoAddr)), amount);

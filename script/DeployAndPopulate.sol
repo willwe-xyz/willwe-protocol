@@ -4,13 +4,13 @@ pragma solidity 0.8.18;
 import "forge-std/Script.sol";
 import {Fun} from "../src/Fun.sol";
 import {Execution} from "../src/Execution.sol";
-import {Fungo} from "../src/Fungo.sol";
+import {RVT} from "../src/RVT.sol";
 import {X20} from "../test/mock/Tokens.sol";
 
 contract LineaDeployAndPopulate is Script {
     Fun FunFun;
     Execution E;
-    Fungo RVT;
+    RVT RVT20;
     X20 MockUSDC;
 
     address Normie1;
@@ -43,14 +43,14 @@ contract LineaDeployAndPopulate is Script {
         amounts[0] = 1 ether * 10_000_000;
         amounts[1] = 1 ether * 10_000_000;
 
-        RVT = new Fungo(1000, 1, founders, amounts);
+        RVT20 = new RVT(1000, 1, founders, amounts);
 
-        E = new Execution(address(RVT));
+        E = new Execution(address(RVT20));
         FunFun = new Fun(address(E));
 
-        RVT.transfer(Normie1, 10 ether);
-        RVT.transfer(Normie2, 20 ether);
-        RVT.transfer(Normie3, 30 ether);
+        RVT20.transfer(Normie1, 10 ether);
+        RVT20.transfer(Normie2, 20 ether);
+        RVT20.transfer(Normie3, 30 ether);
 
         MockUSDC = new X20();
         MockUSDC.transfer(Normie1, 11 ether);
@@ -61,7 +61,7 @@ contract LineaDeployAndPopulate is Script {
         console.log("                                                             ");
         console.log("###############################");
         console.log("                                                             ");
-        console.log("RootValueToken RVT deployed at : ", address(RVT));
+        console.log("RootValueToken RVT20 deployed at : ", address(RVT20));
         console.log("                                                             ");
         console.log("###############################");
         console.log("                                                             ");

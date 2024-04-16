@@ -5,12 +5,12 @@ import "forge-std/Script.sol";
 import {Fun} from "../src/Fun.sol";
 import {Execution} from "../src/Execution.sol";
 
-import {Fungo} from "../src/Fungo.sol";
+import {RVT} from "../src/RVT.sol";
 
 contract FungoDeploy is Script {
     Fun FunFun;
     Execution E;
-    Fungo F20;
+    RVT F20;
 
     function setUp() public {
         console.log("###############################");
@@ -28,7 +28,7 @@ contract FungoDeploy is Script {
         founders[0] = address(0xF86bc3D323354359E6aEcf26202611Dd097aA0Fe);
         amounts[0] = 1 ether * 10_000_000;
 
-        F20 = new Fungo(10, 1, founders, amounts);
+        F20 = new RVT(10, 1, founders, amounts);
 
         vm.startBroadcast(vm.envUint("testnetPVK")); //// start 1
         E = new Execution(address(F20));

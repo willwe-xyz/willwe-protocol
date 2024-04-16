@@ -12,7 +12,7 @@ import {Movement, SafeTx} from "../src/interfaces/IFun.sol";
 import {ISafe} from "../src/interfaces/ISafe.sol";
 import {IERC20} from "openzeppelin/token/ERC20/IERC20.sol";
 
-import {Fungo} from "../src/Fungo.sol";
+import {RVT} from "../src/RVT.sol";
 import {InitTest} from "./Init.t.sol";
 import {ECDSA} from "openzeppelin/utils/cryptography/ECDSA.sol";
 

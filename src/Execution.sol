@@ -57,6 +57,7 @@ contract Execution is Endpoints {
     error EXEC_OnlyMore();
     error EXEC_OnlySigner();
     error EXEC_SafeExeF();
+    error EXEC_InProgress();
 
     /// events
     event NewMovementCreated(bytes32 indexed movementHash, uint256 indexed node_);
@@ -303,6 +304,11 @@ contract Execution is Endpoints {
         delete SQ.Sigs[index_];
         delete SQ.Signers[index_];
         getSigQueueByHash[sigHash_] = SQ;
+    }
+
+    function removeLatentAction(bytes32 actionHash_) external {
+        SignatureQueue memory SQ = getSigQueueByHash[actionHash_];
+        if (SQ.state == SQState.Initialized || SQ.state == SQState.Valid) revert EXEC_InProgress();
     }
 
     function createEndpointForOwner(address origin, uint256 nodeId_, address owner)
