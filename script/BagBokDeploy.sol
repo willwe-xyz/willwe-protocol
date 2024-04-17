@@ -54,7 +54,7 @@ contract BagBokDeploy is Script {
         console.log("Fun deployed at : ", address(FunFun));
         console.log(" ");
         console.log("###############################");
-
+        E.foundationIni();
         FunFun.setControl(E.FoundationAgent());
         F20.transfer(E.FoundationAgent(), F20.balanceOf(address(deployer)));
 
@@ -63,7 +63,6 @@ contract BagBokDeploy is Script {
         console.log("Foundation Agent in Control : ", address(E.FoundationAgent()));
         console.log(" ");
         console.log("###############################");
-        E.foundationIni();
 
         vm.stopBroadcast();
     }

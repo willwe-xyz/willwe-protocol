@@ -13,13 +13,15 @@ import {Endpoints} from "./Endpoint.sol";
 import {IFun, SafeTx, SignatureQueue, SQState, MovementType, Movement} from "./interfaces/IFun.sol";
 import {ISafe} from "./interfaces/ISafe.sol";
 
+import {IERC1155Receiver} from "openzeppelin-contracts/contracts/token/ERC1155/IERC1155Receiver.sol";
+
 ///////////////////////////////////////////////
 ////////////////////////////////////
 import {console} from "forge-std/console.sol";
 
 /// @title Fungido
 /// @author Bogdan Arsene | parseb
-contract Execution is Endpoints {
+contract Execution is Endpoints, IERC1155Receiver {
     using Address for address;
     using Strings for string;
 
@@ -90,9 +92,8 @@ contract Execution is Endpoints {
         RootValueToken = rootValueToken_;
     }
 
-    function foundationIni() external returns (address FoundationAgent) {
-        FoundationAgent =
-            this.createEndpointForOwner(address(this), SelfFungi.spawnRootBranch(RootValueToken), address(this));
+    function foundationIni() external returns (address) {
+        return FoundationAgent = this.createEndpointForOwner(address(this), SelfFungi.spawnRootBranch(RootValueToken), address(this));
     }
 
     function proposeMovement(
@@ -321,7 +322,7 @@ contract Execution is Endpoints {
         external
         returns (address endpoint)
     {
-        if (msg.sender != BagBokAddress && BagBokAddress != address(0)) revert OnlyFun();
+        if (msg.sender != BagBokAddress && msg.sender != address(this)) revert OnlyFun();
 
         if (!SelfFungi.isMember(origin, nodeId_)) revert NotNodeMember();
         if (hasEndpointOrInteraction[nodeId_ + uint160(bytes20(owner))]) revert AlreadyHasEndpoint();
@@ -388,7 +389,7 @@ contract Execution is Endpoints {
     }
 
     function createNodeEndpoint(address origin, uint256 endpointOwner_) internal returns (address endpoint) {
-        if (msg.sender != BagBokAddress) revert OnlyFun();
+        if (msg.sender != BagBokAddress && msg.sender != address(this)) revert OnlyFun();
 
         endpoint = super.createNodeEndpoint(endpointOwner_);
         address owner;
@@ -435,46 +436,28 @@ contract Execution is Endpoints {
     function getSigQueue(bytes32 hash_) public view returns (SignatureQueue memory) {
         return getSigQueueByHash[hash_];
     }
+
+    function onERC1155BatchReceived(
+        address operator,
+        address from,
+        uint256[] calldata ids,
+        uint256[] calldata values,
+        bytes calldata data
+    ) external override returns (bytes4) {
+        return bytes4(keccak256("onERC1155BatchReceived(address,address,uint256[],uint256[],bytes)"));
+    }
+
+    function onERC1155Received(
+        address operator,
+        address from,
+        uint256 id,
+        uint256 value,
+        bytes calldata data
+    ) external returns (bytes4) {
+        return bytes4(keccak256("onERC1155Received(address,address,uint256,uint256,bytes)"));
+    }
+
+        function supportsInterface(bytes4 interfaceID) external override view returns (bool) {
+        false;
+    }
 }
-
-/// @dev tbd
-//             function multicall(bytes[] calldata data) external returns (bytes[] memory results) {
-//     results = new bytes[](data.length);
-//     for (uint256 i = 0; i < data.length; i++) {
-//         results[i] = Address.functionDelegateCall(address(this), data[i]);
-//     }
-//     return results;
-// }
-
-// /** @notice Executes a `operation` {0: Call, 1: DelegateCall}} transaction to `to` with `value` (Native Currency)
-//  *          and pays `gasPrice` * `gasLimit` in `gasToken` token to `refundReceiver`.
-//  * @dev The fees are always transferred, even if the user transaction fails.
-//  *      This method doesn't perform any sanity check of the transaction, such as:
-//  *      - if the contract at `to` address has code or not
-//  *      - if the `gasToken` is a contract or not
-//  *      It is the responsibility of the caller to perform such checks.
-//  * @param to Destination address of Safe transaction.
-//  * @param value Ether value of Safe transaction.
-//  * @param data Data payload of Safe transaction.
-//  * @param operation Operation type of Safe transaction.
-//  * @param safeTxGas Gas that should be used for the Safe transaction.
-//  * @param baseGas Gas costs that are independent of the transaction execution(e.g. base transaction fee, signature check, payment of the refund)
-//  * @param gasPrice Gas price that should be used for the payment calculation.
-//  * @param gasToken Token address (or 0 if ETH) that is used for the payment.
-//  * @param refundReceiver Address of receiver of gas payment (or 0 if tx.origin).
-//  * @param signatures Signature data that should be verified.
-//  *                   Can be packed ECDSA signature ({bytes32 r}{bytes32 s}{uint8 v}), contract signature (EIP-1271) or approved hash.
-//  * @return success Boolean indicating transaction's success.
-//  */
-// function execTransaction(
-//     address to,
-//     uint256 value,
-//     bytes calldata data,
-//     Enum.Operation operation,
-//     uint256 safeTxGas,
-//     uint256 baseGas,
-//     uint256 gasPrice,
-//     address gasToken,
-//     address payable refundReceiver,
-//     bytes memory signatures
-// ) public payable virtual returns (bool success)

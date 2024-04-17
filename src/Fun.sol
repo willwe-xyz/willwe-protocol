@@ -147,37 +147,7 @@ contract Fun is Fungido {
 
     /////////// Public
 
-    function membershipEnforce(address target, uint256 fid_) public override returns (bool s) {
-        return super.membershipEnforce(target, fid_);
-    }
 
-    function mintInflation(uint256 node) public override returns (uint256 amount) {
-        return super.mintInflation(node);
-    }
-
-    function burn(uint256 fid_, uint256 amount_) public override returns (bool) {
-        return super.burn(fid_, amount_);
-    }
-
-    function mint(uint256 fid_, uint256 amount_) public override {
-        super.mint(fid_, amount_);
-    }
-
-    function mintMembership(uint256 fid_, address to_) public override returns (uint256 mID) {
-        return super.mintMembership(fid_, to_);
-    }
-
-    function spawnBranchWithMembrane(uint256 fid_, uint256 membraneID_) public override returns (uint256 newID) {
-        return super.spawnBranchWithMembrane(fid_, membraneID_);
-    }
-
-    function spawnBranch(uint256 fid_) public override returns (uint256 newID) {
-        return super.spawnBranch(fid_);
-    }
-
-    function spawnRootBranch(address fungible20_) public override returns (uint256 fID) {
-        return super.spawnRootBranch(fungible20_);
-    }
 
     /////////// External
 
