@@ -5,22 +5,12 @@ import "./interfaces/IMembrane.sol";
 import "openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 
 /// @title Fungido
-/// @author Bogdan Arsene | parseb
-abstract contract Membranes is IMembrane {
-    mapping(uint256 => Membrane) getMembraneById;
+/// @author parseb
+contract Membranes is IMembrane {
+    mapping(uint256 => Membrane) membraneById;
 
     error membraneNotFound();
     error Membrane__EmptyFieldOnMembraneCreation();
-
-    event CreatedMembrane(uint256 id, string metadata);
-    event ChangedMembrane(address they, uint256 membrane);
-    event gCheckKick(address indexed who);
-
-    uint256 immutable Y_SEC = 525600;
-    uint256 immutable MAX160 = type(uint160).max;
-    uint256 immutable MAX176 = type(uint176).max;
-
-    // bytes immutable CONTINUE = bytes("continue");
 
     /// @inheritdoc IMembrane
     function createMembrane(address[] memory tokens_, uint256[] memory balances_, string memory meta_)
@@ -35,10 +25,8 @@ abstract contract Membranes is IMembrane {
         M.tokens = tokens_;
         M.balances = balances_;
         M.meta = meta_;
-        id = uint256(keccak256(abi.encode(M))) % MAX176;
-        getMembraneById[id] = M;
-
-        emit CreatedMembrane(id, meta_);
+        id = uint256(keccak256(abi.encode(M))) % type(uint176).max;
+        membraneById[id] = M;
     }
 
     //////////////////////////////////////////////////
@@ -48,7 +36,7 @@ abstract contract Membranes is IMembrane {
     /// @param who_: address of agent to be checked
     /// @param membraneID_: conditions
     function gCheck(address who_, uint256 membraneID_) public view returns (bool s) {
-        Membrane memory M = getMembraneById[membraneID_];
+        Membrane memory M = membraneById[membraneID_];
         membraneID_ = 0;
         s = true;
         for (membraneID_; membraneID_ < M.tokens.length;) {
@@ -63,5 +51,9 @@ abstract contract Membranes is IMembrane {
                 ++membraneID_;
             }
         }
+    }
+
+    function getMembraneById(uint256 id_) public view returns (Membrane memory) {
+        return membraneById[id_];
     }
 }

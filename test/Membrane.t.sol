@@ -32,14 +32,14 @@ contract MembraneTests is Test, InitTest {
         uint256 snap1 = vm.snapshot();
 
         tokens_[0] = address(X20);
-        uint256 mID = F.createMembrane(tokens_, balances_, meta_);
+        uint256 mID = M.createMembrane(tokens_, balances_, meta_);
         assertTrue(mID > type(uint160).max, "expected 256");
 
         vm.revertTo(snap1);
 
         tokens_[0] = address(X20);
         balances_[0] = 123 ether;
-        mID = F.createMembrane(tokens_, balances_, meta_);
+        mID = M.createMembrane(tokens_, balances_, meta_);
         assertTrue(mID > type(uint160).max, "expected 256");
 
         vm.revertTo(snap1);
@@ -48,13 +48,13 @@ contract MembraneTests is Test, InitTest {
         balances_[0] = 123 ether;
         balances_ = new uint256[](3);
         vm.expectRevert();
-        mID = F.createMembrane(tokens_, balances_, meta_);
+        mID = M.createMembrane(tokens_, balances_, meta_);
 
         vm.revertTo(snap1);
 
         tokens_ = new address[](0);
         balances_ = new uint256[](0);
         vm.expectRevert();
-        mID = F.createMembrane(tokens_, balances_, meta_);
+        mID = M.createMembrane(tokens_, balances_, meta_);
     }
 }

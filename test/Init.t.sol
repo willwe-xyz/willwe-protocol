@@ -11,11 +11,14 @@ import {Fun} from "../src/Fun.sol";
 
 import {IFun} from "../src/interfaces/IFun.sol";
 
+import {Membranes} from "../src/Membranes.sol";
+
 import "forge-std/console.sol";
 
 contract InitTest is Test {
     RVT public F20;
     Fun public F;
+    Membranes public M;
     address public E;
 
     address public A1;
@@ -37,8 +40,9 @@ contract InitTest is Test {
         amounts[0] = 1 ether * 10_000_000;
 
         F20 = new RVT(10, 1, founders, amounts);
+        M = new Membranes();
         E = address(new Execution(address(F20)));
-        F = new Fun(E);
+        F = new Fun(E, address(M));
 
         vm.label(address(F20), "F20");
         vm.label(address(E), "Execution");

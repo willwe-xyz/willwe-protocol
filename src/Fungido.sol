@@ -2,27 +2,26 @@
 pragma solidity 0.8.18;
 
 import {ERC1155} from "openzeppelin-contracts/contracts/token/ERC1155/ERC1155.sol";
-import "./Membranes.sol";
+import {IERC20} from "openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
+
 
 import "./interfaces/IExecution.sol";
-// import {Execution} from "./Execution.sol";
-import {IERC1155Receiver} from "openzeppelin-contracts/contracts/token/ERC1155/IERC1155Receiver.sol";
 import {IRVT} from "./interfaces/IRVT.sol";
+import "./interfaces/IMembrane.sol";
 
 ///////////////////////////////////////////////
 ////////////////////////////////////
-import {console} from "forge-std/console.sol";
 
 /// @title Fungido
 /// @author Bogdan A. | parseb
 
-contract Fungido is ERC1155("fungido.xyz"), Membranes {
+contract Fungido is ERC1155("fungido.xyz") {
     uint256 immutable initTime = block.timestamp;
     address virtualAccount;
     uint256 public entityCount;
     address public executionAddress;
     address public RVT;
-
+    IMembrane M;
     /// @notice stores the total supply of each id | id -> supply
     mapping(uint256 => uint256) public totalSupplyOf;
 
@@ -31,9 +30,6 @@ contract Fungido is ERC1155("fungido.xyz"), Membranes {
 
     /// @notice parent of instance chain | is root if parent is 0
     mapping(uint256 => uint256) parentOf;
-
-    /// @notice parent of instance chain | is root if parent is 0
-    mapping(uint256 => uint256) rootOf;
 
     /// @notice inflation per second | entityID -> [ inflationpersec | last modified] last minted
     mapping(uint256 => uint256[3]) inflSec;
@@ -59,13 +55,14 @@ contract Fungido is ERC1155("fungido.xyz"), Membranes {
 
     address[2] control;
 
-    constructor(address executionAddr) {
+    constructor(address executionAddr, address membranes) {
         /// default
         taxAndGas[address(0)] = [100_00, 2];
         executionAddress = executionAddr;
         /// @dev
         RVT = IExecution(executionAddr).RootValueToken();
         control[0] = msg.sender;
+        M = IMembrane(membranes);
 
         IRVT(RVT).pingInit();
     }
@@ -100,20 +97,10 @@ contract Fungido is ERC1155("fungido.xyz"), Membranes {
     error Unautorised();
 
     ////////////////////////////////////////////////
-    //////______EVENTS______///////////////////////
-
-    event NewEntityCreated(uint256 indexed Parent, uint256 indexed newBranch);
-    event SpawnedWithMembrane(uint256 indexed newEntity, uint256 usedMembrane);
-    event Burned(uint256 Fungible, uint256 Amount, address Who);
-    event NewRootRegistered(address indexed ERC20Root);
-    event RenouncedMembership(address who, uint256 indexed fromWhere);
-    event MintedInflation(uint256 node, uint256 amount);
-    event GasUsedWithCost(address who, bytes4 fxSig, uint256 gasCost);
-    ////////////////////////////////////////////////
     //////________MODIFIER________/////////////////
 
     modifier localGas() {
-        /// @todo _msgSig()
+        //// !
         if (!((control[0] == control[1]) && (address(RVT) != address(0)))) {
             _;
         } else {
@@ -130,7 +117,6 @@ contract Fungido is ERC1155("fungido.xyz"), Membranes {
             endGas = gasleft();
 
             if (!IRVT(RVT).transferGas(_msgSender(), address(this), gasCost)) revert CoreGasTransferFailed();
-            emit GasUsedWithCost(_msgSender(), msg.sig, gasCost);
         }
     }
 
@@ -152,8 +138,6 @@ contract Fungido is ERC1155("fungido.xyz"), Membranes {
         _localizeNode(fID, fID);
 
         _giveMembership(_msgSender(), fID);
-
-        emit NewRootRegistered(fungible20_);
     }
 
     function spawnBranch(uint256 fid_) public virtual localGas returns (uint256 newID) {
@@ -165,12 +149,9 @@ contract Fungido is ERC1155("fungido.xyz"), Membranes {
         }
 
         newID = (fid_ - block.timestamp - childrenOf[fid_].length) - entityCount;
-        console.log(block.timestamp, entityCount, childrenOf[fid_].length); //////////////###############################
 
         _localizeNode(newID, fid_);
         _giveMembership(_msgSender(), newID);
-
-        emit NewEntityCreated(fid_, newID);
     }
 
     function spawnBranchWithMembrane(uint256 fid_, uint256 membraneID_)
@@ -179,19 +160,17 @@ contract Fungido is ERC1155("fungido.xyz"), Membranes {
         localGas
         returns (uint256 newID)
     {
-        if (getMembraneById[membraneID_].tokens.length == 0) revert Fdo_UniniMembrane();
+        if (M.getMembraneById(membraneID_).tokens.length == 0) revert Fdo_UniniMembrane();
         newID = spawnBranch(fid_);
         inUseMembraneId[newID][0] = membraneID_;
         inUseMembraneId[newID][1] = block.timestamp;
-
-        emit SpawnedWithMembrane(newID, membraneID_);
     }
 
     function mintMembership(uint256 fid_, address to_) public virtual localGas returns (uint256 mID) {
         if (parentOf[fid_] == 0) revert BranchNotFound();
         mID = membershipID(fid_);
         if (isMember(to_, fid_)) revert Fdo_AlreadyMember();
-        if (!gCheck(to_, mID)) revert Unqualified();
+        if (!M.gCheck(to_, mID)) revert Unqualified();
 
         _giveMembership(to_, fid_);
     }
@@ -233,7 +212,6 @@ contract Fungido is ERC1155("fungido.xyz"), Membranes {
         if (parentOf[fid_] == 0) revert Fdo_BaseOrNonFungible();
         _burn(_msgSender(), fid_, amount_);
 
-        emit Burned(fid_, amount_, _msgSender());
         return true;
     }
 
@@ -244,11 +222,10 @@ contract Fungido is ERC1155("fungido.xyz"), Membranes {
         if (balanceOf(target, fid_) != 1) revert NotMember();
         if (members[fid_].length < 1) revert NoMembership();
 
-        s = !gCheck(target, getMembraneOf(fid_));
+        s = !M.gCheck(target, getMembraneOf(fid_));
         if (s) _burn(target, fid_, 1);
         if (target == _msgSender()) {
             _burn(target, fid_, 1);
-            emit RenouncedMembership(target, fid_);
         }
     }
 
@@ -258,7 +235,6 @@ contract Fungido is ERC1155("fungido.xyz"), Membranes {
         inflSec[node][2] = block.timestamp;
 
         _mint(address(uint160(node)), node, amount, abi.encodePacked("inflation"));
-        emit MintedInflation(node, amount);
     }
 
     function _giveMembership(address to, uint256 id) private {
@@ -275,7 +251,6 @@ contract Fungido is ERC1155("fungido.xyz"), Membranes {
     }
 
     function _localizeNode(uint256 newID, uint256 parentId) private {
-        rootOf[newID] = rootOf[parentId];
         parentOf[newID] = parentId;
         if (parentId != newID) childrenOf[parentId].push(newID);
         inflSec[newID][0] = 1 gwei;
@@ -415,7 +390,7 @@ contract Fungido is ERC1155("fungido.xyz"), Membranes {
     }
 
     function toAddress(uint256 x) public view returns (address) {
-        return x > MAX160 ? address(0) : address(uint160(x));
+        return x > type(uint160).max ? address(0) : address(uint160(x));
     }
 
     function toID(address x) public view returns (uint256) {
@@ -441,7 +416,7 @@ contract Fungido is ERC1155("fungido.xyz"), Membranes {
     }
 
     function getInUseMembraneOf(uint256 fid_) external view returns (Membrane memory) {
-        return getMembraneById[membershipID(fid_)];
+        return M.getMembraneById(membershipID(fid_));
     }
 
     function getChildrenOf(uint256 fid_) public view returns (uint256[] memory) {
@@ -456,10 +431,6 @@ contract Fungido is ERC1155("fungido.xyz"), Membranes {
         if (fid_ > 90 ether) return fid_ % 10 ether;
         return fid_;
     }
-
-    // function getRootToken(uint256 fid_) public view returns (address) {
-    //     return address(uint160(rootOf[fid_]));
-    // }
 
     function inflationOf(uint256 nodeId) external view returns (uint256) {
         return inflSec[nodeId][0];

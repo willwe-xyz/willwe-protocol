@@ -93,7 +93,8 @@ contract Execution is Endpoints, IERC1155Receiver {
     }
 
     function foundationIni() external returns (address) {
-        return FoundationAgent = this.createEndpointForOwner(address(this), SelfFungi.spawnRootBranch(RootValueToken), address(this));
+        return FoundationAgent =
+            this.createEndpointForOwner(address(this), SelfFungi.spawnRootBranch(RootValueToken), address(this));
     }
 
     function proposeMovement(
@@ -447,17 +448,14 @@ contract Execution is Endpoints, IERC1155Receiver {
         return bytes4(keccak256("onERC1155BatchReceived(address,address,uint256[],uint256[],bytes)"));
     }
 
-    function onERC1155Received(
-        address operator,
-        address from,
-        uint256 id,
-        uint256 value,
-        bytes calldata data
-    ) external returns (bytes4) {
+    function onERC1155Received(address operator, address from, uint256 id, uint256 value, bytes calldata data)
+        external
+        returns (bytes4)
+    {
         return bytes4(keccak256("onERC1155Received(address,address,uint256,uint256,bytes)"));
     }
 
-        function supportsInterface(bytes4 interfaceID) external override view returns (bool) {
+    function supportsInterface(bytes4 interfaceID) external view override returns (bool) {
         false;
     }
 }

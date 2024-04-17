@@ -4,12 +4,16 @@ pragma solidity 0.8.18;
 import "forge-std/Script.sol";
 import {Fun} from "../src/Fun.sol";
 import {Execution} from "../src/Execution.sol";
+
+import {Membranes} from "../src/Membranes.sol";
+
 import {RVT} from "../src/RVT.sol";
 import {X20} from "../test/mock/Tokens.sol";
 
 contract LineaDeployAndPopulate is Script {
     Fun FunFun;
     Execution E;
+    Membranes M;
     RVT RVT20;
     X20 MockUSDC;
 
@@ -46,7 +50,9 @@ contract LineaDeployAndPopulate is Script {
         RVT20 = new RVT(1000, 1, founders, amounts);
 
         E = new Execution(address(RVT20));
-        FunFun = new Fun(address(E));
+        M = new Membranes();
+        
+        FunFun = new Fun(address(E), address(M));
 
         RVT20.transfer(Normie1, 10 ether);
         RVT20.transfer(Normie2, 20 ether);

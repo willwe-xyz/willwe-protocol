@@ -7,5 +7,5 @@ import {Fun} from "./Fun.sol";
 /// @author parseb
 /// @notice Experimental. Do not use.
 contract BagBok is Fun {
-    constructor(address Execution) Fun(Execution) {}
+    constructor(address Execution, address Membrane) Fun(Execution, Membrane) {}
 }

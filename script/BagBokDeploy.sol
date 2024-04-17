@@ -4,7 +4,7 @@ pragma solidity 0.8.18;
 import "forge-std/Script.sol";
 import {BagBok} from "../src/BagBok.sol";
 import {Execution} from "../src/Execution.sol";
-
+import {Membranes} from "../src/Membranes.sol";
 import {RVT} from "../src/RVT.sol";
 
 contract BagBokDeploy is Script {
@@ -44,11 +44,12 @@ contract BagBokDeploy is Script {
         uint256 piper_sec = one / 86400 / 1 gwei;
 
         F20 = new RVT(one, piper_sec, founders, amounts);
+        Membranes M = new Membranes();
 
         vm.startBroadcast(runPVK);
 
         E = new Execution(address(F20));
-        FunFun = new BagBok(address(E));
+        FunFun = new BagBok(address(E), address(M));
         console.log("###############################");
         console.log(" ");
         console.log("Fun deployed at : ", address(FunFun));

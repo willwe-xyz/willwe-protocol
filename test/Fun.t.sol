@@ -77,7 +77,7 @@ contract FunTests is Test, TokenPrep, InitTest {
         uint256[] memory balances = new uint256[](1);
         balances[0] = 1;
         string memory meta = "http://urltoveryImportantDataAndDescriptionfrfr.com";
-        mID = F.createMembrane(tokens, balances, meta);
+        mID = M.createMembrane(tokens, balances, meta);
         assertTrue(mID > type(uint160).max, "expected membraneId bigger than address");
     }
 

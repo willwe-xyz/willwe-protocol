@@ -11,17 +11,15 @@ import {SafeTx} from "./interfaces/IFun.sol";
 ////////////////////////////////////
 
 contract Fun is Fungido {
-    constructor(address ExeAddr) Fungido(ExeAddr) {
+    constructor(address ExeAddr, address Membranes_) Fungido(ExeAddr, Membranes_) {
         executionAddress = ExeAddr;
         IExecution(ExeAddr).setSelfFungi();
     }
 
-    event MembraneChanged(uint256 indexed targetNode, uint256 membraneID);
-    event InflationChanged(uint256 indexed targetNode, uint256 newInflation);
-
     error BadLen();
     error Noise();
     error NoSoup();
+    error MembraneNotFound();
 
     /// @notice processes and stores user signal
     /// @notice in case threashold is reached, the change is applied.
@@ -57,7 +55,7 @@ contract Fun is Fungido {
                 if (i == 0) {
                     i = signals[i];
                     if (i < type(uint160).max) revert BadLen();
-                    if (!(getMembraneById[i].tokens.length > 0)) revert membraneNotFound();
+                    if (!(M.getMembraneById(i).tokens.length > 0)) revert MembraneNotFound();
 
                     if (options[userKey][1] > 0 && (inUseMembraneId[targetNode_][1] < options[userKey][1])) {
                         options[nodeKey][0] -= options[userKey][0];
@@ -72,7 +70,6 @@ contract Fun is Fungido {
 
                         inUseMembraneId[targetNode_][0] = i;
                         inUseMembraneId[targetNode_][1] = block.timestamp;
-                        emit MembraneChanged(targetNode_, i);
                     }
 
                     delete i;
@@ -92,8 +89,6 @@ contract Fun is Fungido {
 
                         inflSec[targetNode_][0] = i * 1 gwei;
                         inflSec[targetNode_][1] = block.timestamp;
-
-                        emit InflationChanged(targetNode_, i);
                     }
 
                     i = 1;
@@ -146,8 +141,6 @@ contract Fun is Fungido {
     }
 
     /////////// Public
-
-
 
     /////////// External
 
