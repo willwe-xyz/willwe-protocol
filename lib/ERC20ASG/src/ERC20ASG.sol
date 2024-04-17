@@ -7,6 +7,7 @@ import {ERC20} from "openzeppelin-contracts/token/ERC20/ERC20.sol";
 import "forge-std/console.sol";
 
 //// @notice ERC20GM: Fungible, Uncapped ETH Dutch Auction
+/// @author parseb
 contract ERC20ASG is ERC20, IERC20ASG {
     //// price amount
     uint256 immutable price;
@@ -83,8 +84,7 @@ contract ERC20ASG is ERC20, IERC20ASG {
     }
 
     //// @inheritdoc IERC20GM
-    function burnReturns(uint256 amt_) public view returns (uint256) {
-        console.log(address(this).balance);
-        if (totalSupply() > 0) return amt_ * address(this).balance / totalSupply();
+    function burnReturns(uint256 amt_) public view returns (uint256 rv) {
+        if (totalSupply() > 0) rv = amt_ * address(this).balance / totalSupply();
     }
 }

@@ -237,7 +237,6 @@ contract Fungido is ERC1155("fungido.xyz"), Membranes {
         return true;
     }
 
-
     //// @notice enforces membership conditions on target
     //// @param target agent subject
     //// @param fid_ entity of belonging
@@ -268,7 +267,6 @@ contract Fungido is ERC1155("fungido.xyz"), Membranes {
         _mint(to, membershipID(id), 1, abi.encodePacked("membership"));
     }
 
-
     function localizeEndpoint(address endpoint_, uint256 endpointParent_, address endpointOwner_) external {
         if (msg.sender != executionAddress) revert ExecutionOnly();
         _localizeNode(toID(endpoint_), endpointParent_);
@@ -289,9 +287,9 @@ contract Fungido is ERC1155("fungido.xyz"), Membranes {
         taxAndGas[rootToken_][0] = taxRate_;
     }
 
-    function gasMultiplier(address sender, uint256 gasMultiplier) external {
+    function gasMultiplier(address sender, uint256 multiplier_) external {
         if (_msgSender() != control[0]) revert Unautorised();
-        taxAndGas[sender][1] = gasMultiplier;
+        taxAndGas[sender][1] = multiplier_;
     }
 
     ////////////////////////////////////////////////

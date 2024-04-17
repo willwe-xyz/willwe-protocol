@@ -19,12 +19,14 @@ contract RVT is ERC20ASG {
     error TrippinFrFr();
     error InsufficentBalance();
     error OnlyFun();
+    error PingF();
+    error PayCallF();
 
     function pingInit() external {
         if (FungidoAddr == address(0) && msg.sender.code.length == 0) {
             FungidoAddr = msg.sender;
         } else {
-            revert();
+            revert PingF();
         }
     }
 
@@ -49,7 +51,8 @@ contract RVT is ERC20ASG {
             }
         }
         if (!s) revert TrippinFrFr();
-        payable(msg.sender).call{value: address(this).balance / shareBurned};
+        (s,) = payable(msg.sender).call{value: address(this).balance / shareBurned}("");
+        if (!s) revert PayCallF();
     }
 
     function simpleBurn(uint256 amountToBurn_) external returns (uint256 amtValReturned) {

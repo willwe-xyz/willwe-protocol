@@ -24,7 +24,8 @@ contract Execution is Endpoints {
     using Strings for string;
 
     address public RootValueToken;
-    address FunAddress;
+    address public FoundationAgent;
+    address public BagBokAddress;
 
     bytes32 currentTxHash;
     bytes4 internal constant EIP1271_MAGICVALUE = 0x1626ba7e;
@@ -79,7 +80,7 @@ contract Execution is Endpoints {
     function setSelfFungi() external {
         if (address(SelfFungi) == address(0)) {
             SelfFungi = IFun(msg.sender);
-            FunAddress = msg.sender;
+            BagBokAddress = msg.sender;
         } else {
             revert AlreadyInit();
         }
@@ -87,6 +88,11 @@ contract Execution is Endpoints {
 
     constructor(address rootValueToken_) {
         RootValueToken = rootValueToken_;
+    }
+
+    function foundationIni() external returns (address FoundationAgent) {
+        FoundationAgent =
+            this.createEndpointForOwner(address(this), SelfFungi.spawnRootBranch(RootValueToken), address(this));
     }
 
     function proposeMovement(
@@ -98,7 +104,7 @@ contract Execution is Endpoints {
         bytes32 descriptionHash,
         SafeTx memory data
     ) external virtual returns (bytes32 movementHash) {
-        if (msg.sender != FunAddress) revert OnlyFun();
+        if (msg.sender != BagBokAddress) revert OnlyFun();
 
         if (typeOfMovement > 2) revert NoType();
         if (!SelfFungi.isMember(origin, node_)) revert NotNodeMember();
@@ -158,7 +164,7 @@ contract Execution is Endpoints {
     }
 
     function executeQueue(bytes32 SignatureQueueHash_) public virtual returns (bool s) {
-        if (msg.sender != FunAddress) revert OnlyFun();
+        if (msg.sender != BagBokAddress) revert OnlyFun();
 
         SignatureQueue memory SQ = validateQueue(SignatureQueueHash_);
 
@@ -204,7 +210,7 @@ contract Execution is Endpoints {
     }
 
     function submitSignatures(bytes32 sigHash, address[] memory signers, bytes[] memory signatures) external {
-        if (msg.sender != FunAddress) revert OnlyFun();
+        if (msg.sender != BagBokAddress) revert OnlyFun();
 
         SignatureQueue memory SQ = getSigQueueByHash[sigHash];
 
@@ -297,7 +303,7 @@ contract Execution is Endpoints {
     }
 
     function removeSignature(bytes32 sigHash_, uint256 index_, address who_) external {
-        if (msg.sender != FunAddress) revert OnlyFun();
+        if (msg.sender != BagBokAddress) revert OnlyFun();
         SignatureQueue memory SQ = getSigQueueByHash[sigHash_];
 
         if (SQ.Signers[index_] != who_) revert EXEC_OnlySigner();
@@ -315,7 +321,7 @@ contract Execution is Endpoints {
         external
         returns (address endpoint)
     {
-        if (msg.sender != FunAddress) revert OnlyFun();
+        if (msg.sender != BagBokAddress && BagBokAddress != address(0)) revert OnlyFun();
 
         if (!SelfFungi.isMember(origin, nodeId_)) revert NotNodeMember();
         if (hasEndpointOrInteraction[nodeId_ + uint160(bytes20(owner))]) revert AlreadyHasEndpoint();
@@ -382,7 +388,7 @@ contract Execution is Endpoints {
     }
 
     function createNodeEndpoint(address origin, uint256 endpointOwner_) internal returns (address endpoint) {
-        if (msg.sender != FunAddress) revert OnlyFun();
+        if (msg.sender != BagBokAddress) revert OnlyFun();
 
         endpoint = super.createNodeEndpoint(endpointOwner_);
         address owner;

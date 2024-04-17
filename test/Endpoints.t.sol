@@ -154,7 +154,7 @@ contract Endpoints is Test, TokenPrep, InitTest {
         address[] memory members = F.allMembersOf(rootBranchID);
         assertTrue(members.length > 0, "shoudl have members for majority");
 
-        bytes32 moveHash = F.proposeMovement(2, rootBranchID, 12, address(0), description, data);
+        moveHash = F.proposeMovement(2, rootBranchID, 12, address(0), description, data);
         assertTrue(uint256(moveHash) > 0, "empty hash returned");
         SignatureQueue memory SQ = F.getSigQueue(moveHash);
         assertTrue(SQ.state == SQState.Initialized, "expected intiailized");
