@@ -4,7 +4,6 @@ pragma solidity 0.8.18;
 import {ERC1155} from "openzeppelin-contracts/contracts/token/ERC1155/ERC1155.sol";
 import {IERC20} from "openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 
-
 import "./interfaces/IExecution.sol";
 import {IRVT} from "./interfaces/IRVT.sol";
 import "./interfaces/IMembrane.sol";
@@ -43,8 +42,6 @@ contract Fungido is ERC1155("BagBok.com") {
     /// @notice stores an users option for change: node + user * value -> [ wanted value, lastExpressedAt ]
     mapping(bytes32 NodeXUserXValue => uint256[2] valueAtTime) options;
 
-    
-
     /// @notice root value balances | ERC20 -> Base Value Token (id) -> ERC20 balance
     mapping(address => mapping(uint256 => uint256)) E20bvtBalance;
 
@@ -70,9 +67,9 @@ contract Fungido is ERC1155("BagBok.com") {
     ////////////////////////////////////////////////
     //////______ERRORS______///////////////////////
 
-    error Fdo_UniniMembrane();
-    error Fdo_BaseOrNonFungible();
-    error Fdo_AlreadyMember();
+    error UniniMembrane();
+    error BaseOrNonFungible();
+    error AlreadyMember();
     error BranchNotFound();
     error Unqualified();
     error MintE20TransferFailed();
@@ -87,12 +84,8 @@ contract Fungido is ERC1155("BagBok.com") {
     error NotMember();
     error MembershipOp();
     error No();
-    error Internal();
     error ExecutionOnly();
-    error ERCGasHog();
-    error GasHogOrLightFx();
     error CoreGasTransferFailed();
-    error UnallowedAmount();
     error NoControl();
     error Unautorised();
 
@@ -100,7 +93,6 @@ contract Fungido is ERC1155("BagBok.com") {
     //////________MODIFIER________/////////////////
 
     modifier localGas() {
-        //// !
         if (!((control[0] == control[1]) && (address(RVT) != address(0)))) {
             _;
         } else {
@@ -122,6 +114,10 @@ contract Fungido is ERC1155("BagBok.com") {
 
     function setControl(address newController) external {
         if (msg.sender != control[0]) revert NoControl();
+        if (control[1] == newController) {
+            control[1] = address(0);
+            control[0] = address(0);
+        }
         control[0] == newController ? control[1] = newController : control[0] = newController;
     }
 
@@ -160,25 +156,24 @@ contract Fungido is ERC1155("BagBok.com") {
         localGas
         returns (uint256 newID)
     {
-        if (M.getMembraneById(membraneID_).tokens.length == 0) revert Fdo_UniniMembrane();
+        if (M.getMembraneById(membraneID_).tokens.length == 0) revert UniniMembrane();
         newID = spawnBranch(fid_);
         inUseMembraneId[newID][0] = membraneID_;
         inUseMembraneId[newID][1] = block.timestamp;
     }
 
-    function mintMembership(uint256 fid_, address to_) public virtual localGas  {
+    function mintMembership(uint256 fid_, address to_) public virtual localGas {
         if (parentOf[fid_] == 0) revert BranchNotFound();
-        
-        if (isMember(to_, fid_)) revert Fdo_AlreadyMember();
-        if (!M.gCheck(to_,  membershipID(fid_))) revert Unqualified();
+
+        if (isMember(to_, fid_)) revert AlreadyMember();
+        if (!M.gCheck(to_, membershipID(fid_))) revert Unqualified();
 
         _giveMembership(to_, fid_);
     }
 
     function mint(uint256 fid_, uint256 amount_) public virtual localGas {
-        if (amount_ <= 1) revert UnallowedAmount();
         if (parentOf[fid_] == 0) revert UnregisteredFungible();
-        _mint(_msgSender(), fid_, amount_, abi.encodePacked("fungible"));
+        _mint(_msgSender(), fid_, amount_, abi.encodePacked(fid_, "fungible", amount_));
     }
 
     ///  @dev _msgSig();
@@ -208,10 +203,9 @@ contract Fungido is ERC1155("BagBok.com") {
         }
     }
 
-    function burn(uint256 fid_, uint256 amount_) public virtual  {
-        if (parentOf[fid_] == 0) revert Fdo_BaseOrNonFungible();
+    function burn(uint256 fid_, uint256 amount_) public virtual {
+        if (parentOf[fid_] == 0) revert BaseOrNonFungible();
         _burn(_msgSender(), fid_, amount_);
-
     }
 
     //// @notice enforces membership conditions on target
@@ -233,13 +227,13 @@ contract Fungido is ERC1155("BagBok.com") {
         if (amount == 0) return amount;
         inflSec[node][2] = block.timestamp;
 
-        _mint(address(uint160(node)), node, amount, abi.encodePacked("inflation"));
+        _mint(address(uint160(node)), node, amount, abi.encodePacked(node, "inflation", amount));
     }
 
     function _giveMembership(address to, uint256 id) private {
         members[membershipID(id)].push(to);
 
-        _mint(to, membershipID(id), 1, abi.encodePacked("membership"));
+        _mint(to, membershipID(id), 1, abi.encodePacked(to, "membership", id));
     }
 
     function localizeEndpoint(address endpoint_, uint256 endpointParent_, address endpointOwner_) external {
@@ -320,7 +314,6 @@ contract Fungido is ERC1155("BagBok.com") {
                 ) revert MembershipOp();
                 totalSupplyOf[currentID] = members[currentID].length;
 
-                /// @dev can change basis not crystalclear
                 return;
             }
 
@@ -403,7 +396,7 @@ contract Fungido is ERC1155("BagBok.com") {
     /// @param whoabout_ you care about them dont you
     /// @param whereabout_ you abouting about where exactly
     function isMember(address whoabout_, uint256 whereabout_) public view returns (bool) {
-        if (balanceOf(whoabout_, membershipID(whereabout_)) > 0) return true;
+        if (balanceOf(whoabout_, membershipID(whereabout_)) >= 1) return true;
     }
 
     function getMembraneOf(uint256 fid_) public view returns (uint256) {
@@ -412,10 +405,6 @@ contract Fungido is ERC1155("BagBok.com") {
 
     function allMembersOf(uint256 fid_) public view returns (address[] memory) {
         return members[membershipID(fid_)];
-    }
-
-    function getInUseMembraneOf(uint256 fid_) external view returns (Membrane memory) {
-        return M.getMembraneById(membershipID(fid_));
     }
 
     function getChildrenOf(uint256 fid_) public view returns (uint256[] memory) {

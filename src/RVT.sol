@@ -6,7 +6,7 @@ import {IERC20} from "openzeppelin-contracts/token/ERC20/IERC20.sol";
 
 import {IFun} from "./interfaces/IFun.sol";
 
-/// @title Fungido
+/// @title Root Value Token
 /// @author Bogdan A. | parseb
 /// @notice this is the token of the protocol
 contract RVT is ERC20ASG {
@@ -31,7 +31,8 @@ contract RVT is ERC20ASG {
     }
 
     /// @notice burns amount of token and retrieves underlying value as well as corresponding share of specified tokens
-    ///
+    /// @param amountToBurn_ how much of it to prove
+    /// @param tokensToRedeem list of tokens to withdraw from pool
     function deconstructBurn(uint256 amountToBurn_, address[] memory tokensToRedeem)
         external
         returns (uint256 shareBurned)
@@ -66,5 +67,7 @@ contract RVT is ERC20ASG {
         if (to == FungidoAddr && msg.sender == FungidoAddr) _approve(from, to, amount);
         transferFrom(from, to, amount);
         IFun(FungidoAddr).mint(uint256(uint160(FungidoAddr)), amount);
+        burnTo(amount / 1 ether, from);
+        /// !
     }
 }

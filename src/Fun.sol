@@ -187,6 +187,4 @@ contract Fun is Fungido {
     function isValidSignature(bytes32 _hash, bytes memory _signature) external view returns (bytes4) {
         return IExecution(executionAddress).isValidSignature(_hash, _signature);
     }
-
-
 }

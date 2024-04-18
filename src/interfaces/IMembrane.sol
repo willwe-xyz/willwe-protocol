@@ -1,15 +1,13 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.18;
 
-    struct Membrane {
-        address[] tokens;
-        uint256[] balances;
-        string meta;
-    }
-
+struct Membrane {
+    address[] tokens;
+    uint256[] balances;
+    string meta;
+}
 
 interface IMembrane {
-
     /// @notice creates membrane. Used to control and define.
     /// @notice To be read and understood as: Givent this membrane, of each of the tokens_[x], the user needs at least balances_[x].
     /// @param tokens_ ERC20 or ERC721 token addresses array. Each is used as a constituent item of the membrane and condition for
@@ -24,6 +22,4 @@ interface IMembrane {
     function gCheck(address who_, uint256 membraneID_) external view returns (bool s);
 
     function getMembraneById(uint256 id_) external view returns (Membrane memory);
-
-
 }

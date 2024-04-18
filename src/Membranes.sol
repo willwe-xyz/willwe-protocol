@@ -4,7 +4,7 @@ pragma solidity 0.8.18;
 import "./interfaces/IMembrane.sol";
 import "openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 
-/// @title Fungido
+/// @title Membrane
 /// @author parseb
 contract Membranes is IMembrane {
     mapping(uint256 => Membrane) membraneById;

@@ -24,6 +24,7 @@ contract BagBokDeploy is Script {
     function run() public {
         uint256 runPVK = uint256(vm.envUint("DEGEN_DEPLOYER_PVK"));
         address deployer = vm.addr(runPVK);
+        vm.label(deployer, "deployer");
         address expectedDeployer = 0x920CbC9893bF12eD967116136653240823686D9c;
 
         console.log("Expected Deployer : ", uint160(bytes20(deployer)) == uint160(bytes20(expectedDeployer)));
@@ -46,24 +47,60 @@ contract BagBokDeploy is Script {
         vm.startBroadcast(runPVK);
 
         F20 = new RVT(one, piper_sec, founders, amounts);
+        vm.label(address(F20), "deployer");
+
         Membranes M = new Membranes();
 
         E = new Execution(address(F20));
         FunFun = new BagBok(address(E), address(M));
+        vm.label(address(FunFun), "deployer");
+
         console.log("###############################");
         console.log(" ");
         console.log("Fun deployed at : ", address(FunFun));
         console.log(" ");
         console.log("###############################");
         E.foundationIni();
+        address foundationMultisig = E.FoundationAgent();
+        vm.label(foundationMultisig, "foundationSafe");
         FunFun.setControl(E.FoundationAgent());
-        F20.transfer(E.FoundationAgent(), F20.balanceOf(address(deployer)));
 
         console.log("###############################");
         console.log(" ");
         console.log("Foundation Agent in Control : ", address(E.FoundationAgent()));
         console.log(" ");
         console.log("###############################");
+
+        address[] memory to = new address[](1);
+        uint256[] memory amt = new uint256[](1);
+
+        to[0] = address(F20);
+        amt[0] = 1000 * one;
+
+        uint256 rootNode = FunFun.toID(address(F20));
+
+        {
+            uint256 membraneID = M.createMembrane(to, amt, "metadata");
+            uint256[] memory signals = new uint256[](1);
+            signals[0] = membraneID;
+            if (!FunFun.isMember(deployer, rootNode)) FunFun.mintMembership(rootNode, deployer);
+
+            signals[0] = membraneID;
+            FunFun.sendSignal(rootNode, signals);
+
+            console.log("RootNodeID | Membrane ID | CurrentInflation");
+            console.log(rootNode, membraneID, FunFun.inflationOf(rootNode));
+        }
+
+        /// #############
+
+        F20.transfer(E.FoundationAgent(), F20.balanceOf(address(deployer)));
+        console.log("Balances: Deployer | Foundation Safe | parseb");
+        console.log(
+            F20.balanceOf(address(deployer)),
+            F20.balanceOf(address(foundationMultisig)),
+            F20.balanceOf(address(founders[0]))
+        );
 
         vm.stopBroadcast();
     }

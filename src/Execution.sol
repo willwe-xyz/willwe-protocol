@@ -91,7 +91,8 @@ contract Execution is Endpoints, IERC1155Receiver {
     }
 
     function foundationIni() external returns (address) {
-         FoundationAgent = this.createEndpointForOwner(address(this), SelfFungi.spawnRootBranch(RootValueToken), address(this));
+        FoundationAgent =
+            this.createEndpointForOwner(address(this), SelfFungi.spawnRootBranch(RootValueToken), address(this));
         return FoundationAgent;
     }
 

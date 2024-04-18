@@ -15,7 +15,6 @@ enum MovementType {
     Revert,
     AgentMajority,
     EnergeticMajority
-
 }
 
 struct SafeTx {

@@ -51,7 +51,7 @@ contract LineaDeployAndPopulate is Script {
 
         E = new Execution(address(RVT20));
         M = new Membranes();
-        
+
         FunFun = new Fun(address(E), address(M));
 
         RVT20.transfer(Normie1, 10 ether);
