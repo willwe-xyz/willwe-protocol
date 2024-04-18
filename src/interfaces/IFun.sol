@@ -12,9 +12,9 @@ enum SQState {
 }
 
 enum MovementType {
-    Revert, // none
-    AgentMajority, // 1 member 1 vote
-    EnergeticMajority // 1 node share 1 vote
+    Revert,
+    AgentMajority,
+    EnergeticMajority
 
 }
 

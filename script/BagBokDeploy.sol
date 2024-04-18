@@ -43,10 +43,10 @@ contract BagBokDeploy is Script {
 
         uint256 piper_sec = one / 86400 / 1 gwei;
 
+        vm.startBroadcast(runPVK);
+
         F20 = new RVT(one, piper_sec, founders, amounts);
         Membranes M = new Membranes();
-
-        vm.startBroadcast(runPVK);
 
         E = new Execution(address(F20));
         FunFun = new BagBok(address(E), address(M));

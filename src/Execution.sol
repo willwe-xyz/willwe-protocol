@@ -8,7 +8,6 @@ import {Strings} from "openzeppelin-contracts/contracts/utils/Strings.sol";
 import {Strings, ECDSA} from "openzeppelin-contracts/contracts/utils/cryptography/ECDSA.sol";
 
 import {Endpoints} from "./Endpoint.sol";
-// import {IExecution} from "./interfaces/IExecution.sol";
 
 import {IFun, SafeTx, SignatureQueue, SQState, MovementType, Movement} from "./interfaces/IFun.sol";
 import {ISafe} from "./interfaces/ISafe.sol";
@@ -31,7 +30,6 @@ contract Execution is Endpoints, IERC1155Receiver {
 
     bytes32 currentTxHash;
     bytes4 internal constant EIP1271_MAGICVALUE = 0x1626ba7e;
-    // bytes4(keccak256("isValidSignature(bytes,bytes)")
     bytes4 internal constant EIP1271_MAGIC_VALUE_LEGACY = 0x20c13b0b;
     IFun SelfFungi;
 
@@ -93,8 +91,8 @@ contract Execution is Endpoints, IERC1155Receiver {
     }
 
     function foundationIni() external returns (address) {
-        return FoundationAgent =
-            this.createEndpointForOwner(address(this), SelfFungi.spawnRootBranch(RootValueToken), address(this));
+         FoundationAgent = this.createEndpointForOwner(address(this), SelfFungi.spawnRootBranch(RootValueToken), address(this));
+        return FoundationAgent;
     }
 
     function proposeMovement(
@@ -336,7 +334,6 @@ contract Execution is Endpoints, IERC1155Receiver {
         ISafe(endpoint).setup(
             members, 1, address(0), abi.encodePacked(uint160(owner) - block.timestamp), address(0), address(0), 0, owner
         );
-        emit EndpointCreatedForAgent(nodeId_, endpoint, owner);
     }
 
     function validateQueue(bytes32 sigHash) internal returns (SignatureQueue memory SQM) {
@@ -456,6 +453,6 @@ contract Execution is Endpoints, IERC1155Receiver {
     }
 
     function supportsInterface(bytes4 interfaceID) external view override returns (bool) {
-        false;
+        return false;
     }
 }

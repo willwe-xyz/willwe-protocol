@@ -14,8 +14,6 @@ abstract contract Endpoints {
     ISafeFactory SafeFactory;
     address Singleton;
 
-    event EndpointCreatedFor(uint256 endpointOwner_, address endpoint);
-
     constructor() {
         SafeFactory = ISafeFactory(SafeFactoryAddresses.factoryAddressForChainId(block.chainid));
         Singleton = SafeFactoryAddresses.getSingletonAddressForChainID(block.chainid);
@@ -23,7 +21,5 @@ abstract contract Endpoints {
 
     function createNodeEndpoint(uint256 endpointOwner_) internal virtual returns (address endpoint) {
         endpoint = SafeFactory.createProxyWithNonce(Singleton, abi.encodePacked(), (endpointOwner_ - block.timestamp));
-
-        emit EndpointCreatedFor(endpointOwner_, endpoint);
     }
 }

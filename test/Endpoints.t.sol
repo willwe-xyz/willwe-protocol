@@ -223,7 +223,6 @@ contract Endpoints is Test, TokenPrep, InitTest {
         assertTrue(SQ.state == SQState.Initialized, "expected intiailized");
         assertTrue(SQ.Action.descriptionHash == description, "description mism");
         assertTrue(SQ.Action.exeAccount != address(0), "no exe account");
-
         assertTrue(SQ.Action.category == MovementType.EnergeticMajority, "not type 1");
 
         vm.stopPrank();

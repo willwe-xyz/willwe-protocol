@@ -27,9 +27,8 @@ contract Fun is Fungido {
     /// @param targetNode_ node for which to signal
     /// @param signals array of signaling values constructed starting with membrane, inflation, and [redistributive preferences for sub-entities]
 
-    function sendSignal(uint256 targetNode_, uint256[] memory signals) external localGas returns (bool s) {
+    function sendSignal(uint256 targetNode_, uint256[] memory signals) external localGas {
         if (!isMember(_msgSender(), targetNode_)) revert NotMember();
-        s = isMember(_msgSender(), targetNode_);
 
         mintInflation(targetNode_);
 
@@ -137,10 +136,8 @@ contract Fun is Fungido {
         bytes32 childParentEligibility = keccak256((abi.encodePacked(nodeId_, parent)));
         distributedAmt = options[childParentEligibility][0] * (block.timestamp - options[childParentEligibility][1]);
 
-        _mint(address(uint160(nodeId_)), parent, distributedAmt, REDIST);
+        _mint(address(uint160(nodeId_)), parent, distributedAmt, abi.encodePacked("redistribution"));
     }
-
-    /////////// Public
 
     /////////// External
 
@@ -191,7 +188,5 @@ contract Fun is Fungido {
         return IExecution(executionAddress).isValidSignature(_hash, _signature);
     }
 
-    function endpointOwner(address endpointAddress) external view returns (uint256) {
-        return IExecution(executionAddress).endpointOwner(endpointAddress);
-    }
+
 }

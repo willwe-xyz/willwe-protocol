@@ -15,7 +15,7 @@ import "./interfaces/IMembrane.sol";
 /// @title Fungido
 /// @author Bogdan A. | parseb
 
-contract Fungido is ERC1155("fungido.xyz") {
+contract Fungido is ERC1155("BagBok.com") {
     uint256 immutable initTime = block.timestamp;
     address virtualAccount;
     uint256 public entityCount;
@@ -43,7 +43,7 @@ contract Fungido is ERC1155("fungido.xyz") {
     /// @notice stores an users option for change: node + user * value -> [ wanted value, lastExpressedAt ]
     mapping(bytes32 NodeXUserXValue => uint256[2] valueAtTime) options;
 
-    bytes constant REDIST = abi.encodePacked("redistribution");
+    
 
     /// @notice root value balances | ERC20 -> Base Value Token (id) -> ERC20 balance
     mapping(address => mapping(uint256 => uint256)) E20bvtBalance;
@@ -166,11 +166,11 @@ contract Fungido is ERC1155("fungido.xyz") {
         inUseMembraneId[newID][1] = block.timestamp;
     }
 
-    function mintMembership(uint256 fid_, address to_) public virtual localGas returns (uint256 mID) {
+    function mintMembership(uint256 fid_, address to_) public virtual localGas  {
         if (parentOf[fid_] == 0) revert BranchNotFound();
-        mID = membershipID(fid_);
+        
         if (isMember(to_, fid_)) revert Fdo_AlreadyMember();
-        if (!M.gCheck(to_, mID)) revert Unqualified();
+        if (!M.gCheck(to_,  membershipID(fid_))) revert Unqualified();
 
         _giveMembership(to_, fid_);
     }
@@ -208,11 +208,10 @@ contract Fungido is ERC1155("fungido.xyz") {
         }
     }
 
-    function burn(uint256 fid_, uint256 amount_) public virtual returns (bool) {
+    function burn(uint256 fid_, uint256 amount_) public virtual  {
         if (parentOf[fid_] == 0) revert Fdo_BaseOrNonFungible();
         _burn(_msgSender(), fid_, amount_);
 
-        return true;
     }
 
     //// @notice enforces membership conditions on target
