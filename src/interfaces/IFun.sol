@@ -31,13 +31,20 @@ struct SafeTx {
 
 struct Movement {
     MovementType category;
+    /// proposer
     address initiatior;
+    /// safe or similar execution environment
     address exeAccount;
+    /// fid
     uint256 viaNode;
+    /// signature expires - skip if expired
     uint256 expiresAt;
     bytes32 descriptionHash;
+    /// calldata
     SafeTx txData;
 }
+
+/// human view
 
 struct SignatureQueue {
     SQState state;

@@ -5,11 +5,9 @@ import {Fungido} from "./Fungido.sol";
 import {IExecution, SignatureQueue} from "./interfaces/IExecution.sol";
 import {SafeTx} from "./interfaces/IFun.sol";
 
-import "forge-std/console.sol";
-
 /////////////////////////////////////////
 /// @title Fun
-/// @author   parseb
+/// @author parseb
 ///////////////////////////////////////////////
 
 contract Fun is Fungido {
@@ -32,22 +30,7 @@ contract Fun is Fungido {
 
     function sendSignal(uint256 targetNode_, uint256[] memory signals) external localGas {
         if (parentOf[targetNode_] == targetNode_) revert RootNodeOrNone();
-                console.log("sender", msg.sender);
-                                console.log("isMember??", isMember(msg.sender, targetNode_));
-                                                                console.log("isMember?? -- parent", isMember(msg.sender, parentOf[targetNode_]));
-
-                                console.log(balanceOf(msg.sender, parentOf[targetNode_]));
-                                console.log("parent ", isMember( msg.sender, parentOf[targetNode_] )  );
-                                console.log("parent  - exec", isMember( executionAddress, parentOf[targetNode_] )  );
-                                console.log("parent  - exec", parentOf[targetNode_]  );
-                                console.log(executionAddress);
-
-
-                                
-
-
-        if (!isMember(_msgSender(), targetNode_)) revert NotMember();
-        console.log("sender", msg.sender);
+        if (!(isMember(msg.sender, targetNode_))) revert NotMember();
 
         mintInflation(targetNode_);
 

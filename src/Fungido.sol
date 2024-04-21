@@ -14,7 +14,7 @@ import "./interfaces/IMembrane.sol";
 /// @title Fungido
 /// @author Bogdan A. | parseb
 
-contract Fungido is ERC1155("BagBok.com") {
+contract Fungido is ERC1155("BagBok") {
     uint256 immutable initTime = block.timestamp;
     address virtualAccount;
     uint256 public entityCount;
@@ -165,7 +165,6 @@ contract Fungido is ERC1155("BagBok.com") {
     function mintMembership(uint256 fid_, address to_) public virtual localGas {
         if (parentOf[fid_] == 0) revert BranchNotFound();
         if (isMember(to_, fid_)) revert AlreadyMember();
-
         if (!M.gCheck(to_, membershipID(fid_))) revert Unqualified();
 
         _giveMembership(to_, fid_);

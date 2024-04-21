@@ -177,7 +177,7 @@ contract FunTests is Test, TokenPrep, InitTest {
         uint256[] memory signals = new uint256[](childrenOf.length + 2);
         console.log("B1 has this amount of children :  -- ", childrenOf.length);
         signals[0] = 0;
-        signals[1] = 0;
+        signals[1] = 3245;
         signals[2] = 90_00;
         signals[3] = 10_00;
         skip(2345);
@@ -188,8 +188,14 @@ contract FunTests is Test, TokenPrep, InitTest {
         skip(234225);
 
         F.sendSignal(B1, signals);
+        address[] memory tokens = new address[](1);
+        uint256[] memory balances = new uint256[](1);
+        tokens[0] = address(T1);
+        balances[0] = 1 ether;
+        uint256 newmembraneID = M.createMembrane(tokens, balances, "meta");
 
         skip(234225);
+        signals[0] = newmembraneID;
         signals[2] = 88_00;
         signals[3] = 12_00;
         F.sendSignal(B1, signals);

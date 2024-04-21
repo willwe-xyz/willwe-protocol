@@ -39,8 +39,8 @@ interface IExecution {
 
     function FoundationAgent() external returns (address);
 
-     function setFoundationAgent(address fa_) external;
-        
+    function setFoundationAgent(address fa_) external;
+
     //// cleanup functions
 
     function removeSignature(bytes32 sigHash_, uint256 index_, address who_) external;

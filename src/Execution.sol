@@ -16,10 +16,9 @@ import {IERC1155Receiver} from "openzeppelin-contracts/contracts/token/ERC1155/I
 
 ///////////////////////////////////////////////
 ////////////////////////////////////
-import {console} from "forge-std/console.sol";
 
 /// @title Fungido
-/// @author Bogdan Arsene | parseb
+/// @author parseb
 contract Execution is Endpoints, IERC1155Receiver {
     using Address for address;
     using Strings for string;
@@ -87,9 +86,9 @@ contract Execution is Endpoints, IERC1155Receiver {
         RootValueToken = rootValueToken_;
     }
 
-    function setFoundationAgent(uint256 baseNodeId_) external {        
-        if (FoundationAgent != address(0) ) revert();
-        FoundationAgent = createNodeEndpoint(address(this),baseNodeId_);
+    function setFoundationAgent(uint256 baseNodeId_) external {
+        if (FoundationAgent != address(0)) revert();
+        FoundationAgent = createNodeEndpoint(address(this), baseNodeId_);
     }
 
     function proposeMovement(
@@ -384,7 +383,6 @@ contract Execution is Endpoints, IERC1155Receiver {
     }
 
     function createNodeEndpoint(address origin, uint256 endpointOwner_) internal returns (address endpoint) {
-
         endpoint = super.createNodeEndpoint(endpointOwner_);
         address owner;
         if (msg.sig == this.createEndpointForOwner.selector || msg.sig == this.setFoundationAgent.selector) {
@@ -401,15 +399,6 @@ contract Execution is Endpoints, IERC1155Receiver {
         return engineOwner[exeAcc_];
     }
 
-    /**
-     * @dev Should return whether the signature provided is valid for the provided hash
-     * @param _hash      Hash of the data to be signed
-     * @param _signature Signature byte array associated with _hash
-     *
-     * MUST return the bytes4 magic value 0x1626ba7e when function passes.
-     * MUST NOT modify state (using STATICCALL for solc < 0.5, view modifier for solc > 0.5)
-     * MUST allow external calls
-     */
     function isValidSignature(bytes32 _hash, bytes memory _signature) public view returns (bytes4) {
         if (getSigQueueByHash[_hash].state == SQState.Valid) return EIP1271_MAGICVALUE;
     }
