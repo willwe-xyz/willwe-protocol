@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity 0.8.18;
+pragma solidity >=0.8.3;
 
 import {IERC20ASG} from "ERC20ASG/src/IERC20ASG.sol";
 

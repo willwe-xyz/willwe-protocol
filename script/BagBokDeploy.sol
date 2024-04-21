@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity 0.8.18;
+pragma solidity 0.8.20;
 
 import "forge-std/Script.sol";
 import {BagBok} from "../src/BagBok.sol";
@@ -25,11 +25,8 @@ contract BagBokDeploy is Script {
         uint256 runPVK = uint256(vm.envUint("DEGEN_DEPLOYER_PVK"));
         address deployer = vm.addr(runPVK);
         vm.label(deployer, "deployer");
-        address expectedDeployer = 0x920CbC9893bF12eD967116136653240823686D9c;
 
-        console.log("Expected Deployer : ", uint160(bytes20(deployer)) == uint160(bytes20(expectedDeployer)));
-
-        console.log("##### Deployer : ", deployer);
+        console.log("##### Deployer : ", deployer,  "| expected", "0x920CbC9893bF12eD967116136653240823686D9c");
         console.log("#________________________________");
 
         address[] memory founders = new address[](2);
@@ -53,16 +50,23 @@ contract BagBokDeploy is Script {
 
         E = new Execution(address(F20));
         FunFun = new BagBok(address(E), address(M));
-        vm.label(address(FunFun), "deployer");
+        vm.label(address(FunFun), "FunFun");
+
+        uint256 rootBranchId = FunFun.spawnRootBranch(address(F20));
+        uint256 commonBranch = FunFun.spawnBranch(rootBranchId);
+
+ /*        FunFun.mintMembership(commonBranch, address(E));
+
+        address fa_ = FunFun.createEndpointForOwner( commonBranch, address(E));  */
+
+        E.setFoundationAgent(commonBranch);
 
         console.log("###############################");
         console.log(" ");
         console.log("Fun deployed at : ", address(FunFun));
         console.log(" ");
         console.log("###############################");
-        E.foundationIni();
-        address foundationMultisig = E.FoundationAgent();
-        vm.label(foundationMultisig, "foundationSafe");
+        vm.label( E.FoundationAgent(), "foundationSafe");
         FunFun.setControl(E.FoundationAgent());
 
         console.log("###############################");
@@ -70,27 +74,26 @@ contract BagBokDeploy is Script {
         console.log("Foundation Agent in Control : ", address(E.FoundationAgent()));
         console.log(" ");
         console.log("###############################");
-
+/* 
         address[] memory to = new address[](1);
         uint256[] memory amt = new uint256[](1);
 
         to[0] = address(F20);
         amt[0] = 1000 * one;
 
-        uint256 rootNode = FunFun.toID(address(F20));
-
-        {
+        console.log("root node", rootNode);
+        
             uint256 membraneID = M.createMembrane(to, amt, "metadata");
-            uint256[] memory signals = new uint256[](1);
+            uint256[] memory signals = new uint256[](2);
             signals[0] = membraneID;
+            signals[1] = 1_000_000_000;
             if (!FunFun.isMember(deployer, rootNode)) FunFun.mintMembership(rootNode, deployer);
 
-            signals[0] = membraneID;
             FunFun.sendSignal(rootNode, signals);
 
             console.log("RootNodeID | Membrane ID | CurrentInflation");
             console.log(rootNode, membraneID, FunFun.inflationOf(rootNode));
-        }
+        
 
         /// #############
 
@@ -98,9 +101,17 @@ contract BagBokDeploy is Script {
         console.log("Balances: Deployer | Foundation Safe | parseb");
         console.log(
             F20.balanceOf(address(deployer)),
-            F20.balanceOf(address(foundationMultisig)),
+            F20.balanceOf(address(E.FoundationAgent())),
             F20.balanceOf(address(founders[0]))
-        );
+        ); */
+
+        // F20.setPointer(E.FoundationAgent());
+
+        // console.log("////////////////////////////////////");
+        // uint256 inflationRate = FunFun.inflationOf(rootNode);
+        // console.log("Inflation Rate: ", inflationRate);
+ 
+
 
         vm.stopBroadcast();
     }

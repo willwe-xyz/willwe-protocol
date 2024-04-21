@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity 0.8.18;
+pragma solidity >=0.8.3;
 
 import {IERC1155} from "openzeppelin-contracts/contracts/token/ERC1155/IERC1155.sol";
 
@@ -31,20 +31,13 @@ struct SafeTx {
 
 struct Movement {
     MovementType category;
-    /// proposer
     address initiatior;
-    /// safe or similar execution environment
     address exeAccount;
-    /// fid
     uint256 viaNode;
-    /// signature expires - skip if expired
     uint256 expiresAt;
     bytes32 descriptionHash;
-    /// calldata
     SafeTx txData;
 }
-
-/// human view
 
 struct SignatureQueue {
     SQState state;

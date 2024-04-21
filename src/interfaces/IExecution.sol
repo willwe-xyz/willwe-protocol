@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity 0.8.18;
+pragma solidity >=0.8.3;
 
 import "./IFun.sol";
 
@@ -31,12 +31,16 @@ interface IExecution {
 
     function getSigQueue(bytes32 hash_) external view returns (SignatureQueue memory);
 
-    function setSelfFungi() external;
+    function setBagBook(address newBB) external;
 
     function RootValueToken() external view returns (address);
 
     function isQueueValid(bytes32 sigHash) external view returns (bool);
 
+    function FoundationAgent() external returns (address);
+
+     function setFoundationAgent(address fa_) external;
+        
     //// cleanup functions
 
     function removeSignature(bytes32 sigHash_, uint256 index_, address who_) external;

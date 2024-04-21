@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity 0.8.18;
+pragma solidity >=0.8.3;
 
 import {ERC20ASG} from "ERC20ASG/src/ERC20ASG.sol";
 import {IERC20} from "openzeppelin-contracts/token/ERC20/IERC20.sol";
@@ -10,11 +10,16 @@ import {IFun} from "./interfaces/IFun.sol";
 /// @author Bogdan A. | parseb
 /// @notice this is the token of the protocol
 contract RVT is ERC20ASG {
-    address FungidoAddr;
+    address BagBok;
+    address Pointer;
+
+    error OnlyPointer();
 
     constructor(uint256 price_, uint256 pps_, address[] memory initMintAddrs_, uint256[] memory initMintAmts_)
         ERC20ASG("Root Value Token", "RVT", price_, pps_, initMintAddrs_, initMintAmts_)
-    {}
+    {
+        Pointer = msg.sender;
+    }
 
     error TrippinFrFr();
     error InsufficentBalance();
@@ -23,8 +28,8 @@ contract RVT is ERC20ASG {
     error PayCallF();
 
     function pingInit() external {
-        if (FungidoAddr == address(0) && msg.sender.code.length == 0) {
-            FungidoAddr = msg.sender;
+        if (BagBok == address(0) && msg.sender.code.length == 0) {
+            BagBok = msg.sender;
         } else {
             revert PingF();
         }
@@ -63,11 +68,20 @@ contract RVT is ERC20ASG {
     }
 
     function transferGas(address from, address to, uint256 amount) external returns (bool) {
-        if (msg.sender != FungidoAddr) revert OnlyFun();
-        if (to == FungidoAddr && msg.sender == FungidoAddr) _approve(from, to, amount);
+        if (msg.sender != BagBok) revert OnlyFun();
+        if (to == BagBok && msg.sender == BagBok) _approve(from, to, amount);
         transferFrom(from, to, amount);
-        IFun(FungidoAddr).mint(uint256(uint160(FungidoAddr)), amount);
+        IFun(BagBok).mint(uint256(uint160(BagBok)), amount);
         burnTo(amount / 1 ether, from);
-        /// !
+    }
+
+    function setPointer(address newPointer_) external {
+        if (msg.sender != Pointer) revert OnlyPointer();
+        Pointer = newPointer_;
+    }
+
+    function setBagBook(address bagb_) external {
+        if (msg.sender != Pointer) revert OnlyPointer();
+        BagBok = bagb_;
     }
 }

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity 0.8.18;
+pragma solidity >=0.8.3;
 
 import {ERC1155} from "openzeppelin-contracts/contracts/token/ERC1155/ERC1155.sol";
 import {IERC20} from "openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
@@ -164,8 +164,8 @@ contract Fungido is ERC1155("BagBok.com") {
 
     function mintMembership(uint256 fid_, address to_) public virtual localGas {
         if (parentOf[fid_] == 0) revert BranchNotFound();
-
         if (isMember(to_, fid_)) revert AlreadyMember();
+
         if (!M.gCheck(to_, membershipID(fid_))) revert Unqualified();
 
         _giveMembership(to_, fid_);
@@ -175,15 +175,6 @@ contract Fungido is ERC1155("BagBok.com") {
         if (parentOf[fid_] == 0) revert UnregisteredFungible();
         _mint(_msgSender(), fid_, amount_, abi.encodePacked(fid_, "fungible", amount_));
     }
-
-    ///  @dev _msgSig();
-    // function mintFullPath(uint256 fid_, uint256 amount_) public virtual {
-    //     uint256[] memory fids = getFidPath(fid_);
-    //     uint256 i;
-    //     for (i; i < fids.length; ++i;) {
-    //         mint(fids[i], amount_);
-    //     }
-    // }
 
     /// @notice retrieves token path id array from root to target id
     /// @param fid_ target fid to trace path to from root

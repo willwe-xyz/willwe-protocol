@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity 0.8.18;
+pragma solidity >=0.8.3;
 
 import "./interfaces/IMembrane.sol";
 import "openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";

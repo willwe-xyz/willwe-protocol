@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity 0.8.18;
+pragma solidity 0.8.20;
 
 import "forge-std/Test.sol";
 import "../src/Fungido.sol";
@@ -23,18 +23,53 @@ contract InflationTest is Test, TokenPrep, InitTest {
 
     function setUp() public override {
         super.setUp();
+        vm.prank(A1);
         T20 = IERC20(makeReturnERC20());
         vm.label(address(T20), "T20");
 
-        T20addr = address(T20);
-        T20tid = uint160(bytes20(T20addr));
+        vm.prank(A1);
+        B1 = F.spawnRootBranch(address(T20));
 
-        A1 = address(1);
-        A2 = address(2);
-        A3 = address(3);
+        vm.prank(A1);
+        T20.approve(address(F), 10 ether);
 
-        vm.prank(address(1));
-        console.log(address(F));
-        B1 = F.spawnRootBranch(T20addr);
+        vm.prank(A1);
+        F.mint(B1, 2 ether);
+
+        vm.prank(A1);
+        B1 = F.spawnBranch(B1);
+    }
+
+    function testBasicInflation() public {
+        vm.prank(A1);
+        F.mint(B1, 1 ether);
+        F.mintInflation(B1);
+
+        console.log("1 - T0 default inflation, balance", F.inflationOf(B1), F.totalSupplyOf(B1));
+        uint256 snap1 = vm.snapshot();
+
+        vm.warp(block.timestamp + 1000);
+
+        uint256[] memory signals = new uint256[](2);
+        signals[1] = 1_000;
+
+        vm.prank(A1);
+        F.sendSignal(B1, signals);
+
+        //////////////////////////////////////
+        signals[1] = 1 ether;
+        vm.prank(A1);
+        F.sendSignal(B1, signals);
+        console.log("2 - T1 default inflation, balance", F.inflationOf(B1), F.totalSupplyOf(B1));
+        uint256 Bt0 = F.totalSupplyOf(B1);
+        console.log("+ 100 seconds");
+        vm.warp(block.timestamp + 100);
+
+        F.mintInflation(B1);
+        uint256 Bt1 = F.totalSupplyOf(B1);
+
+        console.log("2 - T1 default inflation, balance", F.inflationOf(B1), F.totalSupplyOf(B1));
+        console.log(Bt1 - Bt0, "diff after 100 sec. of 1 ether inflation");
+        assertTrue((Bt1 - Bt0) == 1 ether * 1 gwei * 100, "inflation mism or not in gwei");
     }
 }

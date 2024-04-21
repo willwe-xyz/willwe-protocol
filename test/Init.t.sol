@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity 0.8.18;
+pragma solidity 0.8.20;
 
 import "forge-std/Test.sol";
 import "../src/Fungido.sol";
@@ -7,7 +7,7 @@ import "../src/Fungido.sol";
 import {RVT} from "../src/RVT.sol";
 import {Execution} from "../src/Execution.sol";
 
-import {Fun} from "../src/Fun.sol";
+import {BagBok} from "../src/BagBok.sol";
 
 import {IFun} from "../src/interfaces/IFun.sol";
 
@@ -17,7 +17,7 @@ import "forge-std/console.sol";
 
 contract InitTest is Test {
     RVT public F20;
-    Fun public F;
+    BagBok public F;
     Membranes public M;
     address public E;
 
@@ -42,11 +42,11 @@ contract InitTest is Test {
         F20 = new RVT(10, 1, founders, amounts);
         M = new Membranes();
         E = address(new Execution(address(F20)));
-        F = new Fun(E, address(M));
+        F = new BagBok(E, address(M));
 
         vm.label(address(F20), "F20");
         vm.label(address(E), "Execution");
-        vm.label(address(F), "Fun");
+        vm.label(address(F), "BagBok");
         vm.label(address(F20), "F20");
         vm.label(address(E), "Execution");
         vm.label(address(F), "Fun");
@@ -62,20 +62,4 @@ contract InitTest is Test {
     function testOnePluSOne() public {
         assertTrue(1 + 1 == 2);
     }
-
-    // function testSalty() public {
-    //     uint256 salt =  282934; /// || 95804; /// 71853; //47902; //23951;
-    //     uint256 result = 1;
-    //     address nF;
-
-    //     while (result > 0) {
-    //         Fungido FFF = new Fungido(salt);
-    //         nF = address(FFF);
-    //         result = uint160(nF) % 10_000_000;
-
-    //         unchecked { ++ salt;}
-    //     }
-
-    //     console.log(salt);
-    // }
 }

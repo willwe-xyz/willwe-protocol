@@ -1,25 +1,28 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity 0.8.18;
+pragma solidity >=0.8.3;
 
 import {Fungido} from "./Fungido.sol";
 import {IExecution, SignatureQueue} from "./interfaces/IExecution.sol";
 import {SafeTx} from "./interfaces/IFun.sol";
-/// @title Fungido
-/// @author   parseb
 
+import "forge-std/console.sol";
+
+/////////////////////////////////////////
+/// @title Fun
+/// @author   parseb
 ///////////////////////////////////////////////
-////////////////////////////////////
 
 contract Fun is Fungido {
     constructor(address ExeAddr, address Membranes_) Fungido(ExeAddr, Membranes_) {
         executionAddress = ExeAddr;
-        IExecution(ExeAddr).setSelfFungi();
+        IExecution(ExeAddr).setBagBook(address(this));
     }
 
     error BadLen();
     error Noise();
     error NoSoup();
     error MembraneNotFound();
+    error RootNodeOrNone();
 
     /// @notice processes and stores user signal
     /// @notice in case threashold is reached, the change is applied.
@@ -28,7 +31,23 @@ contract Fun is Fungido {
     /// @param signals array of signaling values constructed starting with membrane, inflation, and [redistributive preferences for sub-entities]
 
     function sendSignal(uint256 targetNode_, uint256[] memory signals) external localGas {
+        if (parentOf[targetNode_] == targetNode_) revert RootNodeOrNone();
+                console.log("sender", msg.sender);
+                                console.log("isMember??", isMember(msg.sender, targetNode_));
+                                                                console.log("isMember?? -- parent", isMember(msg.sender, parentOf[targetNode_]));
+
+                                console.log(balanceOf(msg.sender, parentOf[targetNode_]));
+                                console.log("parent ", isMember( msg.sender, parentOf[targetNode_] )  );
+                                console.log("parent  - exec", isMember( executionAddress, parentOf[targetNode_] )  );
+                                console.log("parent  - exec", parentOf[targetNode_]  );
+                                console.log(executionAddress);
+
+
+                                
+
+
         if (!isMember(_msgSender(), targetNode_)) revert NotMember();
+        console.log("sender", msg.sender);
 
         mintInflation(targetNode_);
 
@@ -74,6 +93,7 @@ contract Fun is Fungido {
                     delete i;
                 } else {
                     mintInflation(targetNode_);
+
                     i = signals[i];
                     if (options[userKey][1] > 0 && (inflSec[targetNode_][1] < options[userKey][1])) {
                         options[nodeKey][0] -= options[userKey][0];

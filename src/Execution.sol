@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity 0.8.18;
+pragma solidity >=0.8.3;
 
 import {SignatureChecker} from "openzeppelin-contracts/contracts/utils/cryptography/SignatureChecker.sol";
 import {Address} from "openzeppelin-contracts/contracts/utils/Address.sol";
@@ -26,12 +26,11 @@ contract Execution is Endpoints, IERC1155Receiver {
 
     address public RootValueToken;
     address public FoundationAgent;
-    address public BagBokAddress;
+    IFun public BagBok;
 
     bytes32 currentTxHash;
     bytes4 internal constant EIP1271_MAGICVALUE = 0x1626ba7e;
     bytes4 internal constant EIP1271_MAGIC_VALUE_LEGACY = 0x20c13b0b;
-    IFun SelfFungi;
 
     /// errors
     error UninitQueue();
@@ -63,6 +62,7 @@ contract Execution is Endpoints, IERC1155Receiver {
     /// events
     event NewMovementCreated(bytes32 indexed movementHash, uint256 indexed node_);
     event EndpointCreatedForAgent(uint256 indexed nodeid, address endpoint, address agent);
+    event BagBokSet(address BBImplementation);
 
     /// @notice signature by hash
     mapping(bytes32 hash => SignatureQueue SigQueue) getSigQueueByHash;
@@ -77,23 +77,19 @@ contract Execution is Endpoints, IERC1155Receiver {
     /// @notice stores agent signatures to prevent double signing  | ( uint256(hash) - uint256(_msgSender()  ) - signer can be simple or composed agent
     mapping(uint256 agentPlusNode => bool) hasEndpointOrInteraction;
 
-    function setSelfFungi() external {
-        if (address(SelfFungi) == address(0)) {
-            SelfFungi = IFun(msg.sender);
-            BagBokAddress = msg.sender;
-        } else {
-            revert AlreadyInit();
-        }
+    function setBagBook(address bb_) external {
+        if (address(BagBok) == address(0)) BagBok = IFun(bb_);
+        if (msg.sender == FoundationAgent) BagBok = IFun(bb_);
+        emit BagBokSet(bb_);
     }
 
     constructor(address rootValueToken_) {
         RootValueToken = rootValueToken_;
     }
 
-    function foundationIni() external returns (address) {
-        FoundationAgent =
-            this.createEndpointForOwner(address(this), SelfFungi.spawnRootBranch(RootValueToken), address(this));
-        return FoundationAgent;
+    function setFoundationAgent(uint256 baseNodeId_) external {        
+        if (FoundationAgent != address(0) ) revert();
+        FoundationAgent = createNodeEndpoint(address(this),baseNodeId_);
     }
 
     function proposeMovement(
@@ -105,10 +101,10 @@ contract Execution is Endpoints, IERC1155Receiver {
         bytes32 descriptionHash,
         SafeTx memory data
     ) external virtual returns (bytes32 movementHash) {
-        if (msg.sender != BagBokAddress) revert OnlyFun();
+        if (msg.sender != address(BagBok)) revert OnlyFun();
 
         if (typeOfMovement > 2) revert NoType();
-        if (!SelfFungi.isMember(origin, node_)) revert NotNodeMember();
+        if (!BagBok.isMember(origin, node_)) revert NotNodeMember();
 
         if (((typeOfMovement * node_ * expiresInDays) == 0)) revert EmptyUnallowed();
         if (uint256(descriptionHash) == 0) revert EXEC_NoDescription();
@@ -121,7 +117,7 @@ contract Execution is Endpoints, IERC1155Receiver {
             engineOwner[executingAccount] = node_;
 
             if (typeOfMovement == 1) {
-                members = SelfFungi.allMembersOf(node_);
+                members = BagBok.allMembersOf(node_);
                 if (members.length == 0) revert NoMembersForNode();
             } else {
                 members = new address[](1);
@@ -165,7 +161,7 @@ contract Execution is Endpoints, IERC1155Receiver {
     }
 
     function executeQueue(bytes32 SignatureQueueHash_) public virtual returns (bool s) {
-        if (msg.sender != BagBokAddress) revert OnlyFun();
+        if (msg.sender != address(BagBok)) revert OnlyFun();
 
         SignatureQueue memory SQ = validateQueue(SignatureQueueHash_);
 
@@ -211,7 +207,7 @@ contract Execution is Endpoints, IERC1155Receiver {
     }
 
     function submitSignatures(bytes32 sigHash, address[] memory signers, bytes[] memory signatures) external {
-        if (msg.sender != BagBokAddress) revert OnlyFun();
+        if (msg.sender != address(BagBok)) revert OnlyFun();
 
         SignatureQueue memory SQ = getSigQueueByHash[sigHash];
 
@@ -229,7 +225,7 @@ contract Execution is Endpoints, IERC1155Receiver {
                 continue;
             }
 
-            if (!(SelfFungi.isMember(signers[i], SQ.Action.viaNode))) {
+            if (!(BagBok.isMember(signers[i], SQ.Action.viaNode))) {
                 ++i;
                 continue;
             }
@@ -304,7 +300,7 @@ contract Execution is Endpoints, IERC1155Receiver {
     }
 
     function removeSignature(bytes32 sigHash_, uint256 index_, address who_) external {
-        if (msg.sender != BagBokAddress) revert OnlyFun();
+        if (msg.sender != address(BagBok)) revert OnlyFun();
         SignatureQueue memory SQ = getSigQueueByHash[sigHash_];
 
         if (SQ.Signers[index_] != who_) revert EXEC_OnlySigner();
@@ -322,9 +318,9 @@ contract Execution is Endpoints, IERC1155Receiver {
         external
         returns (address endpoint)
     {
-        if (msg.sender != BagBokAddress && msg.sender != address(this)) revert OnlyFun();
+        if (msg.sender != address(BagBok) && msg.sig != this.setFoundationAgent.selector) revert OnlyFun();
 
-        if (!SelfFungi.isMember(origin, nodeId_)) revert NotNodeMember();
+        if (!BagBok.isMember(origin, nodeId_)) revert NotNodeMember();
         if (hasEndpointOrInteraction[nodeId_ + uint160(bytes20(owner))]) revert AlreadyHasEndpoint();
         hasEndpointOrInteraction[nodeId_ + uint160(bytes20(owner))] = true;
 
@@ -374,7 +370,7 @@ contract Execution is Endpoints, IERC1155Receiver {
             if (!SignatureChecker.isValidSignatureNow(signers[i], signedHash, signatures[i])) return false;
 
             if (SQM.Action.category == MovementType.EnergeticMajority) {
-                power += SelfFungi.balanceOf(signers[i], SQM.Action.viaNode);
+                power += BagBok.balanceOf(signers[i], SQM.Action.viaNode);
             }
 
             unchecked {
@@ -382,22 +378,21 @@ contract Execution is Endpoints, IERC1155Receiver {
             }
         }
 
-        if (power > 0) return (power > ((SelfFungi.totalSupply(SQM.Action.viaNode) / 2)));
+        if (power > 0) return (power > ((BagBok.totalSupply(SQM.Action.viaNode) / 2)));
 
         return true;
     }
 
     function createNodeEndpoint(address origin, uint256 endpointOwner_) internal returns (address endpoint) {
-        if (msg.sender != BagBokAddress && msg.sender != address(this)) revert OnlyFun();
 
         endpoint = super.createNodeEndpoint(endpointOwner_);
         address owner;
-        if (msg.sig == this.createEndpointForOwner.selector) {
+        if (msg.sig == this.createEndpointForOwner.selector || msg.sig == this.setFoundationAgent.selector) {
             engineOwner[endpoint] = uint160(origin);
         } else {
             engineOwner[endpoint] = endpointOwner_;
         }
-        SelfFungi.localizeEndpoint(endpoint, endpointOwner_, origin);
+        BagBok.localizeEndpoint(endpoint, endpointOwner_, origin);
     }
 
     /// @notice retrieves the endpoint that owns the execution account
