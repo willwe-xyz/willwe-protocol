@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity 0.8.20;
+pragma solidity ^0.8.18;
 
 import "forge-std/Script.sol";
 import {BagBok} from "../src/BagBok.sol";
@@ -12,7 +12,7 @@ contract BagBokDeploy is Script {
     Execution E;
     RVT F20;
 
-    function setUp() public {
+    function setUp() public virtual {
         console.log("###############################");
         console.log("                                                             ");
         console.log("   Deploy script started for network : ", block.chainid);
