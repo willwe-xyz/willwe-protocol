@@ -79,6 +79,7 @@ contract BagBokDeploy is Script {
 
         console.log(" ");
         console.log("###############################");
+        console.log("Foundation Agent Safe at: ", E.FoundationAgent());
 
         vm.stopBroadcast();
     }

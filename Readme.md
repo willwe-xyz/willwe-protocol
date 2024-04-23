@@ -14,3 +14,8 @@ Arbitrary multy-scale competency .
  Goal directedness.
  <br>
  
+
+
+ #### Foundation Safes
+
+ /// Degen : 0x83f90CddFAD07ad9Fa5eAd12287d8c80b45978c8

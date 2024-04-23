@@ -24,7 +24,9 @@ contract LocalG is Test, TokenPrep, BagBokDeploy {
     function setUp() public override {
         super.setUp();
 
-        uint256 degenChain = vm.createSelectFork(vm.envString("DEGEN_RPC")); // 8115176
+
+        // uint256 degenChain = vm.createSelectFork(vm.envString("DEGEN_RPC"), 7115176); // 
+        uint256 degenChainBfDeploy = vm.createSelectFork(vm.envString("DEGEN_RPC"), 8376584); // 8376585
 
         super.run();
         deployer = 0x920CbC9893bF12eD967116136653240823686D9c;
@@ -56,6 +58,6 @@ contract LocalG is Test, TokenPrep, BagBokDeploy {
         assertTrue(FoundingSafe.isOwner(address(E)), "setup f");
         assertTrue(FoundingSafe.getOwners().length == 1  , "one owner");
         assertTrue(FoundingSafe.getOwners()[0] == address(E), "Execution not owner");
-
+        console.log(E.FoundationAgent());
     }
 }
