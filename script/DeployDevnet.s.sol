@@ -79,14 +79,19 @@ contract BagBokDeploy is Script {
 
         console.log(" ");
         console.log("###############################");
-        console.log(" ");
-        console.log("###############################");
         console.log("Foundation Agent Safe at: ", E.FoundationAgent());
         console.log("RVT: ", address(F20));
         console.log("Membrane: ", address(M));
         console.log("Execution: ", address(E));
-        console.log("bagBok: ", address(FunFun));
+        console.log("BagBok: ", address(FunFun));
         console.log("###############################");
+
+
+
+
+
+
+
         vm.stopBroadcast();
     }
 }

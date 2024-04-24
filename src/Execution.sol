@@ -384,7 +384,6 @@ contract Execution is Endpoints, IERC1155Receiver {
 
     function createNodeEndpoint(address origin, uint256 endpointOwner_) internal returns (address endpoint) {
         endpoint = super.createNodeEndpoint(endpointOwner_);
-        address owner;
         if (msg.sig == this.createEndpointForOwner.selector || msg.sig == this.setFoundationAgent.selector) {
             engineOwner[endpoint] = uint160(origin);
         } else {

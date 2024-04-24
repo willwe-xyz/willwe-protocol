@@ -59,5 +59,6 @@ contract LocalG is Test, TokenPrep, BagBokDeploy {
         assertTrue(FoundingSafe.getOwners().length == 1  , "one owner");
         assertTrue(FoundingSafe.getOwners()[0] == address(E), "Execution not owner");
         console.log(E.FoundationAgent());
+
     }
 }

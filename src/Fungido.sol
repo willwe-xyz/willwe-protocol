@@ -14,7 +14,7 @@ import "./interfaces/IMembrane.sol";
 /// @title Fungido
 /// @author Bogdan A. | parseb
 
-contract Fungido is ERC1155("BagBok") {
+contract Fungido is ERC1155("https://bagbok.com/") {
     uint256 immutable initTime = block.timestamp;
     address virtualAccount;
     uint256 public entityCount;
@@ -428,5 +428,19 @@ contract Fungido is ERC1155("BagBok") {
                 ++i;
             }
         }
+    }
+
+        /**
+     * @dev See {IERC1155MetadataURI-uri}.
+     *
+     * This implementation returns the same URI for *all* token types. It relies
+     * on the token type ID substitution mechanism
+     * https://eips.ethereum.org/EIPS/eip-1155#metadata[defined in the EIP].
+     *
+     * Clients calling this function must replace the `\{id\}` substring with the
+     * actual token type ID.
+     */
+    function uri(uint256 id_) public view virtual override returns (string memory) {
+        return string(abi.encodePacked("https://bagbok.com/node-meta/",id_));
     }
 }
