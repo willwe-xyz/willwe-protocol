@@ -7,10 +7,10 @@ import {Strings} from "openzeppelin-contracts/contracts/utils/Strings.sol";
 
 import {Strings, ECDSA} from "openzeppelin-contracts/contracts/utils/cryptography/ECDSA.sol";
 
-import {Endpoints} from "./Endpoint.sol";
-
 import {IFun, SafeTx, SignatureQueue, SQState, MovementType, Movement} from "./interfaces/IFun.sol";
 import {ISafe} from "./interfaces/ISafe.sol";
+import {ISafeFactory} from "./interfaces/ISafeFactory.sol";
+import {SafeFactoryAddresses} from "./info/GnosisSafeFactory.sol";
 
 import {IERC1155Receiver} from "openzeppelin-contracts/contracts/token/ERC1155/IERC1155Receiver.sol";
 
@@ -19,13 +19,15 @@ import {IERC1155Receiver} from "openzeppelin-contracts/contracts/token/ERC1155/I
 
 /// @title Fungido
 /// @author parseb
-contract Execution is Endpoints, IERC1155Receiver {
+contract Execution is IERC1155Receiver {
     using Address for address;
     using Strings for string;
 
     address public RootValueToken;
     address public FoundationAgent;
     IFun public BagBok;
+    ISafeFactory SafeFactory;
+    address Singleton;
 
     bytes32 currentTxHash;
     bytes4 internal constant EIP1271_MAGICVALUE = 0x1626ba7e;
@@ -81,14 +83,20 @@ contract Execution is Endpoints, IERC1155Receiver {
         if (msg.sender == FoundationAgent) BagBok = IFun(bb_);
         emit BagBokSet(bb_);
     }
+    
 
     constructor(address rootValueToken_) {
         RootValueToken = rootValueToken_;
+
+        SafeFactory = ISafeFactory(SafeFactoryAddresses.factoryAddressForChainId(block.chainid));
+        Singleton = SafeFactoryAddresses.getSingletonAddressForChainID(block.chainid);
+    
     }
 
     function setFoundationAgent(uint256 baseNodeId_) external {
         if (FoundationAgent != address(0)) revert();
-        FoundationAgent = createNodeEndpoint(address(this), baseNodeId_);
+        FoundationAgent =  this.createEndpointForOwner(address(this), baseNodeId_, address(this));
+       
     }
 
     function proposeMovement(
@@ -317,9 +325,9 @@ contract Execution is Endpoints, IERC1155Receiver {
         external
         returns (address endpoint)
     {
-        if (msg.sender != address(BagBok) && msg.sig != this.setFoundationAgent.selector) revert OnlyFun();
+        if ( (msg.sender != address(BagBok) && owner != address(this))) revert OnlyFun();
 
-        if (!BagBok.isMember(origin, nodeId_)) revert NotNodeMember();
+        if (!BagBok.isMember(origin, nodeId_) && owner != address(this) ) revert NotNodeMember();
         if (hasEndpointOrInteraction[nodeId_ + uint160(bytes20(owner))]) revert AlreadyHasEndpoint();
         hasEndpointOrInteraction[nodeId_ + uint160(bytes20(owner))] = true;
 
@@ -330,6 +338,10 @@ contract Execution is Endpoints, IERC1155Receiver {
         ISafe(endpoint).setup(
             members, 1, address(0), abi.encodePacked(uint160(owner) - block.timestamp), address(0), address(0), 0, owner
         );
+    }
+
+        function createNodeEndpoint(uint256 endpointOwner_) private  returns (address endpoint) {
+        endpoint = SafeFactory.createProxyWithNonce(Singleton, abi.encodePacked(), (endpointOwner_ - block.timestamp));
     }
 
     function validateQueue(bytes32 sigHash) internal returns (SignatureQueue memory SQM) {
@@ -383,7 +395,7 @@ contract Execution is Endpoints, IERC1155Receiver {
     }
 
     function createNodeEndpoint(address origin, uint256 endpointOwner_) internal returns (address endpoint) {
-        endpoint = super.createNodeEndpoint(endpointOwner_);
+        endpoint = createNodeEndpoint(endpointOwner_);
         if (msg.sig == this.createEndpointForOwner.selector || msg.sig == this.setFoundationAgent.selector) {
             engineOwner[endpoint] = uint160(origin);
         } else {

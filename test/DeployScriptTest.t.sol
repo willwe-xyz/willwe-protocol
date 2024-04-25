@@ -25,8 +25,8 @@ contract LocalG is Test, TokenPrep, BagBokDeploy {
         super.setUp();
 
 
-        // uint256 degenChain = vm.createSelectFork(vm.envString("DEGEN_RPC"), 7115176); // 
-        uint256 degenChainBfDeploy = vm.createSelectFork(vm.envString("DEGEN_RPC"), 8376584); // 8376585
+        uint256 degenChain = vm.createSelectFork(vm.envString("DEGEN_RPC"), 7115176); // 
+        // uint256 degenChainBfDeploy = vm.createSelectFork(vm.envString("DEGEN_RPC"), 8376584); // 8376585
 
         super.run();
         deployer = 0x920CbC9893bF12eD967116136653240823686D9c;
@@ -47,16 +47,17 @@ contract LocalG is Test, TokenPrep, BagBokDeploy {
         FoundingSafe.getChainId();
         FoundingSafe.getThreshold();
         FoundingSafe.VERSION();
-        assertFalse(FoundingSafe.isOwner(address(E)), "E not owner");
+        assertTrue(FoundingSafe.isOwner(address(E)), "E not owner");
         vm.prank(address(E));
         address[] memory owners = new address[](1);
         owners[0] = address(E);
+        vm.expectRevert();
         FoundingSafe.setup(owners, 1, address(0), abi.encodePacked(""), 
         address(0), address(0), 0, address(0));
         assertTrue(F20.balanceOf(deployer) == 0, "deployer has balance");
         assertTrue(F20.balanceOf(address(FoundingSafe)) > F20.totalSupply() / 3, "safe F20 issue");
         assertTrue(FoundingSafe.isOwner(address(E)), "setup f");
-        assertTrue(FoundingSafe.getOwners().length == 1  , "one owner");
+        assertTrue(FoundingSafe.getOwners().length == 1  , "not one owner");
         assertTrue(FoundingSafe.getOwners()[0] == address(E), "Execution not owner");
         console.log(E.FoundationAgent());
 
