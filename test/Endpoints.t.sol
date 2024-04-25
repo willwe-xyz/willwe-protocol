@@ -4,7 +4,7 @@ pragma solidity 0.8.19;
 import "forge-std/Test.sol";
 import {Fun} from "../src/Fun.sol";
 import {Execution} from "../src/Execution.sol";
-import {SignatureQueue} from "../src/interfaces/IExecution.sol";
+import {SignatureQueue, IExecution} from "../src/interfaces/IExecution.sol";
 import {TokenPrep} from "./mock/Tokens.sol";
 
 import {SignatureQueue, SQState, MovementType} from "../src/interfaces/IExecution.sol";
@@ -275,7 +275,7 @@ contract Endpoints is Test, TokenPrep, InitTest {
     function testSubmitsSignatures() public returns (bytes32 move) {
         (SignatureQueue memory SQ, Movement memory M, SafeTx memory STX, bytes32 move_) = _getStructsForHash();
         move = move_;
-        assertTrue(uint256(keccak256(abi.encode(M))) == uint256(move));
+        assertTrue(uint256(IExecution(E).hashMessage(M)) == uint256(move));
 
         bytes[] memory signatures;
         address[] memory signers;

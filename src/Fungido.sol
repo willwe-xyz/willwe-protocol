@@ -430,7 +430,7 @@ contract Fungido is ERC1155("https://bagbok.com/") {
         }
     }
 
-        /**
+    /**
      * @dev See {IERC1155MetadataURI-uri}.
      *
      * This implementation returns the same URI for *all* token types. It relies
@@ -441,6 +441,6 @@ contract Fungido is ERC1155("https://bagbok.com/") {
      * actual token type ID.
      */
     function uri(uint256 id_) public view virtual override returns (string memory) {
-        return string(abi.encodePacked("https://bagbok.com/node-meta/",id_));
+        return string(abi.encodePacked("https://bagbok.com/node-meta/", id_));
     }
 }

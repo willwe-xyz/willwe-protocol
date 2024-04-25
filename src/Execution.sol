@@ -13,13 +13,13 @@ import {ISafeFactory} from "./interfaces/ISafeFactory.sol";
 import {SafeFactoryAddresses} from "./info/GnosisSafeFactory.sol";
 
 import {IERC1155Receiver} from "openzeppelin-contracts/contracts/token/ERC1155/IERC1155Receiver.sol";
-
+import {EIP712} from "./info/EIP712.sol";
 ///////////////////////////////////////////////
 ////////////////////////////////////
 
 /// @title Fungido
 /// @author parseb
-contract Execution is IERC1155Receiver {
+contract Execution is IERC1155Receiver, EIP712 {
     using Address for address;
     using Strings for string;
 
@@ -84,20 +84,17 @@ contract Execution is IERC1155Receiver {
         if (msg.sender == FoundationAgent) BagBok = IFun(bb_);
         emit BagBokSet(bb_);
     }
-    
 
     constructor(address rootValueToken_) {
         RootValueToken = rootValueToken_;
 
         SafeFactory = ISafeFactory(SafeFactoryAddresses.factoryAddressForChainId(block.chainid));
         Singleton = SafeFactoryAddresses.getSingletonAddressForChainID(block.chainid);
-    
     }
 
     function setFoundationAgent(uint256 baseNodeId_) external {
         if (FoundationAgent != address(0)) revert();
-        FoundationAgent =  this.createEndpointForOwner(address(this), baseNodeId_, address(this));
-       
+        FoundationAgent = this.createEndpointForOwner(address(this), baseNodeId_, address(this));
     }
 
     function proposeMovement(
@@ -155,7 +152,7 @@ contract Execution is IERC1155Receiver {
         M.expiresAt = (expiresInDays * 1 days) + block.timestamp;
         M.category = typeOfMovement == 1 ? MovementType.AgentMajority : MovementType.EnergeticMajority;
 
-        movementHash = keccak256(abi.encode(M));
+        movementHash = hashMessage(M);
         latentActions[node_].push(movementHash);
 
         SignatureQueue memory SQ;
@@ -253,7 +250,6 @@ contract Execution is IERC1155Receiver {
             unchecked {
                 ++i;
             }
-        
         }
 
         delete i;
@@ -311,20 +307,19 @@ contract Execution is IERC1155Receiver {
     function removeSignature(bytes32 sigHash_, uint256 index_, address who_) external {
         if (msg.sender != address(BagBok)) revert OnlyFun();
         SignatureQueue memory SQ = getSigQueueByHash[sigHash_];
-        
+
         if (SQ.Signers[index_] != who_) revert EXEC_OnlySigner();
         delete SQ.Sigs[index_];
         delete SQ.Signers[index_];
         getSigQueueByHash[sigHash_] = SQ;
         hasEndpointOrInteraction[uint256(sigHash_) - uint160(who_)] = false;
-
     }
 
     function removeLatentAction(bytes32 actionHash_, uint256 index) external {
         SignatureQueue memory SQ = getSigQueueByHash[actionHash_];
         if (SQ.Action.expiresAt > block.timestamp) SQ.state = SQState.Stale;
         if (SQ.state == SQState.Initialized || SQ.state == SQState.Valid) revert EXEC_InProgress();
-        if (latentActions[SQ.Action.viaNode][index] != actionHash_)revert EXEC_ActionIndexMismatch();
+        if (latentActions[SQ.Action.viaNode][index] != actionHash_) revert EXEC_ActionIndexMismatch();
         delete latentActions[SQ.Action.viaNode][index];
         if (uint256(latentActions[SQ.Action.viaNode][0]) > index) latentActions[SQ.Action.viaNode][0] = bytes32(index);
         getSigQueueByHash[actionHash_] = SQ;
@@ -334,9 +329,9 @@ contract Execution is IERC1155Receiver {
         external
         returns (address endpoint)
     {
-        if ( (msg.sender != address(BagBok) && owner != address(this))) revert OnlyFun();
+        if ((msg.sender != address(BagBok) && owner != address(this))) revert OnlyFun();
 
-        if (!BagBok.isMember(origin, nodeId_) && owner != address(this) ) revert NotNodeMember();
+        if (!BagBok.isMember(origin, nodeId_) && owner != address(this)) revert NotNodeMember();
         if (hasEndpointOrInteraction[nodeId_ + uint160(bytes20(owner))]) revert AlreadyHasEndpoint();
         hasEndpointOrInteraction[nodeId_ + uint160(bytes20(owner))] = true;
 
@@ -349,7 +344,7 @@ contract Execution is IERC1155Receiver {
         );
     }
 
-        function createNodeEndpoint(uint256 endpointOwner_) private  returns (address endpoint) {
+    function createNodeEndpoint(uint256 endpointOwner_) private returns (address endpoint) {
         endpoint = SafeFactory.createProxyWithNonce(Singleton, abi.encodePacked(), (endpointOwner_ - block.timestamp));
     }
 

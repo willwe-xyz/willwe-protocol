@@ -86,12 +86,6 @@ contract BagBokDeploy is Script {
         console.log("BagBok: ", address(FunFun));
         console.log("###############################");
 
-
-
-
-
-
-
         vm.stopBroadcast();
     }
 }
