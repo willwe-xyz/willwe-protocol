@@ -59,6 +59,7 @@ contract Execution is IERC1155Receiver {
     error EXEC_OnlySigner();
     error EXEC_SafeExeF();
     error EXEC_InProgress();
+    error EXEC_ActionIndexMismatch();
 
     /// events
     event NewMovementCreated(bytes32 indexed movementHash, uint256 indexed node_);
@@ -68,7 +69,7 @@ contract Execution is IERC1155Receiver {
     /// @notice signature by hash
     mapping(bytes32 hash => SignatureQueue SigQueue) getSigQueueByHash;
 
-    /// @notice initialized actions from node
+    /// @notice initialized actions from node [node -> latentActionsOfNode[] | [0] valid start index, prevs. 0]
     mapping(uint256 => bytes32[]) latentActions;
 
     /// @notice stores node that ownes a particular execution agent authorisation
@@ -248,10 +249,11 @@ contract Execution is IERC1155Receiver {
             }
 
             i == 0 ? validIndexes[validIndexes.length - 1] = type(uint256).max : validIndexes[i] = i;
-
+            hasEndpointOrInteraction[uint256(sigHash) - uint160(signers[i])] = true;
             unchecked {
                 ++i;
             }
+        
         }
 
         delete i;
@@ -309,16 +311,23 @@ contract Execution is IERC1155Receiver {
     function removeSignature(bytes32 sigHash_, uint256 index_, address who_) external {
         if (msg.sender != address(BagBok)) revert OnlyFun();
         SignatureQueue memory SQ = getSigQueueByHash[sigHash_];
-
+        
         if (SQ.Signers[index_] != who_) revert EXEC_OnlySigner();
         delete SQ.Sigs[index_];
         delete SQ.Signers[index_];
         getSigQueueByHash[sigHash_] = SQ;
+        hasEndpointOrInteraction[uint256(sigHash_) - uint160(who_)] = false;
+
     }
 
-    function removeLatentAction(bytes32 actionHash_) external {
+    function removeLatentAction(bytes32 actionHash_, uint256 index) external {
         SignatureQueue memory SQ = getSigQueueByHash[actionHash_];
+        if (SQ.Action.expiresAt > block.timestamp) SQ.state = SQState.Stale;
         if (SQ.state == SQState.Initialized || SQ.state == SQState.Valid) revert EXEC_InProgress();
+        if (latentActions[SQ.Action.viaNode][index] != actionHash_)revert EXEC_ActionIndexMismatch();
+        delete latentActions[SQ.Action.viaNode][index];
+        if (uint256(latentActions[SQ.Action.viaNode][0]) > index) latentActions[SQ.Action.viaNode][0] = bytes32(index);
+        getSigQueueByHash[actionHash_] = SQ;
     }
 
     function createEndpointForOwner(address origin, uint256 nodeId_, address owner)

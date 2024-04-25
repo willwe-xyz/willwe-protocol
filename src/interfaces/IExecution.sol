@@ -45,5 +45,6 @@ interface IExecution {
 
     function removeSignature(bytes32 sigHash_, uint256 index_, address who_) external;
 
-    function removeLatentAction(bytes32 actionHash_) external;
+    function removeLatentAction(bytes32 actionHash_, uint256 index) external;
+
 }
