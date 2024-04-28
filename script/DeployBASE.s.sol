@@ -6,11 +6,14 @@ import {BagBok} from "../src/BagBok.sol";
 import {Execution} from "../src/Execution.sol";
 import {Membranes} from "../src/Membranes.sol";
 import {RVT} from "../src/RVT.sol";
+import {ISafe} from "../src/interfaces/ISafe.sol";
 
-contract BagBokDeploy is Script {
+contract DeployBASE is Script {
     BagBok FunFun;
     Execution E;
     RVT F20;
+
+    //// @dev foundationAgent transit value.
 
     function setUp() public virtual {
         console.log("###############################");
@@ -22,21 +25,18 @@ contract BagBokDeploy is Script {
     }
 
     function run() public {
-        uint256 runPVK = uint256(vm.envUint("DEGEN_DEPLOYER_PVK"));
+        uint256 runPVK = uint256(vm.envUint("BASE_DEP_PVK4"));
         address deployer = vm.addr(runPVK);
         vm.label(deployer, "deployer");
 
-        console.log("##### Deployer : ", deployer, "| expected", "0x920CbC9893bF12eD967116136653240823686D9c");
+        console.log("##### Deployer : ", deployer, "| expected", "0xEF54c01c3F3d3dbC6C8Ddce2eA38843219A9597E");
         console.log("#________________________________");
 
-        address[] memory founders = new address[](2);
-        uint256[] memory amounts = new uint256[](2);
+        address[] memory founders = new address[](1);
+        uint256[] memory amounts = new uint256[](1);
 
         founders[0] = address(0xE7b30A037F5598E4e73702ca66A59Af5CC650Dcd);
-        founders[1] = deployer;
-
         amounts[0] = 1_000_000 * 1 ether;
-        amounts[1] = 1_000_000 * 1 ether;
 
         uint256 piper_sec = 306;
 
@@ -61,26 +61,31 @@ contract BagBokDeploy is Script {
         uint256 govNode = FunFun.spawnBranch(govNodeParent);
         E.setFoundationAgent(govNode);
 
-        vm.label(E.FoundationAgent(), "foundationSafe");
-        FunFun.setControl(E.FoundationAgent());
+        address FA = E.FoundationAgent();
+        vm.label(FA, "foundationSafe");
+        FunFun.setControl(FA);
 
         console.log("###############################");
         console.log(" ");
-        console.log("Foundation Agent in Control : ", address(E.FoundationAgent()));
-        console.log("Is Foundation Anget contract: ", E.FoundationAgent());
+        console.log("Foundation Agent in Control : ", FA);
+        console.log("Is Foundation Anget contract: ", (address(E.FoundationAgent()).code.length > 1));
         console.log("Deployer is member ", FunFun.isMember(deployer, govNode));
 
-        F20.transfer(E.FoundationAgent(), F20.balanceOf(address(deployer)));
-        F20.setPointer(E.FoundationAgent());
+        if ((address(FA).code.length > 2) && (ISafe(FA).isOwner(address(E)))) {
+            F20.setPointer(FA);
+            // F20.transfer(FA, F20.balanceOf(address(deployer)));
+        } else {
+            console.log("foundation not safe");
+        }
 
         console.log("###############################");
         console.log("Balances: deployer | Agent | f0");
-        console.log(F20.balanceOf(address(deployer)), F20.balanceOf(E.FoundationAgent()), F20.balanceOf(founders[0]));
+        console.log(F20.balanceOf(address(deployer)), F20.balanceOf(FA), F20.balanceOf(founders[0]));
 
         console.log(" ");
         console.log("###############################");
-        console.log("Foundation Agent Safe at: ", E.FoundationAgent());
-        console.log("RVT: ", address(F20));
+        console.log("Foundation Agent Safe at: ", FA);
+        console.log("RVI: ", address(F20));
         console.log("Membrane: ", address(M));
         console.log("Execution: ", address(E));
         console.log("BagBok: ", address(FunFun));

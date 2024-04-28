@@ -408,8 +408,6 @@ contract Execution is IERC1155Receiver, EIP712 {
         BagBok.localizeEndpoint(endpoint, endpointOwner_, origin);
     }
 
-    /// @notice retrieves the endpoint that owns the execution account
-    /// @param exeAcc_ execution account for which to retrieve owner
     function exeAccountOwner(address exeAcc_) external view returns (uint256) {
         return engineOwner[exeAcc_];
     }

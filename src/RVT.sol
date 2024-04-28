@@ -16,7 +16,7 @@ contract RVT is ERC20ASG {
     error OnlyPointer();
 
     constructor(uint256 price_, uint256 pps_, address[] memory initMintAddrs_, uint256[] memory initMintAmts_)
-        ERC20ASG("Root Value Token", "RVT", price_, pps_, initMintAddrs_, initMintAmts_)
+        ERC20ASG("Root Value Index", "RVI", price_, pps_, initMintAddrs_, initMintAmts_)
     {
         Pointer = msg.sender;
     }

@@ -31,14 +31,14 @@ contract LocalG is Test, TokenPrep, BagBokDeploy {
     }
 
     function testContractsDeployed() public {
-        assertTrue(address(FunFun).code.length > 0, "no code fun");
+        assertTrue(address(FunFun).code.length > 1, "no code fun");
         assertTrue(address(E).code.length > 0, "no code E");
         assertTrue(address(F20).code.length > 0, "no code F20");
         assertTrue(address(FoundingSafe).code.length > 0, "no code safe");
     }
 
     function testFoundationAgent() public {
-        console.log(address(FoundingSafe).code.length, "code len of Safe");
+        assertTrue(address(FoundingSafe).code.length > 1, "code len of Safe 0");
         FoundingSafe.getChainId();
         FoundingSafe.getThreshold();
         FoundingSafe.VERSION();

@@ -50,7 +50,10 @@ contract Fungido is ERC1155("https://bagbok.com/") {
     mapping(address => uint256[2]) taxAndGas;
     /// @dev ensure consistency of tax calculation such as enfocing a multiple of 100 on setting
 
-    address[2] control;
+    address[2] public control;
+
+    string public name;
+    string public symbol;
 
     constructor(address executionAddr, address membranes) {
         /// default
@@ -60,6 +63,9 @@ contract Fungido is ERC1155("https://bagbok.com/") {
         RVT = IExecution(executionAddr).RootValueToken();
         control[0] = msg.sender;
         M = IMembrane(membranes);
+
+        name = "BagBok.com";
+        symbol = "BagBok";
 
         IRVT(RVT).pingInit();
     }
