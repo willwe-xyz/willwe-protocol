@@ -17,6 +17,10 @@ contract BranchTests is Test, TokenPrep, InitTest {
     address T20addr;
     uint256 T20tid;
 
+    uint256 ii2;
+    uint256 ix;
+    uint256 i1;
+
     function setUp() public override {
         super.setUp();
         T20 = IERC20(makeReturnERC20());
@@ -41,14 +45,23 @@ contract BranchTests is Test, TokenPrep, InitTest {
         assertTrue(i0 > 0, "i0 is 0");
 
         vm.warp(block.timestamp + 100);
-        uint256 i1 = F.spawnBranch(i0);
+        i1 = F.spawnBranch(i0);
 
-        uint256 ii2 = F.spawnBranch(i1);
+        ii2 = F.spawnBranch(i1);
 
-        uint256 ix = F.spawnBranch(B1);
+        ix = F.spawnBranch(B1);
         console.log("i0, ix", i0, ix);
         assertTrue(i0 > ix, "i0 is 0 2");
 
         vm.stopPrank();
+    }
+
+    function testFetchesPath() public {
+        testCreateInstance();
+        vm.prank(address(1));
+        uint256 b = F.spawnBranch(ii2);
+        vm.prank(address(1));
+        uint256 c = F.spawnBranch(b);
+        assertTrue(F.getFidPath(c).length > 2, "path too short or none");
     }
 }

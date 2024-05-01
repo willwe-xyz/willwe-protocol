@@ -6,6 +6,8 @@ import {IERC20} from "openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 
 import "./interfaces/IExecution.sol";
 import {IRVT} from "./interfaces/IRVT.sol";
+import "forge-std/console.sol";
+
 import "./interfaces/IMembrane.sol";
 
 ///////////////////////////////////////////////
@@ -186,13 +188,15 @@ contract Fungido is ERC1155("https://bagbok.com/") {
     /// @return fids lineage in chronologic order
     function getFidPath(uint256 fid_) public view returns (uint256[] memory fids) {
         uint256 fidCount;
-        uint256 parent = 1;
+        uint256 parent = parentOf[fid_];
         while (parent >= 1) {
             ++fidCount;
-            parent = parentOf[fid_];
+            if (parent == parentOf[parent]) break;
+            parent = parentOf[parent];
         }
         fids = new uint256[](fidCount);
 
+        delete parent;
         for (parent; parent < fids.length; ++parent) {
             fids[fids.length - parent - 1] = parentOf[fid_];
             fid_ = parentOf[fid_];
@@ -447,6 +451,6 @@ contract Fungido is ERC1155("https://bagbok.com/") {
      * actual token type ID.
      */
     function uri(uint256 id_) public view virtual override returns (string memory) {
-        return string(abi.encodePacked("https://bagbok.com/node-meta/", id_));
+        return string(abi.encodePacked("https://bagbok.com/node-meta/", abi.encode(id_)));
     }
 }
