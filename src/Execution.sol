@@ -26,8 +26,8 @@ contract Execution is IERC1155Receiver, EIP712 {
     address public RootValueToken;
     address public FoundationAgent;
     IFun public BagBok;
-    ISafeFactory SafeFactory;
-    address Singleton;
+    // ISafeFactory SafeFactory;
+    // address Singleton;
 
     bytes32 currentTxHash;
     bytes4 internal constant EIP1271_MAGICVALUE = 0x1626ba7e;
@@ -88,8 +88,8 @@ contract Execution is IERC1155Receiver, EIP712 {
     constructor(address rootValueToken_) {
         RootValueToken = rootValueToken_;
 
-        SafeFactory = ISafeFactory(SafeFactoryAddresses.factoryAddressForChainId(block.chainid));
-        Singleton = SafeFactoryAddresses.getSingletonAddressForChainID(block.chainid);
+        // SafeFactory = ISafeFactory(SafeFactoryAddresses.factoryAddressForChainId(block.chainid));
+        // Singleton = SafeFactoryAddresses.getSingletonAddressForChainID(block.chainid);
     }
 
     function setFoundationAgent(uint256 baseNodeId_) external {
@@ -129,16 +129,16 @@ contract Execution is IERC1155Receiver, EIP712 {
                 members[0] = address(this);
             }
 
-            ISafe(executingAccount).setup(
-                members,
-                members.length / 2 + 1,
-                address(0),
-                abi.encodePacked(node_ - block.timestamp),
-                address(0),
-                address(0),
-                0,
-                (members[0] == address(this) ? executingAccount : members[0])
-            );
+            // ISafe(executingAccount).setup(
+            //     members,
+            //     members.length / 2 + 1,
+            //     address(0),
+            //     abi.encodePacked(node_ - block.timestamp),
+            //     address(0),
+            //     address(0),
+            //     0,
+            //     (members[0] == address(this) ? executingAccount : members[0])
+            // );
         } else {
             if (!(engineOwner[executingAccount] == node_)) revert NotExeAccOwner();
         }
@@ -176,33 +176,33 @@ contract Execution is IERC1155Receiver, EIP712 {
         bytes memory sig = abi.encode(address(this), 65, 0, SignatureQueueHash_.length, SignatureQueueHash_);
         Movement memory M = SQ.Action;
 
-        currentTxHash = keccak256(
-            ISafe(SQ.Action.exeAccount).encodeTransactionData(
-                M.txData.to,
-                M.txData.value,
-                M.txData.data,
-                M.txData.operation,
-                M.txData.safeTxGas,
-                M.txData.baseGas,
-                M.txData.gasPrice,
-                M.txData.gasToken,
-                RootValueToken,
-                ISafe(SQ.Action.exeAccount).nonce()
-            )
-        );
+        // currentTxHash = keccak256(
+        //     ISafe(SQ.Action.exeAccount).encodeTransactionData(
+        //         M.txData.to,
+        //         M.txData.value,
+        //         M.txData.data,
+        //         M.txData.operation,
+        //         M.txData.safeTxGas,
+        //         M.txData.baseGas,
+        //         M.txData.gasPrice,
+        //         M.txData.gasToken,
+        //         RootValueToken,
+        //         ISafe(SQ.Action.exeAccount).nonce()
+        //     )
+        // );
 
-        s = ISafe(SQ.Action.exeAccount).execTransaction(
-            M.txData.to,
-            M.txData.value,
-            M.txData.data,
-            M.txData.operation,
-            M.txData.safeTxGas,
-            M.txData.baseGas,
-            M.txData.gasPrice,
-            M.txData.gasToken,
-            RootValueToken,
-            sig
-        );
+        // s = ISafe(SQ.Action.exeAccount).execTransaction(
+        //     M.txData.to,
+        //     M.txData.value,
+        //     M.txData.data,
+        //     M.txData.operation,
+        //     M.txData.safeTxGas,
+        //     M.txData.baseGas,
+        //     M.txData.gasPrice,
+        //     M.txData.gasToken,
+        //     RootValueToken,
+        //     sig
+        // );
 
         if (!s) revert EXEC_SafeExeF();
 
@@ -339,13 +339,14 @@ contract Execution is IERC1155Receiver, EIP712 {
         address[] memory members = new address[](1);
         members[0] = owner;
 
-        ISafe(endpoint).setup(
-            members, 1, address(0), abi.encodePacked(uint160(owner) - block.timestamp), address(0), address(0), 0, owner
-        );
+        // ISafe(endpoint).setup(
+        //     members, 1, address(0), abi.encodePacked(uint160(owner) - block.timestamp), address(0), address(0), 0, owner
+        // );
     }
 
     function createNodeEndpoint(uint256 endpointOwner_) private returns (address endpoint) {
-        endpoint = SafeFactory.createProxyWithNonce(Singleton, abi.encodePacked(), (endpointOwner_ - block.timestamp));
+        /// @todo replace with proxy
+        // endpoint = SafeFactory.createProxyWithNonce(Singleton, abi.encodePacked(), (endpointOwner_ - block.timestamp));
     }
 
     function validateQueue(bytes32 sigHash) internal returns (SignatureQueue memory SQM) {
