@@ -1,4 +1,4 @@
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.19;
 
 
 /**
@@ -23,7 +23,8 @@ pragma solidity ^0.8.20;
 contract  PowerProxy {
 
     address public owner;
-    address
+    address implementation;
+    
 
     constructor() {
         owner = msg.sender;
@@ -41,6 +42,7 @@ contract  PowerProxy {
 
     error noFallback();
     error NotOwner();
+    error Multicall2();
 
 
     function tryAggregate(bool requireSuccess, Call[] calldata calls) public returns (Result[] memory returnData) {
@@ -57,7 +59,7 @@ contract  PowerProxy {
 
     function setImplOrOwner(address implementation_) external {
         if (msg.sender != owner) revert NotOwner();
-        if (implementation_ != implementation) implementation = implementation_ 
+        if (implementation_ != implementation) implementation = implementation_;
         if (implementation == address(0)) owner = implementation_;
     }
 
@@ -68,7 +70,9 @@ contract  PowerProxy {
      */
     fallback() external payable {
         if (implementation == address(0)) revert noFallback();
+        address i;
         assembly {
+            i := sload(implementation.slot)
             // Copy msg.data. We take full control of memory in this inline assembly
             // block because it will not return to Solidity code. We overwrite the
             // Solidity scratch pad at memory position 0.
@@ -76,7 +80,7 @@ contract  PowerProxy {
 
             // Call the implementation.
             // out and outsize are 0 because we don't know the size yet.
-            let result := delegatecall(gas(), implementation, 0, calldatasize(), 0, 0)
+            let result := delegatecall(gas(), i, 0, calldatasize(), 0, 0)
 
             // Copy the returned data.
             returndatacopy(0, 0, returndatasize())
@@ -91,4 +95,5 @@ contract  PowerProxy {
             }
         }
     }
+    
 }

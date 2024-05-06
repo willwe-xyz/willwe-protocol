@@ -1,4 +1,4 @@
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.19;
 
 /// @author parseb.eth @ github.com/parseb
 
@@ -14,15 +14,18 @@ interface  IPowerProxy {
         bytes returnData;
     }
 
+
     error noFallback();
     error NotOwner();
-    
+    error Multicall2();
+
     /// @notice returns the address that is authorised to use this proxy.
     /// @notice default value is deployer
     function owner() external returns (address);
+    function implementation() external returns (address);
 
     /// @notice see multicall V2
-    function tryAggregate(bool requireSuccess, Call[] calldata calls) public returns (Result[] memory returnData);
+    function tryAggregate(bool requireSuccess, Call[] calldata calls) external returns (Result[] memory returnData);
     function setImplOrOwner(address implementation_) external;
 
 
