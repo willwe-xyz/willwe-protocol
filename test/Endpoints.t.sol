@@ -8,7 +8,7 @@ import {SignatureQueue, IExecution} from "../src/interfaces/IExecution.sol";
 import {TokenPrep} from "./mock/Tokens.sol";
 
 import {SignatureQueue, SQState, MovementType} from "../src/interfaces/IExecution.sol";
-import {Movement, SafeTx} from "../src/interfaces/IFun.sol";
+import {Movement, Call} from "../src/interfaces/IFun.sol";
 import {ISafe} from "../src/interfaces/ISafe.sol";
 import {IERC20} from "openzeppelin/token/ERC20/IERC20.sol";
 
@@ -141,7 +141,7 @@ contract Endpoints is Test, TokenPrep, InitTest {
         console.log("########### new movement________________");
 
         bytes32 description = keccak256("this is a description");
-        SafeTx memory data = _getSafeTxData();
+        Call memory data = _getCallData();
 
         vm.startPrank(A1);
 
@@ -175,10 +175,9 @@ contract Endpoints is Test, TokenPrep, InitTest {
         return moveHash;
     }
 
-    function _getSafeTxData() public returns (SafeTx memory S) {
-        S.to = address(T1);
-        S.data = abi.encodeWithSelector(IERC20.transfer.selector, receiver, 0.1 ether); //0xa9059cbb000000
-        S.operation = 0;
+    function _getCallData() public returns (Call memory S) {
+        S.target = address(S.target);
+        S.callData = abi.encodeWithSelector(IERC20.transfer.selector, receiver, 0.1 ether); //0xa9059cbb000000
     }
 
     function testCreatesNodeEndpoint() public {
@@ -189,7 +188,7 @@ contract Endpoints is Test, TokenPrep, InitTest {
         vm.startPrank(A1);
 
         bytes32 description = keccak256("this is a description");
-        SafeTx memory data = _getSafeTxData();
+        Call memory data = _getCallData();
 
         bytes32 moveHash = F.proposeMovement(1, rootBranchID, 12, address(0), description, data);
         SignatureQueue memory SQ = F.getSigQueue(moveHash);
@@ -257,7 +256,7 @@ contract Endpoints is Test, TokenPrep, InitTest {
 
     function _getStructsForHash()
         public
-        returns (SignatureQueue memory SQ, Movement memory M, SafeTx memory STX, bytes32 move)
+        returns (SignatureQueue memory SQ, Movement memory M, Call memory STX, bytes32 move)
     {
         move = testProposesNewMovement();
         console.log(vm.toString(move));
@@ -265,7 +264,7 @@ contract Endpoints is Test, TokenPrep, InitTest {
 
         SQ = F.getSigQueue(move);
         M = SQ.Action;
-        STX = M.txData;
+        STX = M.executedPayload;
 
         assertTrue(M.exeAccount != address(0), "safe is 0x0");
         vm.prank(address(1));
@@ -273,7 +272,7 @@ contract Endpoints is Test, TokenPrep, InitTest {
     }
 
     function testSubmitsSignatures() public returns (bytes32 move) {
-        (SignatureQueue memory SQ, Movement memory M, SafeTx memory STX, bytes32 move_) = _getStructsForHash();
+        (SignatureQueue memory SQ, Movement memory M, Call memory STX, bytes32 move_) = _getStructsForHash();
         move = move_;
         assertTrue(uint256(IExecution(E).hashMessage(M)) == uint256(move));
 

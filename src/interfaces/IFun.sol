@@ -17,17 +17,10 @@ enum MovementType {
     EnergeticMajority
 }
 
-struct SafeTx {
-    address to;
-    uint256 value;
-    bytes data;
-    uint8 operation;
-    uint256 safeTxGas;
-    uint256 baseGas;
-    uint256 gasPrice;
-    address gasToken;
-    address refundReceiver;
-}
+    struct Call {
+        address target;
+        bytes callData;
+    }
 
 struct Movement {
     MovementType category;
@@ -41,7 +34,7 @@ struct Movement {
     uint256 expiresAt;
     bytes32 descriptionHash;
     /// calldata
-    SafeTx txData;
+    Call executedPayload;
 }
 
 /// human view

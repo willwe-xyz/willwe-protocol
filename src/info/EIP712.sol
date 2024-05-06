@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.18;
 
-import {Movement, SafeTx, MovementType, SQState, SignatureQueue} from "../interfaces/IFun.sol";
+import {Movement, MovementType, SQState, SignatureQueue, Call} from "../interfaces/IFun.sol";
 
 // EIP712 domain separator
 struct EIP712Domain {
@@ -52,7 +52,7 @@ contract EIP712 {
             abi.encode(
                 keccak256(
                     bytes(
-                        "Movement(uint8 category,address initiatior,address exeAccount,uint256 viaNode,uint256 expiresAt,bytes32 descriptionHash,SafeTx(address to,uint256 value,bytes data,uint8 operation,uint256 safeTxGas,uint256 baseGas,uint256 gasPrice,address gasToken,address refundReceiver))"
+                        "Movement(uint8 category,address initiatior,address exeAccount,uint256 viaNode,uint256 expiresAt,bytes32 descriptionHash,Call(address target,bytes callData))"
                     )
                 ),
                 keccak256(abi.encode(movement)),
@@ -62,7 +62,7 @@ contract EIP712 {
                 movement.viaNode,
                 movement.expiresAt,
                 movement.descriptionHash,
-                movement.txData
+                movement.executedPayload
             )
         );
     }

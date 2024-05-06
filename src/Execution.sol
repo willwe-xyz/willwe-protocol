@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity >=0.8.3;
+pragma solidity ^0.8.19;
 
 import {SignatureChecker} from "openzeppelin-contracts/contracts/utils/cryptography/SignatureChecker.sol";
 import {Address} from "openzeppelin-contracts/contracts/utils/Address.sol";
@@ -7,13 +7,13 @@ import {Strings} from "openzeppelin-contracts/contracts/utils/Strings.sol";
 
 import {Strings, ECDSA} from "openzeppelin-contracts/contracts/utils/cryptography/ECDSA.sol";
 
-import {IFun, SafeTx, SignatureQueue, SQState, MovementType, Movement} from "./interfaces/IFun.sol";
-import {ISafe} from "./interfaces/ISafe.sol";
-import {ISafeFactory} from "./interfaces/ISafeFactory.sol";
-import {SafeFactoryAddresses} from "./info/GnosisSafeFactory.sol";
-
+import {IFun, SignatureQueue, SQState, MovementType, Movement, Call} from "./interfaces/IFun.sol";
 import {IERC1155Receiver} from "openzeppelin-contracts/contracts/token/ERC1155/IERC1155Receiver.sol";
 import {EIP712} from "./info/EIP712.sol";
+
+import {PowerProxy} from "./components/PowerProxy.sol";
+
+
 ///////////////////////////////////////////////
 ////////////////////////////////////
 
@@ -104,7 +104,7 @@ contract Execution is IERC1155Receiver, EIP712 {
         uint256 expiresInDays,
         address executingAccount,
         bytes32 descriptionHash,
-        SafeTx memory data
+        Call memory data
     ) external virtual returns (bytes32 movementHash) {
         if (msg.sender != address(BagBok)) revert OnlyFun();
 
@@ -147,7 +147,7 @@ contract Execution is IERC1155Receiver, EIP712 {
         M.initiatior = msg.sender;
         M.viaNode = node_;
         M.descriptionHash = descriptionHash;
-        M.txData = data;
+        M.executedPayload = data;
         M.exeAccount = executingAccount;
         M.expiresAt = (expiresInDays * 1 days) + block.timestamp;
         M.category = typeOfMovement == 1 ? MovementType.AgentMajority : MovementType.EnergeticMajority;
@@ -347,6 +347,8 @@ contract Execution is IERC1155Receiver, EIP712 {
     function createNodeEndpoint(uint256 endpointOwner_) private returns (address endpoint) {
         /// @todo replace with proxy
         // endpoint = SafeFactory.createProxyWithNonce(Singleton, abi.encodePacked(), (endpointOwner_ - block.timestamp));
+
+
     }
 
     function validateQueue(bytes32 sigHash) internal returns (SignatureQueue memory SQM) {

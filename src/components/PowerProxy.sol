@@ -70,6 +70,7 @@ contract  PowerProxy {
      */
     fallback() external payable {
         if (implementation == address(0)) revert noFallback();
+
         address i;
         assembly {
             i := sload(implementation.slot)
