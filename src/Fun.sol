@@ -3,7 +3,8 @@ pragma solidity >=0.8.3;
 
 import {Fungido} from "./Fungido.sol";
 import {IExecution, SignatureQueue} from "./interfaces/IExecution.sol";
-import {SafeTx} from "./interfaces/IFun.sol";
+
+import {Call} from "./interfaces/IFun.sol";
 
 /////////////////////////////////////////
 /// @title Fun
@@ -150,7 +151,7 @@ contract Fun is Fungido {
         uint256 expiresInDays,
         address executingAccount,
         bytes32 descriptionHash,
-        SafeTx memory data
+        bytes memory data
     ) external localGas returns (bytes32 movementHash) {
         return IExecution(executionAddress).proposeMovement(
             _msgSender(), typeOfMovement, node_, expiresInDays, executingAccount, descriptionHash, data

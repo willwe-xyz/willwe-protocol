@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity >=0.8.3;
 
-import {ERC1155} from "openzeppelin-contracts/contracts/token/ERC1155/ERC1155.sol";
+// import {ERC1155} from "openzeppelin-contracts/contracts/token/ERC1155/ERC1155.sol";
+import {ERC1155} from "solady/tokens/ERC1155.sol";
+
 import {IERC20} from "openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 
 import "./interfaces/IExecution.sol";
@@ -16,7 +18,7 @@ import "./interfaces/IMembrane.sol";
 /// @title Fungido
 /// @author Bogdan A. | parseb
 
-contract Fungido is ERC1155("https://bagbok.com/") {
+contract Fungido is ERC1155 {
     uint256 immutable initTime = block.timestamp;
     address virtualAccount;
     uint256 public entityCount;
@@ -183,6 +185,14 @@ contract Fungido is ERC1155("https://bagbok.com/") {
         _mint(_msgSender(), fid_, amount_, abi.encodePacked(fid_, "fungible", amount_));
     }
 
+
+    function mintPath(uint256 target_, uint256 amount) external {
+        uint256[] memory fidPath = getFidPath(target_);
+        for(uint256 i; i < fidPath.length; ++i) {
+            mint(fidPath[i], amount);
+        }
+    }
+
     /// @notice retrieves token path id array from root to target id
     /// @param fid_ target fid to trace path to from root
     /// @return fids lineage in chronologic order
@@ -264,7 +274,6 @@ contract Fungido is ERC1155("https://bagbok.com/") {
     //////________OVERRIDE________/////////////////
 
     function _afterTokenTransfer(
-        address operator,
         address from,
         address to,
         uint256[] memory ids,
@@ -285,8 +294,15 @@ contract Fungido is ERC1155("https://bagbok.com/") {
         }
     }
 
+    function _useAfterTokenTransfer() internal view override returns (bool) {
+        return true;
+    }
+
+    function _useBeforeTokenTransfer() internal view override returns (bool) {
+        return true;
+    }
+
     function _beforeTokenTransfer(
-        address operator,
         address from,
         address to,
         uint256[] memory ids,
@@ -298,7 +314,6 @@ contract Fungido is ERC1155("https://bagbok.com/") {
             return;
         }
 
-        operator;
         if (from != address(0) && to != address(0)) revert UnsupportedTransfer();
         for (uint256 i; ids.length > i;) {
             uint256 currentID = ids[i];
@@ -326,7 +341,7 @@ contract Fungido is ERC1155("https://bagbok.com/") {
                     }
                 } else {
                     virtualAccount = toAddress(currentID);
-                    _safeTransferFrom(_msgSender(), virtualAccount, parentOf[currentID], currentAmt, "");
+                    safeTransferFrom(_msgSender(), virtualAccount, parentOf[currentID], currentAmt, msg.data[0:1]);
                     delete virtualAccount;
                 }
             }
@@ -355,7 +370,7 @@ contract Fungido is ERC1155("https://bagbok.com/") {
                 } else {
                     refundAmount = currentAmt * totalSupplyOf[currentID] / totalSupplyOf[parentOf[currentID]];
                     virtualAccount = toAddress(currentID);
-                    _safeTransferFrom(virtualAccount, _msgSender(), parentOf[currentID], refundAmount, "");
+                    safeTransferFrom(virtualAccount, _msgSender(), parentOf[currentID], refundAmount, msg.data[0:1]);
                     delete virtualAccount;
                 }
             }
@@ -376,7 +391,7 @@ contract Fungido is ERC1155("https://bagbok.com/") {
         totalSupplyOf[id] -= amount;
     }
 
-    function _msgSender() internal view virtual override returns (address) {
+    function _msgSender() internal view virtual returns (address) {
         if (msg.sender == RVT) return address(this);
         return msg.sender;
     }
