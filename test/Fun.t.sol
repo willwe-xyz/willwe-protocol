@@ -15,6 +15,7 @@ import {Fun} from "../src/Fun.sol";
 import {IERC20} from "openzeppelin/token/ERC20/IERC20.sol";
 
 import {InitTest} from "./Init.t.sol";
+import "forge-std/console.sol";
 
 contract FunTests is Test, TokenPrep, InitTest {
     IERC20 T1;
@@ -169,8 +170,7 @@ contract FunTests is Test, TokenPrep, InitTest {
         vm.prank(A2);
         F.mint(rootBranchID, 10 ether);
 
-        //  vm.prank(A2);
-        // F.mint(B1, 10 ether);
+
 
         vm.startPrank(A1);
         uint256[] memory childrenOf = F.getChildrenOf(B1);
@@ -250,11 +250,29 @@ contract FunTests is Test, TokenPrep, InitTest {
     }
 
     function testFidLineage() public {
-        vm.skip(true);
-        // /// @notice retrieves token path id array from root to target id
-        // /// @param fid_ target fid to trace path to from root
-        // /// @return fid lineage in chronologic order
-        // function getFidPath(uint256 fid_) public view returns (uint256[] memory fids) {
-        assert(true);
+        
+        uint256[] memory fids = F.getFidPath(B22);
+        assertTrue(fids.length == 2, "fid has len");
+        assertTrue(fids[0] == F.getParentOf(fids[0]), "first id not root");
+        assertTrue(fids[0] == rootBranchID, "expecte root" );
+        assertTrue(fids[1] == B2, "expected parent" );
+
+        
+    }
+
+
+    function testMintPath() public {
+        uint256 b22_1 = F.balanceOf(A1, B22);
+        uint256 b2_1 = F.balanceOf(A1, F.getParentOf(B22));
+
+        vm.prank(A1);
+        F.mintPath(B22, 1 ether);
+
+        uint256 b22_2 = F.balanceOf(A1, B22);
+        uint256 b2_2 = F.balanceOf(A1, F.getParentOf(B22));
+
+        assertTrue(b22_1 + 1 ether >= b22_2, "diff not constant1");
+        assertTrue(b2_1 + 1 ether >= b2_2, "diff not constant2");
+
     }
 }

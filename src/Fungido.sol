@@ -185,6 +185,14 @@ contract Fungido is ERC1155 {
         _mint(_msgSender(), fid_, amount_, abi.encodePacked(fid_, "fungible", amount_));
     }
 
+
+    function mintPath(uint256 target_, uint256 amount) external {
+        uint256[] memory fidPath = getFidPath(target_);
+        for(uint256 i; i < fidPath.length; ++i) {
+            mint(fidPath[i], amount);
+        }
+    }
+
     /// @notice retrieves token path id array from root to target id
     /// @param fid_ target fid to trace path to from root
     /// @return fids lineage in chronologic order
