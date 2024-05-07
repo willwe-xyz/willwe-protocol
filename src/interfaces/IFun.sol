@@ -17,10 +17,10 @@ enum MovementType {
     EnergeticMajority
 }
 
-    struct Call {
-        address target;
-        bytes callData;
-    }
+struct Call {
+    address target;
+    bytes callData;
+}
 
 struct Movement {
     MovementType category;
@@ -34,7 +34,7 @@ struct Movement {
     uint256 expiresAt;
     bytes32 descriptionHash;
     /// calldata
-    Call executedPayload;
+    bytes executedPayload;
 }
 
 /// human view

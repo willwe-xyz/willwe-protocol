@@ -19,7 +19,7 @@ interface IExecution {
         uint256 expiresInDays,
         address executingAccount,
         bytes32 descriptionHash,
-        Call memory data
+        bytes memory data
     ) external returns (bytes32 movementHash);
 
     function setBagBook(address newBB) external;

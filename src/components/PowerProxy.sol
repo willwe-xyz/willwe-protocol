@@ -1,6 +1,5 @@
 pragma solidity ^0.8.19;
 
-
 /**
  * @dev This abstract contract provides a fallback function that delegates all calls to another contract using the EVM
  * instruction `delegatecall`. We refer to the second contract as the _implementation_ behind the proxy, and it has to
@@ -20,11 +19,9 @@ pragma solidity ^0.8.19;
 /// @author OpenZeppelin OpenZeppelin.com
 
 /// @notice A simple authenticated proxy. A mashup of (MakerDAO) MulticallV2 and simple (OpenZeppelin) proxy.
-contract  PowerProxy {
-
+contract PowerProxy {
     address public owner;
     address implementation;
-    
 
     constructor() {
         owner = msg.sender;
@@ -44,14 +41,13 @@ contract  PowerProxy {
     error NotOwner();
     error Multicall2();
 
-
     function tryAggregate(bool requireSuccess, Call[] calldata calls) public returns (Result[] memory returnData) {
         if (msg.sender != owner) revert NotOwner();
         returnData = new Result[](calls.length);
         for (uint256 i = 0; i < calls.length; i++) {
             (bool success, bytes memory ret) = calls[i].target.call(calls[i].callData);
 
-            if (requireSuccess && (! success)) revert Multicall2();
+            if (requireSuccess && (!success)) revert Multicall2();
 
             returnData[i] = Result(success, ret);
         }
@@ -62,7 +58,6 @@ contract  PowerProxy {
         if (implementation_ != implementation) implementation = implementation_;
         if (implementation == address(0)) owner = implementation_;
     }
-
 
     /**
      * @dev Fallback function that delegates calls to the address returned by `_implementation()`. Will run if no other
@@ -88,13 +83,8 @@ contract  PowerProxy {
 
             switch result
             // delegatecall returns 0 on error.
-            case 0 {
-                revert(0, returndatasize())
-            }
-            default {
-                return(0, returndatasize())
-            }
+            case 0 { revert(0, returndatasize()) }
+            default { return(0, returndatasize()) }
         }
     }
-    
 }

@@ -15,6 +15,7 @@ import {IERC20} from "openzeppelin/token/ERC20/IERC20.sol";
 import {RVT} from "../src/RVT.sol";
 import {InitTest} from "./Init.t.sol";
 import {ECDSA} from "openzeppelin/utils/cryptography/ECDSA.sol";
+import {IPowerProxy} from "../src/interfaces/IPowerProxy.sol";
 
 contract Endpoints is Test, TokenPrep, InitTest {
     IERC20 T1;
@@ -136,12 +137,12 @@ contract Endpoints is Test, TokenPrep, InitTest {
 
     function testProposesNewMovement() public returns (bytes32 moveHash) {
         // if (block.chainid != 59140) return moveHash;
-        if (block.chainid == 31337) vm.skip(true);
+        // if (block.chainid == 31337) vm.skip(true);
         testSimpleDeposit();
         console.log("########### new movement________________");
 
         bytes32 description = keccak256("this is a description");
-        Call memory data = _getCallData();
+        bytes memory data = _getCallData();
 
         vm.startPrank(A1);
 
@@ -155,6 +156,7 @@ contract Endpoints is Test, TokenPrep, InitTest {
         assertTrue(members.length > 0, "shoudl have members for majority");
 
         moveHash = F.proposeMovement(2, rootBranchID, 12, address(0), description, data);
+
         assertTrue(uint256(moveHash) > 0, "empty hash returned");
         SignatureQueue memory SQ = F.getSigQueue(moveHash);
         assertTrue(SQ.state == SQState.Initialized, "expected intiailized");
@@ -162,22 +164,22 @@ contract Endpoints is Test, TokenPrep, InitTest {
         assertTrue(SQ.Action.exeAccount != address(0), "no exe account");
         assertTrue(SQ.Action.category == MovementType.EnergeticMajority, "not type 2");
 
-        address safe = SQ.Action.exeAccount;
-
-        ISafe Safe = ISafe(safe);
-        address[] memory ooo = Safe.getOwners();
-        uint256 threshold = Safe.getThreshold();
-
-        assertTrue(ooo.length == 1, "more than one owner for energetic type");
-        assertTrue(ooo[0] == address(F.executionAddress()), "owner not ExeEngine");
-        assertTrue(threshold == 1, "not 1 threshold");
         vm.stopPrank();
         return moveHash;
     }
 
-    function _getCallData() public returns (Call memory S) {
-        S.target = address(S.target);
-        S.callData = abi.encodeWithSelector(IERC20.transfer.selector, receiver, 0.1 ether); //0xa9059cbb000000
+    // function tryAggregate(bool requireSuccess, Call[] calldata calls)
+
+    function _getCallData() public returns (bytes memory call) {
+        Call memory S;
+        S.target = address(address(F20));
+        bytes memory data = abi.encodeWithSelector(IERC20.transfer.selector, receiver, 0.1 ether); //0xa9059cbb000000
+        S.callData = data;
+        
+        Call[] memory calls = new Call[](1);
+        calls[0] = S;
+        call = abi.encodeWithSelector(IPowerProxy.tryAggregate.selector, true, calls);
+        
     }
 
     function testCreatesNodeEndpoint() public {
@@ -188,7 +190,7 @@ contract Endpoints is Test, TokenPrep, InitTest {
         vm.startPrank(A1);
 
         bytes32 description = keccak256("this is a description");
-        Call memory data = _getCallData();
+        bytes memory data = _getCallData();
 
         bytes32 moveHash = F.proposeMovement(1, rootBranchID, 12, address(0), description, data);
         SignatureQueue memory SQ = F.getSigQueue(moveHash);
@@ -256,7 +258,7 @@ contract Endpoints is Test, TokenPrep, InitTest {
 
     function _getStructsForHash()
         public
-        returns (SignatureQueue memory SQ, Movement memory M, Call memory STX, bytes32 move)
+        returns (SignatureQueue memory SQ, Movement memory M, bytes memory STX, bytes32 move)
     {
         move = testProposesNewMovement();
         console.log(vm.toString(move));
@@ -272,7 +274,7 @@ contract Endpoints is Test, TokenPrep, InitTest {
     }
 
     function testSubmitsSignatures() public returns (bytes32 move) {
-        (SignatureQueue memory SQ, Movement memory M, Call memory STX, bytes32 move_) = _getStructsForHash();
+        (SignatureQueue memory SQ, Movement memory M, bytes memory STX, bytes32 move_) = _getStructsForHash();
         move = move_;
         assertTrue(uint256(IExecution(E).hashMessage(M)) == uint256(move));
 
@@ -328,13 +330,21 @@ contract Endpoints is Test, TokenPrep, InitTest {
         bytes32 move = testSubmitsSignatures();
         SignatureQueue memory SQ = F.getSigQueue(move);
 
-        uint256 safeNonce = ISafe(SQ.Action.exeAccount).nonce();
         assertTrue(T1.balanceOf(receiver) == 0, "has balance exp 0");
-
+        
+        uint256 snapNoBalance = vm.snapshot();
+        vm.expectRevert();
         F.executeQueue(move);
+        assertFalse(T1.balanceOf(receiver) == 0.1 ether, "it should not have balance");
 
-        assertTrue(T1.balanceOf(receiver) == 0.1 ether, "has expected balance");
-        assertTrue(safeNonce < ISafe(SQ.Action.exeAccount).nonce(), "nonce not ++");
+        vm.revertTo(snapNoBalance);
+        
+        vm.startPrank(A1);
+        assertTrue(SQ.Action.exeAccount != address(0), "no assoc. exe proxy");
+        F20.transfer(SQ.Action.exeAccount,F20.balanceOf(A1));
+        F.executeQueue(move);
+        assertTrue(F20.balanceOf(receiver) == 0.1 ether, "has expected balance");
+
 
         SQ = F.getSigQueue(move);
         assertTrue(SQ.state == SQState.Executed, "expected executed");

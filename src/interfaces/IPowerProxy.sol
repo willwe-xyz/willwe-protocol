@@ -2,8 +2,7 @@ pragma solidity ^0.8.19;
 
 /// @author parseb.eth @ github.com/parseb
 
-interface  IPowerProxy {
-
+interface IPowerProxy {
     struct Call {
         address target;
         bytes callData;
@@ -13,7 +12,6 @@ interface  IPowerProxy {
         bool success;
         bytes returnData;
     }
-
 
     error noFallback();
     error NotOwner();
@@ -27,8 +25,4 @@ interface  IPowerProxy {
     /// @notice see multicall V2
     function tryAggregate(bool requireSuccess, Call[] calldata calls) external returns (Result[] memory returnData);
     function setImplOrOwner(address implementation_) external;
-
-
-
-
 }

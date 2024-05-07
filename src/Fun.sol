@@ -151,7 +151,7 @@ contract Fun is Fungido {
         uint256 expiresInDays,
         address executingAccount,
         bytes32 descriptionHash,
-        Call memory data
+        bytes memory data
     ) external localGas returns (bytes32 movementHash) {
         return IExecution(executionAddress).proposeMovement(
             _msgSender(), typeOfMovement, node_, expiresInDays, executingAccount, descriptionHash, data

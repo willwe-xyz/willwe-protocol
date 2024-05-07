@@ -14,8 +14,8 @@ struct EIP712Domain {
 
 contract EIP712 {
     // EIP712 domain separator hash
-    bytes32 private DOMAIN_SEPARATOR;
-    bytes32 private immutable SALT;
+    bytes32 internal DOMAIN_SEPARATOR;
+    bytes32 internal immutable SALT;
 
     // EIP712 domain separator setup
     constructor() {

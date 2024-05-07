@@ -26,8 +26,7 @@ contract Execution is IERC1155Receiver, EIP712 {
     address public RootValueToken;
     address public FoundationAgent;
     IFun public BagBok;
-    // ISafeFactory SafeFactory;
-    // address Singleton;
+
 
     bytes32 currentTxHash;
     bytes4 internal constant EIP1271_MAGICVALUE = 0x1626ba7e;
@@ -57,7 +56,7 @@ contract Execution is IERC1155Receiver, EIP712 {
     error EXEC_A0sig();
     error EXEC_OnlyMore();
     error EXEC_OnlySigner();
-    error EXEC_SafeExeF();
+    error EXEC_exeQFail();
     error EXEC_InProgress();
     error EXEC_ActionIndexMismatch();
 
@@ -104,7 +103,7 @@ contract Execution is IERC1155Receiver, EIP712 {
         uint256 expiresInDays,
         address executingAccount,
         bytes32 descriptionHash,
-        Call memory data
+        bytes memory data
     ) external virtual returns (bytes32 movementHash) {
         if (msg.sender != address(BagBok)) revert OnlyFun();
 
@@ -129,16 +128,7 @@ contract Execution is IERC1155Receiver, EIP712 {
                 members[0] = address(this);
             }
 
-            // ISafe(executingAccount).setup(
-            //     members,
-            //     members.length / 2 + 1,
-            //     address(0),
-            //     abi.encodePacked(node_ - block.timestamp),
-            //     address(0),
-            //     address(0),
-            //     0,
-            //     (members[0] == address(this) ? executingAccount : members[0])
-            // );
+
         } else {
             if (!(engineOwner[executingAccount] == node_)) revert NotExeAccOwner();
         }
@@ -173,38 +163,10 @@ contract Execution is IERC1155Receiver, EIP712 {
         if (SQ.state != SQState.Valid) revert InvalidQueue();
         if (SQ.Action.expiresAt <= block.timestamp) revert ExpiredMovement();
 
-        bytes memory sig = abi.encode(address(this), 65, 0, SignatureQueueHash_.length, SignatureQueueHash_);
         Movement memory M = SQ.Action;
 
-        // currentTxHash = keccak256(
-        //     ISafe(SQ.Action.exeAccount).encodeTransactionData(
-        //         M.txData.to,
-        //         M.txData.value,
-        //         M.txData.data,
-        //         M.txData.operation,
-        //         M.txData.safeTxGas,
-        //         M.txData.baseGas,
-        //         M.txData.gasPrice,
-        //         M.txData.gasToken,
-        //         RootValueToken,
-        //         ISafe(SQ.Action.exeAccount).nonce()
-        //     )
-        // );
-
-        // s = ISafe(SQ.Action.exeAccount).execTransaction(
-        //     M.txData.to,
-        //     M.txData.value,
-        //     M.txData.data,
-        //     M.txData.operation,
-        //     M.txData.safeTxGas,
-        //     M.txData.baseGas,
-        //     M.txData.gasPrice,
-        //     M.txData.gasToken,
-        //     RootValueToken,
-        //     sig
-        // );
-
-        if (!s) revert EXEC_SafeExeF();
+        (s,) = (SQ.Action.exeAccount).call(M.executedPayload);
+        if (!s) revert EXEC_exeQFail();
 
         delete currentTxHash;
         SQ.state = SQState.Executed;
@@ -336,19 +298,11 @@ contract Execution is IERC1155Receiver, EIP712 {
         hasEndpointOrInteraction[nodeId_ + uint160(bytes20(owner))] = true;
 
         endpoint = createNodeEndpoint(origin, nodeId_);
-        address[] memory members = new address[](1);
-        members[0] = owner;
 
-        // ISafe(endpoint).setup(
-        //     members, 1, address(0), abi.encodePacked(uint160(owner) - block.timestamp), address(0), address(0), 0, owner
-        // );
     }
 
-    function createNodeEndpoint(uint256 endpointOwner_) private returns (address endpoint) {
-        /// @todo replace with proxy
-        // endpoint = SafeFactory.createProxyWithNonce(Singleton, abi.encodePacked(), (endpointOwner_ - block.timestamp));
-
-
+    function createNodeEndpoint() private returns (address) {
+        return address(new PowerProxy());
     }
 
     function validateQueue(bytes32 sigHash) internal returns (SignatureQueue memory SQM) {
@@ -377,7 +331,6 @@ contract Execution is IERC1155Receiver, EIP712 {
         address[] memory signers = SQM.Signers;
         bytes[] memory signatures = SQM.Sigs;
 
-        ///  personalSign @dev @todo make this 712
         bytes32 signedHash = ECDSA.toEthSignedMessageHash(sigHash);
 
         for (i; i < signatures.length;) {
@@ -402,9 +355,9 @@ contract Execution is IERC1155Receiver, EIP712 {
     }
 
     function createNodeEndpoint(address origin, uint256 endpointOwner_) internal returns (address endpoint) {
-        endpoint = createNodeEndpoint(endpointOwner_);
-        if (msg.sig == this.createEndpointForOwner.selector || msg.sig == this.setFoundationAgent.selector) {
-            engineOwner[endpoint] = uint160(origin);
+        endpoint = createNodeEndpoint();
+        if (msg.sig == this.createEndpointForOwner.selector) {
+            engineOwner[endpoint] = uint160(origin); //// @dev 
         } else {
             engineOwner[endpoint] = endpointOwner_;
         }

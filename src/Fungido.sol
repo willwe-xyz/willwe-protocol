@@ -290,10 +290,9 @@ contract Fungido is ERC1155 {
         return true;
     }
 
-        function _useBeforeTokenTransfer() internal view override returns (bool) {
+    function _useBeforeTokenTransfer() internal view override returns (bool) {
         return true;
     }
-
 
     function _beforeTokenTransfer(
         address from,
