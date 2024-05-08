@@ -13,7 +13,6 @@ import {EIP712} from "./info/EIP712.sol";
 
 import {PowerProxy} from "./components/PowerProxy.sol";
 
-
 ///////////////////////////////////////////////
 ////////////////////////////////////
 
@@ -26,7 +25,6 @@ contract Execution is IERC1155Receiver, EIP712 {
     address public RootValueToken;
     address public FoundationAgent;
     IFun public BagBok;
-
 
     bytes32 currentTxHash;
     bytes4 internal constant EIP1271_MAGICVALUE = 0x1626ba7e;
@@ -127,8 +125,6 @@ contract Execution is IERC1155Receiver, EIP712 {
                 members = new address[](1);
                 members[0] = address(this);
             }
-
-
         } else {
             if (!(engineOwner[executingAccount] == node_)) revert NotExeAccOwner();
         }
@@ -298,7 +294,6 @@ contract Execution is IERC1155Receiver, EIP712 {
         hasEndpointOrInteraction[nodeId_ + uint160(bytes20(owner))] = true;
 
         endpoint = createNodeEndpoint(origin, nodeId_);
-
     }
 
     function createNodeEndpoint() private returns (address) {
@@ -357,7 +352,7 @@ contract Execution is IERC1155Receiver, EIP712 {
     function createNodeEndpoint(address origin, uint256 endpointOwner_) internal returns (address endpoint) {
         endpoint = createNodeEndpoint();
         if (msg.sig == this.createEndpointForOwner.selector) {
-            engineOwner[endpoint] = uint160(origin); //// @dev 
+            engineOwner[endpoint] = uint160(origin); //// @dev
         } else {
             engineOwner[endpoint] = endpointOwner_;
         }

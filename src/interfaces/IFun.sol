@@ -47,6 +47,16 @@ struct SignatureQueue {
     bytes32 exeSig;
 }
 
+struct NodeState {
+    uint256 nodeId;
+    uint256 inflation;
+    uint256 balanceAnchor;
+    uint256 balanceBudget;
+    uint256 membraneId;
+    address[] membersOfNode;
+    uint256[] childrenNodes;
+}
+
 interface IFun is IERC1155 {
     function spawnRootBranch(address fungible20_) external returns (uint256 fID);
 
@@ -58,43 +68,29 @@ interface IFun is IERC1155 {
 
     function membershipEnforce(address target, uint256 fid_) external returns (bool s);
     function burn(uint256 fid_, uint256 amount_) external;
-
     function allMembersOf(uint256 fid_) external view returns (address[] memory);
-
     function mint(uint256 fid_, uint256 amount_) external;
-
     function toID(address x) external view returns (uint256);
-
     function toAddress(uint256 x) external view returns (address);
-
     function isMember(address whoabout_, uint256 whereabout_) external view returns (bool);
-
     function getInUseMemberaneID(uint256 fid_) external view returns (uint256 membraneID_);
-
     function getMembraneOf(uint256 fid_) external view returns (uint256);
-
     function getChildrenOf(uint256 fid_) external view returns (uint256[] memory);
     function getParentOf(uint256 fid_) external view returns (uint256);
-
     function membershipID(uint256 fid_) external pure returns (uint256);
-
     function getRootId(uint256 fid_) external view returns (uint256);
-
     function getRootToken(uint256 fid_) external view returns (address);
-
     function fungo() external returns (address);
-
     function createEndpointForOwner(uint256 nodeId_, address owner) external returns (address endpoint);
-
     function localizeEndpoint(address endpointAddress, uint256 endpointParent_, address endpointOwner_) external;
-
     function getSigQueue(bytes32 hash_) external view returns (SignatureQueue memory);
-
     function totalSupply(uint256 nodeId) external view returns (uint256);
     function executionEngineAddress() external view returns (address);
-
     function rule() external;
     function RVT() external view returns (address);
-
     function getUserInteractions(address user_) external view returns (uint256[][2] memory);
+    function getInteractionDataOf(address user_)
+        external
+        view
+        returns (uint256[][2] memory activeBalances, NodeState[] memory);
 }

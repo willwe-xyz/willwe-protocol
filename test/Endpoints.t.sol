@@ -175,11 +175,10 @@ contract Endpoints is Test, TokenPrep, InitTest {
         S.target = address(address(F20));
         bytes memory data = abi.encodeWithSelector(IERC20.transfer.selector, receiver, 0.1 ether); //0xa9059cbb000000
         S.callData = data;
-        
+
         Call[] memory calls = new Call[](1);
         calls[0] = S;
         call = abi.encodeWithSelector(IPowerProxy.tryAggregate.selector, true, calls);
-        
     }
 
     function testCreatesNodeEndpoint() public {
@@ -331,20 +330,19 @@ contract Endpoints is Test, TokenPrep, InitTest {
         SignatureQueue memory SQ = F.getSigQueue(move);
 
         assertTrue(T1.balanceOf(receiver) == 0, "has balance exp 0");
-        
+
         uint256 snapNoBalance = vm.snapshot();
         vm.expectRevert();
         F.executeQueue(move);
         assertFalse(T1.balanceOf(receiver) == 0.1 ether, "it should not have balance");
 
         vm.revertTo(snapNoBalance);
-        
+
         vm.startPrank(A1);
         assertTrue(SQ.Action.exeAccount != address(0), "no assoc. exe proxy");
-        F20.transfer(SQ.Action.exeAccount,F20.balanceOf(A1));
+        F20.transfer(SQ.Action.exeAccount, F20.balanceOf(A1));
         F.executeQueue(move);
         assertTrue(F20.balanceOf(receiver) == 0.1 ether, "has expected balance");
-
 
         SQ = F.getSigQueue(move);
         assertTrue(SQ.state == SQState.Executed, "expected executed");
