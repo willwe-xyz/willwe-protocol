@@ -53,6 +53,8 @@ struct NodeState {
     uint256 balanceAnchor;
     uint256 balanceBudget;
     uint256 membraneId;
+    uint256 lastMinted;
+    uint256 inflPerSec;
     address[] membersOfNode;
     uint256[] childrenNodes;
 }

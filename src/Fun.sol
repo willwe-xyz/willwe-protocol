@@ -23,6 +23,8 @@ contract Fun is Fungido {
     error MembraneNotFound();
     error RootNodeOrNone();
 
+    event NodePreference(uint256 indexed nodeId, address sender, uint256 membr, uint256 infl);
+
     /// @notice processes and stores user signal
     /// @notice in case threashold is reached, the change is applied.
     /// @notice formatted as follows: membrane, inflation, [recognition]
@@ -96,6 +98,9 @@ contract Fun is Fungido {
 
                     i = 1;
                 }
+
+                emit NodePreference(targetNode_, _msgSender(), signals[0], signals[1]);
+
                 unchecked {
                     ++i;
                 }

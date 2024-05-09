@@ -42,7 +42,7 @@ contract Fungido is ERC1155 {
     /// @notice members of node
     mapping(uint256 => address[]) members;
 
-    /// @notice stores an users option for change: node + user * value -> [ wanted value, lastExpressedAt ]
+    /// @notice stores a users option for change and node state [ wanted value, lastExpressedAt ]
     mapping(bytes32 NodeXUserXValue => uint256[2] valueAtTime) options;
 
     /// @notice root value balances | ERC20 -> Base Value Token (id) -> ERC20 balance
