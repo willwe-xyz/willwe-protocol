@@ -451,10 +451,6 @@ contract Fungido is ERC1155 {
         uint256 i;
         uint256 n;
         uint256 u = toID(user_);
-//         struct UserSignal {
-//     uint256[][2] MembraneInflation;
-//     uint256[] lastRedistSignal;
-// }
 
         NodeState[] memory NSs = new NodeState[](activeBalances[0].length);
         for (i; i < activeBalances[0].length;) {
