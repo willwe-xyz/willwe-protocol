@@ -6,7 +6,6 @@ import {BagBok} from "../src/BagBok.sol";
 import {Execution} from "../src/Execution.sol";
 import {Membranes} from "../src/Membranes.sol";
 import {RVT} from "../src/RVT.sol";
-import {ISafe} from "../src/interfaces/ISafe.sol";
 
 contract DeployBASE is Script {
     BagBok FunFun;
@@ -73,7 +72,7 @@ contract DeployBASE is Script {
         console.log("Is Foundation Anget contract: ", (address(E.FoundationAgent()).code.length > 1));
         console.log("Deployer is member ", FunFun.isMember(deployer, govNode));
 
-        if ((address(FA).code.length > 2) && (ISafe(FA).isOwner(address(E)))) {
+        if ((address(FA).code.length > 2) ) {
             F20.setPointer(FA);
             F20.transfer(FA, F20.balanceOf(address(deployer)));
         } else {

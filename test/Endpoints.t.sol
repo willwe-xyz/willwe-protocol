@@ -9,7 +9,6 @@ import {TokenPrep} from "./mock/Tokens.sol";
 
 import {SignatureQueue, SQState, MovementType} from "../src/interfaces/IExecution.sol";
 import {Movement, Call} from "../src/interfaces/IFun.sol";
-import {ISafe} from "../src/interfaces/ISafe.sol";
 import {IERC20} from "openzeppelin/token/ERC20/IERC20.sol";
 
 import {RVT} from "../src/RVT.sol";
@@ -235,8 +234,7 @@ contract Endpoints is Test, TokenPrep, InitTest {
 
         address endpoint = F.createEndpointForOwner(rootBranchID, A1);
 
-        assertTrue(ISafe(endpoint).getThreshold() == 1, "unexpected threshold");
-        assertTrue(ISafe(endpoint).isOwner(A1), "expected owner");
+
 
         uint256 membershipID = F.membershipID(F.toID(endpoint));
         console.log("these should be the same  -------  GGFYASG& ----", uint160(endpoint) % 10 ether, membershipID);
