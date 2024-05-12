@@ -47,6 +47,12 @@ struct SignatureQueue {
     bytes32 exeSig;
 }
 
+struct UserSignal {
+    uint256[][2] MembraneInflation;
+    uint256[] lastRedistSignal;
+}
+
+
 struct NodeState {
     uint256 nodeId;
     uint256 inflation;
@@ -57,6 +63,7 @@ struct NodeState {
     uint256 inflPerSec;
     address[] membersOfNode;
     uint256[] childrenNodes;
+    UserSignal[] signals;
 }
 
 interface IFun is IERC1155 {

@@ -84,9 +84,6 @@ contract Execution is IERC1155Receiver, EIP712 {
 
     constructor(address rootValueToken_) {
         RootValueToken = rootValueToken_;
-
-        // SafeFactory = ISafeFactory(SafeFactoryAddresses.factoryAddressForChainId(block.chainid));
-        // Singleton = SafeFactoryAddresses.getSingletonAddressForChainID(block.chainid);
     }
 
     function setFoundationAgent(uint256 baseNodeId_) external {

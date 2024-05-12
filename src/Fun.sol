@@ -23,7 +23,6 @@ contract Fun is Fungido {
     error MembraneNotFound();
     error RootNodeOrNone();
 
-    event NodePreference(uint256 indexed nodeId, address sender, uint256 membr, uint256 infl);
 
     /// @notice processes and stores user signal
     /// @notice in case threashold is reached, the change is applied.
@@ -55,6 +54,9 @@ contract Fun is Fungido {
 
                 bytes32 userKey = keccak256((abi.encodePacked(targetNode_, user, signals[i])));
                 bytes32 nodeKey = keccak256((abi.encodePacked(targetNode_, signals[i])));
+
+                childrenOf[targetNode_ + user - 1].push(signals[0]);
+                childrenOf[targetNode_ + user - 2].push(signals[1]);
 
                 if (i == 0) {
                     i = signals[i];
@@ -99,7 +101,6 @@ contract Fun is Fungido {
                     i = 1;
                 }
 
-                emit NodePreference(targetNode_, _msgSender(), signals[0], signals[1]);
 
                 unchecked {
                     ++i;
@@ -108,11 +109,13 @@ contract Fun is Fungido {
             }
             uint256[] memory children = childrenOf[targetNode_];
             if (children.length != (signals.length - 2)) revert BadLen();
-            uint256 totalInflPerSec = inflSec[targetNode_][0];
             bytes32 userTargetedPreference = keccak256((abi.encodePacked(user, targetNode_, children[i - 2])));
 
             if (!(options[userTargetedPreference][0] == signals[i])) {
+
                 options[userTargetedPreference][0] = signals[i];
+                options[userTargetedPreference][1] = block.timestamp;
+
                 redistribute(children[i - 2]);
 
                 bytes32 childParentEligibilityPerSec = keccak256((abi.encodePacked(children[i - 2], targetNode_)));
@@ -127,6 +130,7 @@ contract Fun is Fungido {
                 options[childParentEligibilityPerSec][0] += options[userTargetedPreference][1];
 
                 options[childParentEligibilityPerSec][1] = block.timestamp;
+                
             }
 
             unchecked {

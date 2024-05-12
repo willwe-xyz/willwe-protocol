@@ -8,7 +8,7 @@ import {IERC20} from "openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 
 import "./interfaces/IExecution.sol";
 import {IRVT} from "./interfaces/IRVT.sol";
-import {NodeState} from "./interfaces/IFun.sol";
+import {NodeState, UserSignal} from "./interfaces/IFun.sol";
 import "./interfaces/IMembrane.sol";
 
 ///////////////////////////////////////////////
@@ -68,7 +68,7 @@ contract Fungido is ERC1155 {
         M = IMembrane(membranes);
 
         name = "BagBok.com";
-        symbol = "BagBok";
+        symbol = "BB";
 
         IRVT(RVT).pingInit();
     }
@@ -184,10 +184,10 @@ contract Fungido is ERC1155 {
         _mint(_msgSender(), fid_, amount_, abi.encodePacked(fid_, "fungible", amount_));
     }
 
-    function mintPath(uint256 target_, uint256 amount) external {
+    function mintPath(uint256 target_, uint256 amount_) external {
         uint256[] memory fidPath = getFidPath(target_);
         for (uint256 i; i < fidPath.length; ++i) {
-            mint(fidPath[i], amount);
+            mint(fidPath[i], amount_);
         }
     }
 
@@ -441,20 +441,6 @@ contract Fungido is ERC1155 {
         return totalSupplyOf[nodeId];
     }
 
-    //     const BBbalances = await BB.getUserInteractions(userAddr);
-    //   BBbalances[0].forEach(async (X) => {
-    //   let nodeId:string = X.toString();
-    //   //// ignores membrane ids - extra call - @todo pack in one multicall or create util contract
-    //   let parent: string = await BB.getParentOf(nodeId);
-    //   if (nodeId.length > 20 && parent != "0") {
-    //     let nodeAsAddress = await BB.toAddress(nodeId);
-    //     let membrane: string = await BB.getMembraneOf(nodeId);
-    //     let isMember: boolean = await BB.isMember(userAddr,nodeId);
-    //     let inflation: string = await BB.inflationOf(nodeId);
-    //     let balanceA: string = await BB.balanceOf(nodeAsAddress, parent);
-    //     let balanceB: string = await BB.balanceOf(nodeAsAddress, nodeId);
-    //     let membersOfNode: string[] = parent != "0" ? await BB.allMembersOf(nodeId) : [];
-
     function getInteractionDataOf(address user_)
         external
         view
@@ -464,12 +450,19 @@ contract Fungido is ERC1155 {
         activeBalances[1] = new uint256[](activeBalances[0].length);
         uint256 i;
         uint256 n;
+        uint256 u = toID(user_);
+//         struct UserSignal {
+//     uint256[][2] MembraneInflation;
+//     uint256[] lastRedistSignal;
+// }
 
         NodeState[] memory NSs = new NodeState[](activeBalances[0].length);
         for (i; i < activeBalances[0].length;) {
             n = activeBalances[0][i];
             activeBalances[1][i] = balanceOf(user_, n);
             NodeState memory N;
+            UserSignal[] memory US;
+
             N.nodeId = n;
             N.inflation = inflSec[n][0];
             N.balanceAnchor = balanceOf(toAddress(n), parentOf[n]);
@@ -479,12 +472,24 @@ contract Fungido is ERC1155 {
             N.childrenNodes = childrenOf[n];
 
             NSs[i] = N;
+            UserSignal memory U;
+                U.MembraneInflation[i][0] = childrenOf[n + u - 1 ][0];
+                U.MembraneInflation[i][1] = childrenOf[n + u - 2 ][0];
+                uint256[] memory sigs = new uint256[](N.membersOfNode.length);
+            for (uint256 x; x < N.membersOfNode.length; ++x ) {
+                bytes32 targetedPref = keccak256((abi.encodePacked(u, n, N.membersOfNode[x])));
+                if (options[targetedPref][0] == 0) continue;
+                sigs[x] = options[targetedPref][0];
+            }
+            U.lastRedistSignal = sigs;
+            US[i] = U;
 
             unchecked {
                 ++i;
             }
         }
     }
+
 
     /**
      * @dev See {IERC1155MetadataURI-uri}.
