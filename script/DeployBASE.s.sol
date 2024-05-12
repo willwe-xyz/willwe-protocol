@@ -35,10 +35,12 @@ contract DeployBASE is Script {
         address[] memory founders = new address[](1);
         uint256[] memory amounts = new uint256[](1);
 
-        founders[0] = address(0xE7b30A037F5598E4e73702ca66A59Af5CC650Dcd);
-        amounts[0] = 1_000_000 * 1 ether;
+        founders[0] = deployer;
 
-        uint256 piper_sec = 306;
+        /// address(0xE7b30A037F5598E4e73702ca66A59Af5CC650Dcd);
+        amounts[0] = 10_000_000 * 1 ether;
+
+        uint256 piper_sec = 69;
 
         vm.startBroadcast(runPVK);
 
@@ -73,7 +75,7 @@ contract DeployBASE is Script {
 
         if ((address(FA).code.length > 2) && (ISafe(FA).isOwner(address(E)))) {
             F20.setPointer(FA);
-            // F20.transfer(FA, F20.balanceOf(address(deployer)));
+            F20.transfer(FA, F20.balanceOf(address(deployer)));
         } else {
             console.log("foundation not safe");
         }

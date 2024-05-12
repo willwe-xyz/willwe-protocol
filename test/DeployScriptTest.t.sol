@@ -41,8 +41,9 @@ contract LocalG is Test, TokenPrep, BagBokDeploy {
         assertTrue(address(FoundingSafe).code.length > 1, "code len of Safe 0");
         assertTrue(FoundingSafe.owner() == address(E), "Exe not owner");
 
-        assertTrue(FunFun.getParentOf(FunFun.toID(address(FoundingSafe)) ) > 0, "no parent");
-        assertTrue(FunFun.getParentOf(FunFun.getParentOf(FunFun.toID(address(FoundingSafe))) ) > 0, "no for parent of founding");
-
+        assertTrue(FunFun.getParentOf(FunFun.toID(address(FoundingSafe))) > 0, "no parent");
+        assertTrue(
+            FunFun.getParentOf(FunFun.getParentOf(FunFun.toID(address(FoundingSafe)))) > 0, "no for parent of founding"
+        );
     }
 }

@@ -8,8 +8,7 @@ import {IERC20} from "openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 
 import "./interfaces/IExecution.sol";
 import {IRVT} from "./interfaces/IRVT.sol";
-import "forge-std/console.sol";
-
+import {NodeState, UserSignal} from "./interfaces/IFun.sol";
 import "./interfaces/IMembrane.sol";
 
 ///////////////////////////////////////////////
@@ -40,10 +39,10 @@ contract Fungido is ERC1155 {
     /// @notice membrane being used by entity | entityID ->  [ membrane id | last Timestamp]
     mapping(uint256 => uint256[2]) inUseMembraneId;
 
-    /// @notice membrane being used by entity
+    /// @notice members of node
     mapping(uint256 => address[]) members;
 
-    /// @notice stores an users option for change: node + user * value -> [ wanted value, lastExpressedAt ]
+    /// @notice stores a users option for change and node state [ wanted value, lastExpressedAt ]
     mapping(bytes32 NodeXUserXValue => uint256[2] valueAtTime) options;
 
     /// @notice root value balances | ERC20 -> Base Value Token (id) -> ERC20 balance
@@ -69,7 +68,7 @@ contract Fungido is ERC1155 {
         M = IMembrane(membranes);
 
         name = "BagBok.com";
-        symbol = "BagBok";
+        symbol = "BB";
 
         IRVT(RVT).pingInit();
     }
@@ -185,11 +184,10 @@ contract Fungido is ERC1155 {
         _mint(_msgSender(), fid_, amount_, abi.encodePacked(fid_, "fungible", amount_));
     }
 
-
-    function mintPath(uint256 target_, uint256 amount) external {
+    function mintPath(uint256 target_, uint256 amount_) external {
         uint256[] memory fidPath = getFidPath(target_);
-        for(uint256 i; i < fidPath.length; ++i) {
-            mint(fidPath[i], amount);
+        for (uint256 i; i < fidPath.length; ++i) {
+            mint(fidPath[i], amount_);
         }
     }
 
@@ -443,17 +441,51 @@ contract Fungido is ERC1155 {
         return totalSupplyOf[nodeId];
     }
 
-    function getUserInteractions(address user_) external view returns (uint256[][2] memory activeBalances) {
+    function getInteractionDataOf(address user_)
+        external
+        view
+        returns (uint256[][2] memory activeBalances, NodeState[] memory)
+    {
         activeBalances[0] = childrenOf[uint160(user_)];
         activeBalances[1] = new uint256[](activeBalances[0].length);
         uint256 i;
+        uint256 n;
+        uint256 u = toID(user_);
+
+        NodeState[] memory NSs = new NodeState[](activeBalances[0].length);
         for (i; i < activeBalances[0].length;) {
-            activeBalances[1][i] = balanceOf(user_, activeBalances[0][i]);
+            n = activeBalances[0][i];
+            activeBalances[1][i] = balanceOf(user_, n);
+            NodeState memory N;
+            UserSignal[] memory US;
+
+            N.nodeId = n;
+            N.inflation = inflSec[n][0];
+            N.balanceAnchor = balanceOf(toAddress(n), parentOf[n]);
+            N.balanceBudget = balanceOf(toAddress(n), n);
+            N.membraneId = inUseMembraneId[n][0];
+            N.membersOfNode = members[n];
+            N.childrenNodes = childrenOf[n];
+
+            NSs[i] = N;
+            UserSignal memory U;
+                U.MembraneInflation[i][0] = childrenOf[n + u - 1 ][0];
+                U.MembraneInflation[i][1] = childrenOf[n + u - 2 ][0];
+                uint256[] memory sigs = new uint256[](N.membersOfNode.length);
+            for (uint256 x; x < N.membersOfNode.length; ++x ) {
+                bytes32 targetedPref = keccak256((abi.encodePacked(u, n, N.membersOfNode[x])));
+                if (options[targetedPref][0] == 0) continue;
+                sigs[x] = options[targetedPref][0];
+            }
+            U.lastRedistSignal = sigs;
+            US[i] = U;
+
             unchecked {
                 ++i;
             }
         }
     }
+
 
     /**
      * @dev See {IERC1155MetadataURI-uri}.
