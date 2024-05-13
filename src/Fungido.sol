@@ -59,10 +59,8 @@ contract Fungido is ERC1155 {
     string public symbol;
 
     constructor(address executionAddr, address membranes) {
-        /// default
         taxRate[address(0)] = 100_00;
         executionAddress = executionAddr;
-        /// @dev
         RVT = IExecution(executionAddr).RootValueToken();
         control[0] = msg.sender;
         M = IMembrane(membranes);
@@ -116,13 +114,11 @@ contract Fungido is ERC1155 {
 
     function spawnRootBranch(address fungible20_) public virtual returns (uint256 fID) {
         if (fungible20_.code.length == 0) revert EOA();
-        /// @dev constructor call
-        fID = toID(fungible20_);
 
+        fID = toID(fungible20_);
         if (parentOf[fID] == fID) revert RootExists();
 
         _localizeNode(fID, fID);
-
         _giveMembership(_msgSender(), fID);
     }
 
@@ -150,7 +146,7 @@ contract Fungido is ERC1155 {
     function mintMembership(uint256 fid_, address to_) public virtual {
         if (parentOf[fid_] == 0) revert BranchNotFound();
         if (isMember(to_, fid_)) revert AlreadyMember();
-        if (!M.gCheck(to_, membershipID(fid_))) revert Unqualified();
+        if (!M.gCheck(to_, getMembraneOf(fid_))) revert Unqualified();
 
         _giveMembership(to_, fid_);
     }
@@ -196,13 +192,13 @@ contract Fungido is ERC1155 {
     //// @param target agent subject
     //// @param fid_ entity of belonging
     function membershipEnforce(address target, uint256 fid_) public virtual returns (bool s) {
-        if (balanceOf(target, fid_) != 1) revert NotMember();
+        if (balanceOf(target, membershipID(fid_)) != 1) revert NotMember();
         if (members[fid_].length < 1) revert NoMembership();
 
         s = !M.gCheck(target, getMembraneOf(fid_));
-        if (s) _burn(target, fid_, 1);
+        if (s) _burn(target, membershipID(fid_), 1);
         if (target == _msgSender()) {
-            _burn(target, fid_, 1);
+            _burn(target, membershipID(fid_), 1);
         }
     }
 
@@ -215,7 +211,7 @@ contract Fungido is ERC1155 {
     }
 
     function _giveMembership(address to, uint256 id) private {
-        members[membershipID(id)].push(to);
+        members[id].push(to);
 
         _mint(to, membershipID(id), 1, abi.encodePacked(to, "membership", id));
     }
@@ -388,7 +384,7 @@ contract Fungido is ERC1155 {
     }
 
     function allMembersOf(uint256 fid_) public view returns (address[] memory) {
-        return members[membershipID(fid_)];
+        return members[fid_];
     }
 
     function getChildrenOf(uint256 fid_) public view returns (uint256[] memory) {
@@ -415,7 +411,7 @@ contract Fungido is ERC1155 {
     function getInteractionDataOf(address user_)
         external
         view
-        returns (uint256[][2] memory activeBalances, NodeState[] memory)
+        returns (uint256[][2] memory activeBalances, NodeState[] memory NSs)
     {
         activeBalances[0] = childrenOf[uint160(user_)];
         activeBalances[1] = new uint256[](activeBalances[0].length);
@@ -423,12 +419,11 @@ contract Fungido is ERC1155 {
         uint256 n;
         uint256 u = toID(user_);
 
-        NodeState[] memory NSs = new NodeState[](activeBalances[0].length);
-        for (i; i < activeBalances[0].length;) {
+        NSs = new NodeState[](activeBalances[0].length);
+        for (i; i < activeBalances[0].length; ++i) {
             n = activeBalances[0][i];
             activeBalances[1][i] = balanceOf(user_, n);
             NodeState memory N;
-            UserSignal[] memory US;
 
             N.nodeId = n;
             N.inflation = inflSec[n][0];
@@ -438,22 +433,23 @@ contract Fungido is ERC1155 {
             N.membersOfNode = members[n];
             N.childrenNodes = childrenOf[n];
 
-            NSs[i] = N;
-            UserSignal memory U;
-            U.MembraneInflation[i][0] = childrenOf[n + u - 1][0];
-            U.MembraneInflation[i][1] = childrenOf[n + u - 2][0];
-            uint256[] memory sigs = new uint256[](N.membersOfNode.length);
-            for (uint256 x; x < N.membersOfNode.length; ++x) {
-                bytes32 targetedPref = keccak256((abi.encodePacked(u, n, N.membersOfNode[x])));
-                if (options[targetedPref][0] == 0) continue;
-                sigs[x] = options[targetedPref][0];
-            }
-            U.lastRedistSignal = sigs;
-            US[i] = U;
+            uint256 len = childrenOf[n].length;
 
-            unchecked {
-                ++i;
+            UserSignal memory U;
+            UserSignal[] memory Uss = new UserSignal[](len);
+
+            U.MembraneInflation[0] = childrenOf[n + u - 1];
+            U.MembraneInflation[1] = childrenOf[n + u - 2];
+            if (len == 0) continue;
+            uint256[] memory sigs = new uint256[](len);
+            for (uint256 x; x < len; ++x) {
+                bytes32 targetedPref = keccak256((abi.encodePacked(u, n, childrenOf[n][x])));
+                sigs[x] = options[targetedPref][0];
+                U.lastRedistSignal = sigs;
+                Uss[x] = U;
             }
+            N.signals = Uss;
+            NSs[i] = N;
         }
     }
 

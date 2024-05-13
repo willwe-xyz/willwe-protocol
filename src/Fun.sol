@@ -57,7 +57,7 @@ contract Fun is Fungido {
                 childrenOf[targetNode_ + user - 1].push(signals[0]);
                 childrenOf[targetNode_ + user - 2].push(signals[1]);
 
-                if (i == 0) {
+                if (i == 0 && (parentOf[targetNode_] != targetNode_)) {
                     i = signals[i];
                     if (i < type(uint160).max) revert BadLen();
                     if (!(M.getMembraneById(i).tokens.length > 0)) revert MembraneNotFound();

@@ -72,4 +72,19 @@ contract InflationTest is Test, TokenPrep, InitTest {
         console.log(Bt1 - Bt0, "diff after 100 sec. of 1 ether inflation");
         assertTrue((Bt1 - Bt0) == 1 ether * 1 gwei * 100, "inflation mism or not in gwei");
     }
+
+    function testView0FetchData() public {
+        testBasicInflation();
+        vm.prank(A1);
+        F.spawnBranch(B1);
+
+        console.log("######### tesBasicInflationEnd() #######");
+        (uint256[][2] memory AB, NodeState[] memory NS) = F.getInteractionDataOf(A1);
+
+        assertTrue(AB.length > 0, "no basic balances");
+        assertTrue(NS.length > 0, "no NS");
+        assertTrue(NS[0].signals.length == NS[0].childrenNodes.length, "len mismatch 0 ");
+        assertTrue(NS[1].signals.length == NS[1].childrenNodes.length, "len mismatch 1");
+        assertTrue(NS[2].signals.length == NS[2].childrenNodes.length, "len mismatch 2");
+    }
 }
