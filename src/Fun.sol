@@ -23,14 +23,13 @@ contract Fun is Fungido {
     error MembraneNotFound();
     error RootNodeOrNone();
 
-
     /// @notice processes and stores user signal
     /// @notice in case threashold is reached, the change is applied.
     /// @notice formatted as follows: membrane, inflation, [recognition]
     /// @param targetNode_ node for which to signal
     /// @param signals array of signaling values constructed starting with membrane, inflation, and [redistributive preferences for sub-entities]
 
-    function sendSignal(uint256 targetNode_, uint256[] memory signals) external localGas {
+    function sendSignal(uint256 targetNode_, uint256[] memory signals) external {
         if (parentOf[targetNode_] == targetNode_) revert RootNodeOrNone();
         if (!(isMember(msg.sender, targetNode_))) revert NotMember();
 
@@ -101,7 +100,6 @@ contract Fun is Fungido {
                     i = 1;
                 }
 
-
                 unchecked {
                     ++i;
                 }
@@ -112,7 +110,6 @@ contract Fun is Fungido {
             bytes32 userTargetedPreference = keccak256((abi.encodePacked(user, targetNode_, children[i - 2])));
 
             if (!(options[userTargetedPreference][0] == signals[i])) {
-
                 options[userTargetedPreference][0] = signals[i];
                 options[userTargetedPreference][1] = block.timestamp;
 
@@ -130,7 +127,6 @@ contract Fun is Fungido {
                 options[childParentEligibilityPerSec][0] += options[userTargetedPreference][1];
 
                 options[childParentEligibilityPerSec][1] = block.timestamp;
-                
             }
 
             unchecked {
@@ -141,7 +137,7 @@ contract Fun is Fungido {
 
     //// @notice redistributes eligible acummulated inflationary flows
     /// @param nodeId_ redistribution target group
-    function redistribute(uint256 nodeId_) public localGas returns (uint256 distributedAmt) {
+    function redistribute(uint256 nodeId_) public returns (uint256 distributedAmt) {
         uint256 parent = parentOf[nodeId_];
         if (parent == 0) revert NoSoup();
         mintInflation(nodeId_);
@@ -161,7 +157,7 @@ contract Fun is Fungido {
         address executingAccount,
         bytes32 descriptionHash,
         bytes memory data
-    ) external localGas returns (bytes32 movementHash) {
+    ) external returns (bytes32 movementHash) {
         return IExecution(executionAddress).proposeMovement(
             _msgSender(), typeOfMovement, node_, expiresInDays, executingAccount, descriptionHash, data
         );

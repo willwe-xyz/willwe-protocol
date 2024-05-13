@@ -52,7 +52,6 @@ struct UserSignal {
     uint256[] lastRedistSignal;
 }
 
-
 struct NodeState {
     uint256 nodeId;
     uint256 inflation;

@@ -50,7 +50,7 @@ contract Fungido is ERC1155 {
 
     /// @notice tax rate on withdrawals as share in base root value token | 100_00 = 0.1% - gas multiplier
     /// @notice default values: 0.01% - x2
-    mapping(address => uint256[2]) taxAndGas;
+    mapping(address => uint256) taxRate;
     /// @dev ensure consistency of tax calculation such as enfocing a multiple of 100 on setting
 
     address[2] public control;
@@ -60,7 +60,7 @@ contract Fungido is ERC1155 {
 
     constructor(address executionAddr, address membranes) {
         /// default
-        taxAndGas[address(0)] = [100_00, 2];
+        taxRate[address(0)] = 100_00;
         executionAddress = executionAddr;
         /// @dev
         RVT = IExecution(executionAddr).RootValueToken();
@@ -101,39 +101,20 @@ contract Fungido is ERC1155 {
     ////////////////////////////////////////////////
     //////________MODIFIER________/////////////////
 
-    modifier localGas() {
-        if (!((control[0] == control[1]) && (address(RVT) != address(0)))) {
-            _;
-        } else {
-            uint256 startGas = gasleft();
-            _;
-            uint256 endGas = gasleft();
-            uint256 multiplier = taxAndGas[_msgSender()][1] == 0 ? taxAndGas[address(0)][1] : taxAndGas[_msgSender()][1];
-            uint256 gasUsed = (startGas - endGas) * multiplier;
-            uint256 gasPrice = tx.gasprice;
-            uint256 gasCost = gasUsed * gasPrice / 1e18;
-            uint256 perUnit = IRVT(RVT).burnReturns(1);
-
-            gasCost = perUnit > gasCost ? 1 ether / (perUnit / gasCost) : gasCost / perUnit;
-            endGas = gasleft();
-
-            if (!IRVT(RVT).transferGas(_msgSender(), address(this), gasCost)) revert CoreGasTransferFailed();
-        }
-    }
-
     function setControl(address newController) external {
         if (msg.sender != control[0]) revert NoControl();
         if (control[1] == newController) {
-            control[1] = address(0);
-            control[0] = address(0);
+            control[0] = control[1];
+            delete control[1];
+        } else {
+            control[1] = newController;
         }
-        control[0] == newController ? control[1] = newController : control[0] = newController;
     }
 
     ////////////////////////////////////////////////
     //////______EXTERNAL______/////////////////////
 
-    function spawnRootBranch(address fungible20_) public virtual localGas returns (uint256 fID) {
+    function spawnRootBranch(address fungible20_) public virtual returns (uint256 fID) {
         if (fungible20_.code.length == 0) revert EOA();
         /// @dev constructor call
         fID = toID(fungible20_);
@@ -145,7 +126,7 @@ contract Fungido is ERC1155 {
         _giveMembership(_msgSender(), fID);
     }
 
-    function spawnBranch(uint256 fid_) public virtual localGas returns (uint256 newID) {
+    function spawnBranch(uint256 fid_) public virtual returns (uint256 newID) {
         if (parentOf[fid_] == 0) revert UnregisteredFungible();
         if (!isMember(_msgSender(), fid_)) revert NotMember();
 
@@ -159,19 +140,14 @@ contract Fungido is ERC1155 {
         _giveMembership(_msgSender(), newID);
     }
 
-    function spawnBranchWithMembrane(uint256 fid_, uint256 membraneID_)
-        public
-        virtual
-        localGas
-        returns (uint256 newID)
-    {
+    function spawnBranchWithMembrane(uint256 fid_, uint256 membraneID_) public virtual returns (uint256 newID) {
         if (M.getMembraneById(membraneID_).tokens.length == 0) revert UniniMembrane();
         newID = spawnBranch(fid_);
         inUseMembraneId[newID][0] = membraneID_;
         inUseMembraneId[newID][1] = block.timestamp;
     }
 
-    function mintMembership(uint256 fid_, address to_) public virtual localGas {
+    function mintMembership(uint256 fid_, address to_) public virtual {
         if (parentOf[fid_] == 0) revert BranchNotFound();
         if (isMember(to_, fid_)) revert AlreadyMember();
         if (!M.gCheck(to_, membershipID(fid_))) revert Unqualified();
@@ -179,7 +155,7 @@ contract Fungido is ERC1155 {
         _giveMembership(to_, fid_);
     }
 
-    function mint(uint256 fid_, uint256 amount_) public virtual localGas {
+    function mint(uint256 fid_, uint256 amount_) public virtual {
         if (parentOf[fid_] == 0) revert UnregisteredFungible();
         _mint(_msgSender(), fid_, amount_, abi.encodePacked(fid_, "fungible", amount_));
     }
@@ -260,12 +236,7 @@ contract Fungido is ERC1155 {
 
     function taxPolicyPreference(address rootToken_, uint256 taxRate_) external {
         if (_msgSender() != control[0]) revert Unautorised();
-        taxAndGas[rootToken_][0] = taxRate_;
-    }
-
-    function gasMultiplier(address sender, uint256 multiplier_) external {
-        if (_msgSender() != control[0]) revert Unautorised();
-        taxAndGas[sender][1] = multiplier_;
+        taxRate[rootToken_] = taxRate_;
     }
 
     ////////////////////////////////////////////////
@@ -356,7 +327,7 @@ contract Fungido is ERC1155 {
                     if (currentAmt < refundAmount) revert No();
                     E20bvtBalance[token20][currentID] -= currentAmt;
 
-                    uint256 taxAmount = taxAndGas[token20][0] == 0 ? taxAndGas[address(0)][0] : taxAndGas[token20][0];
+                    uint256 taxAmount = taxRate[token20] == 0 ? taxRate[address(0)] : taxRate[token20];
                     taxAmount = refundAmount / taxAmount;
                     refundAmount = refundAmount - taxAmount;
 
@@ -469,10 +440,10 @@ contract Fungido is ERC1155 {
 
             NSs[i] = N;
             UserSignal memory U;
-                U.MembraneInflation[i][0] = childrenOf[n + u - 1 ][0];
-                U.MembraneInflation[i][1] = childrenOf[n + u - 2 ][0];
-                uint256[] memory sigs = new uint256[](N.membersOfNode.length);
-            for (uint256 x; x < N.membersOfNode.length; ++x ) {
+            U.MembraneInflation[i][0] = childrenOf[n + u - 1][0];
+            U.MembraneInflation[i][1] = childrenOf[n + u - 2][0];
+            uint256[] memory sigs = new uint256[](N.membersOfNode.length);
+            for (uint256 x; x < N.membersOfNode.length; ++x) {
                 bytes32 targetedPref = keccak256((abi.encodePacked(u, n, N.membersOfNode[x])));
                 if (options[targetedPref][0] == 0) continue;
                 sigs[x] = options[targetedPref][0];
@@ -485,7 +456,6 @@ contract Fungido is ERC1155 {
             }
         }
     }
-
 
     /**
      * @dev See {IERC1155MetadataURI-uri}.

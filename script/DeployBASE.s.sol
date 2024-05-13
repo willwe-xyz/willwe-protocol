@@ -72,12 +72,15 @@ contract DeployBASE is Script {
         console.log("Is Foundation Anget contract: ", (address(E.FoundationAgent()).code.length > 1));
         console.log("Deployer is member ", FunFun.isMember(deployer, govNode));
 
-        if ((address(FA).code.length > 2) ) {
+        if ((address(FA).code.length > 2)) {
             F20.setPointer(FA);
             F20.transfer(FA, F20.balanceOf(address(deployer)));
         } else {
             console.log("foundation not safe");
         }
+
+        FunFun.setControl(FA);
+        FunFun.setControl(FA);
 
         console.log("###############################");
         console.log("Balances: deployer | Agent | f0");

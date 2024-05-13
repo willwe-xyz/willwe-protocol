@@ -234,8 +234,6 @@ contract Endpoints is Test, TokenPrep, InitTest {
 
         address endpoint = F.createEndpointForOwner(rootBranchID, A1);
 
-
-
         uint256 membershipID = F.membershipID(F.toID(endpoint));
         console.log("these should be the same  -------  GGFYASG& ----", uint160(endpoint) % 10 ether, membershipID);
 
