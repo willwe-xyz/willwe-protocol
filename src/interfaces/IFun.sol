@@ -32,7 +32,6 @@ struct Movement {
     bytes executedPayload;
 }
 
-
 struct SignatureQueue {
     SQState state;
     Movement Action;

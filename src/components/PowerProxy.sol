@@ -58,11 +58,10 @@ contract PowerProxy {
         if (implementation_ != implementation) implementation = implementation_;
     }
 
-        function setOwner(address owner_) external {
-            if (msg.sender != owner) revert NotOwner();
-            owner = owner_;
-        }
-
+    function setOwner(address owner_) external {
+        if (msg.sender != owner) revert NotOwner();
+        owner = owner_;
+    }
 
     /**
      * @dev Fallback function that delegates calls to the address returned by `_implementation()`. Will run if no other

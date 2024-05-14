@@ -26,5 +26,4 @@ interface IPowerProxy {
     function tryAggregate(bool requireSuccess, Call[] calldata calls) external returns (Result[] memory returnData);
     function setImplementation(address implementation_) external;
     function setOwner(address owner_) external;
-
 }

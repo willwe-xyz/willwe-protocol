@@ -26,7 +26,6 @@ contract Fun is Fungido {
     event Signal(uint256 indexed nodeID, address origin, uint256 value);
     event NewMovement(uint256 indexed nodeID, bytes32 movementID, bytes32 descriptionHash);
 
-
     /// @notice processes and stores user signal
     /// @notice in case threashold is reached, the change is applied.
     /// @notice formatted as follows: membrane, inflation, [recognition]
@@ -47,7 +46,6 @@ contract Fun is Fungido {
         uint256 i;
 
         for (i; i < signals.length;) {
-            
             emit Signal(targetNode_, _msgSender(), signals[i]);
 
             if (i <= 1) {

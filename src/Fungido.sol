@@ -163,9 +163,6 @@ contract Fungido is ERC1155 {
         }
     }
 
-    
-
-
     function asRootValuation(uint256 target_, uint256 amount) public view {
         true;
     }
@@ -232,9 +229,11 @@ contract Fungido is ERC1155 {
 
     function _localizeNode(uint256 newID, uint256 parentId) private {
         parentOf[newID] = parentId;
-        if (parentId != newID) childrenOf[parentId].push(newID);
-        inflSec[newID][0] = 1 gwei;
-        inflSec[newID][2] = block.timestamp;
+        if (parentId != newID) {
+            childrenOf[parentId].push(newID);
+            inflSec[newID][0] = 1 gwei;
+            inflSec[newID][2] = block.timestamp;
+        }
     }
 
     function taxPolicyPreference(address rootToken_, uint256 taxRate_) external {

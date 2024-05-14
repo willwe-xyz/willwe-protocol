@@ -345,7 +345,6 @@ contract Execution is IERC1155Receiver, EIP712 {
     }
 
     function createNodeEndpoint(address origin, uint256 endpointOwner_) internal returns (address endpoint) {
-        
         if (msg.sig == this.createEndpointForOwner.selector) {
             endpoint = createNodeEndpoint(origin);
             engineOwner[endpoint] = uint160(origin);
@@ -356,12 +355,9 @@ contract Execution is IERC1155Receiver, EIP712 {
         BagBok.localizeEndpoint(endpoint, endpointOwner_, origin);
     }
 
-
-
     function isValidSignature(bytes32 _hash, bytes memory _signature) public view returns (bytes4) {
         if (getSigQueueByHash[_hash].state == SQState.Valid) return EIP1271_MAGICVALUE;
     }
-
 
     /// @notice retrieves the node or agent  that owns the execution account
     /// @param endpointAddress execution account for which to retrieve owner
