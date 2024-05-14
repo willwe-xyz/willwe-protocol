@@ -26,7 +26,6 @@ contract Execution is IERC1155Receiver, EIP712 {
     address public FoundationAgent;
     IFun public BagBok;
 
-    bytes32 currentTxHash;
     bytes4 internal constant EIP1271_MAGICVALUE = 0x1626ba7e;
     bytes4 internal constant EIP1271_MAGIC_VALUE_LEGACY = 0x20c13b0b;
 
@@ -161,7 +160,6 @@ contract Execution is IERC1155Receiver, EIP712 {
         (s,) = (SQ.Action.exeAccount).call(M.executedPayload);
         if (!s) revert EXEC_exeQFail();
 
-        delete currentTxHash;
         SQ.state = SQState.Executed;
         getSigQueueByHash[SignatureQueueHash_] = SQ;
     }
@@ -293,8 +291,8 @@ contract Execution is IERC1155Receiver, EIP712 {
         endpoint = createNodeEndpoint(origin, nodeId_);
     }
 
-    function createNodeEndpoint() private returns (address) {
-        return address(new PowerProxy());
+    function createNodeEndpoint(address proxyOwner_) private returns (address) {
+        return address(new PowerProxy(proxyOwner_));
     }
 
     function validateQueue(bytes32 sigHash) internal returns (SignatureQueue memory SQM) {
@@ -347,28 +345,23 @@ contract Execution is IERC1155Receiver, EIP712 {
     }
 
     function createNodeEndpoint(address origin, uint256 endpointOwner_) internal returns (address endpoint) {
-        endpoint = createNodeEndpoint();
+        
         if (msg.sig == this.createEndpointForOwner.selector) {
-            engineOwner[endpoint] = uint160(origin); //// @dev
+            endpoint = createNodeEndpoint(origin);
+            engineOwner[endpoint] = uint160(origin);
         } else {
+            endpoint = createNodeEndpoint(address(this));
             engineOwner[endpoint] = endpointOwner_;
         }
         BagBok.localizeEndpoint(endpoint, endpointOwner_, origin);
     }
 
-    function exeAccountOwner(address exeAcc_) external view returns (uint256) {
-        return engineOwner[exeAcc_];
-    }
+
 
     function isValidSignature(bytes32 _hash, bytes memory _signature) public view returns (bytes4) {
         if (getSigQueueByHash[_hash].state == SQState.Valid) return EIP1271_MAGICVALUE;
     }
 
-    function isValidSignature(bytes memory a, bytes memory b) external view returns (bytes4) {
-        if (currentTxHash == keccak256(a)) {
-            return EIP1271_MAGIC_VALUE_LEGACY;
-        }
-    }
 
     /// @notice retrieves the node or agent  that owns the execution account
     /// @param endpointAddress execution account for which to retrieve owner

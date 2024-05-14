@@ -14,6 +14,8 @@ import {Execution} from "../src/Execution.sol";
 import {Fun} from "../src/Fun.sol";
 import {InitTest} from "./Init.t.sol";
 
+import {IPowerProxy} from "../src/interfaces/IPowerProxy.sol"; 
+
 contract MembraneTests is Test, InitTest {
     X20 X20token;
     ERC721 X721;
@@ -120,4 +122,31 @@ contract MembraneTests is Test, InitTest {
 
         assertFalse(F.isMember(address(5), B1), "is member");
     }
+
+    function testProxyControl() public {
+        testEnforceM();
+
+        vm.prank(A1);
+        IPowerProxy P = IPowerProxy(F.createEndpointForOwner(B1, A1));
+        
+        assertTrue(P.owner() == A1, "not expected owner");
+        assertTrue(P.implementation() == address(0), "has Implementation");
+        
+        vm.expectRevert();
+        P.setImplementation(address(1));
+        
+        vm.prank(A1);
+        P.setImplementation(address(1));
+        assertTrue(P.implementation() == address(1), "impl is ! 1");
+
+        vm.prank(A1);
+        P.setOwner(address(1));
+        assertTrue(P.implementation() == address(1), "impl is ! 1");
+        assertTrue(P.owner() == address(1), "owner no 1");
+
+    }
+
+
+
+
 }

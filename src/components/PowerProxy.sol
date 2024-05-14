@@ -21,10 +21,10 @@ pragma solidity ^0.8.19;
 /// @notice A simple authenticated proxy. A mashup of (MakerDAO) MulticallV2 and simple (OpenZeppelin) proxy.
 contract PowerProxy {
     address public owner;
-    address implementation;
+    address public implementation;
 
-    constructor() {
-        owner = msg.sender;
+    constructor(address proxyOwner_) {
+        owner = proxyOwner_;
     }
 
     struct Call {
@@ -53,11 +53,16 @@ contract PowerProxy {
         }
     }
 
-    function setImplOrOwner(address implementation_) external {
+    function setImplementation(address implementation_) external {
         if (msg.sender != owner) revert NotOwner();
         if (implementation_ != implementation) implementation = implementation_;
-        if (implementation == address(0)) owner = implementation_;
     }
+
+        function setOwner(address owner_) external {
+            if (msg.sender != owner) revert NotOwner();
+            owner = owner_;
+        }
+
 
     /**
      * @dev Fallback function that delegates calls to the address returned by `_implementation()`. Will run if no other
