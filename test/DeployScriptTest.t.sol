@@ -22,7 +22,7 @@ contract LocalG is Test, TokenPrep, BagBokDeploy {
     function setUp() public override {
         super.setUp();
 
-        uint256 degenChain = vm.createSelectFork(vm.envString("BASE_SepoliaRPC")); //
+        // vm.createSelectFork(vm.envString("BASE_SepoliaRPC")); //
         super.run();
         deployer = 0x920CbC9893bF12eD967116136653240823686D9c;
         FoundingSafe = IPowerProxy(E.FoundationAgent());

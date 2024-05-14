@@ -163,6 +163,13 @@ contract Fungido is ERC1155 {
         }
     }
 
+    
+
+
+    function asRootValuation(uint256 target_, uint256 amount) public view {
+        true;
+    }
+
     /// @notice retrieves token path id array from root to target id
     /// @param fid_ target fid to trace path to from root
     /// @return fids lineage in chronologic order

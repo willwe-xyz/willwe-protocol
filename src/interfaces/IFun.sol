@@ -24,20 +24,14 @@ struct Call {
 
 struct Movement {
     MovementType category;
-    /// proposer
     address initiatior;
-    /// safe or similar execution environment
     address exeAccount;
-    /// fid
     uint256 viaNode;
-    /// signature expires - skip if expired
     uint256 expiresAt;
     bytes32 descriptionHash;
-    /// calldata
     bytes executedPayload;
 }
 
-/// human view
 
 struct SignatureQueue {
     SQState state;
@@ -97,6 +91,7 @@ interface IFun is IERC1155 {
     function rule() external;
     function RVT() external view returns (address);
     function getUserInteractions(address user_) external view returns (uint256[][2] memory);
+    function removeSignature(bytes32 sigHash_, uint256 index_) external;
     function getInteractionDataOf(address user_)
         external
         view

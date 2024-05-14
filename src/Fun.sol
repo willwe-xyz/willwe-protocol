@@ -23,6 +23,10 @@ contract Fun is Fungido {
     error MembraneNotFound();
     error RootNodeOrNone();
 
+    event Signal(uint256 indexed nodeID, address origin, uint256 value);
+    event NewMovement(uint256 indexed nodeID, bytes32 movementID, bytes32 descriptionHash);
+
+
     /// @notice processes and stores user signal
     /// @notice in case threashold is reached, the change is applied.
     /// @notice formatted as follows: membrane, inflation, [recognition]
@@ -43,6 +47,9 @@ contract Fun is Fungido {
         uint256 i;
 
         for (i; i < signals.length;) {
+            
+            emit Signal(targetNode_, _msgSender(), signals[i]);
+
             if (i <= 1) {
                 if (signals[i] == 0) {
                     unchecked {
@@ -158,9 +165,10 @@ contract Fun is Fungido {
         bytes32 descriptionHash,
         bytes memory data
     ) external returns (bytes32 movementHash) {
-        return IExecution(executionAddress).proposeMovement(
+        movementHash = IExecution(executionAddress).proposeMovement(
             _msgSender(), typeOfMovement, node_, expiresInDays, executingAccount, descriptionHash, data
         );
+        emit NewMovement(node_, movementHash, descriptionHash);
     }
 
     function createEndpointForOwner(uint256 nodeId_, address owner) external returns (address endpoint) {
@@ -175,8 +183,8 @@ contract Fun is Fungido {
         return IExecution(executionAddress).submitSignatures(sigHash, signers, signatures);
     }
 
-    function removeSignature(bytes32 sigHash_, uint256 index_, address who_) external {
-        IExecution(executionAddress).removeSignature(sigHash_, index_, who_);
+    function removeSignature(bytes32 sigHash_, uint256 index_) external {
+        IExecution(executionAddress).removeSignature(sigHash_, index_, _msgSender());
     }
 
     /////////// View
