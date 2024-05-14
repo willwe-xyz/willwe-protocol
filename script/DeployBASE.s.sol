@@ -28,7 +28,7 @@ contract DeployBASE is Script {
         address deployer = vm.addr(runPVK);
         vm.label(deployer, "deployer");
 
-        console.log("##### Deployer : ", deployer, "| expected", "0xEF54c01c3F3d3dbC6C8Ddce2eA38843219A9597E");
+        console.log("##### Deployer : ", deployer, "| expected", "0xcEEeDDD949C41b1086FC7Aa6d953a8c254160A90");
         console.log("#________________________________");
 
         address[] memory founders = new address[](1);
@@ -64,7 +64,8 @@ contract DeployBASE is Script {
 
         address FA = E.FoundationAgent();
         vm.label(FA, "foundationSafe");
-        FunFun.setControl(FA);
+
+        console.log("control --- ", (FunFun.control(0)), (FunFun.control(1)), deployer);
 
         console.log("###############################");
         console.log(" ");
