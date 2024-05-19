@@ -112,6 +112,8 @@ contract MembraneTests is Test, InitTest {
         vm.prank(address(5));
         F.mintMembership(B1, address(5));
 
+        uint256 snapfor_renounce = vm.snapshot();
+
         vm.prank(address(5));
         X20token.transfer(address(10), 2 ether);
 
@@ -121,6 +123,12 @@ contract MembraneTests is Test, InitTest {
         F.membershipEnforce(address(5), B1);
 
         assertFalse(F.isMember(address(5), B1), "is member");
+
+        vm.revertTo(snapfor_renounce);
+        assertTrue(F.isMember(address(5), B1));
+        vm.prank(address(5));
+        F.membershipEnforce(address(5), B1);
+        assertFalse(F.isMember(address(5), B1), "renonce fail");
     }
 
     function testProxyControl() public {

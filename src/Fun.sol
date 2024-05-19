@@ -84,8 +84,6 @@ contract Fun is Fungido {
 
                     delete i;
                 } else {
-                    mintInflation(targetNode_);
-
                     i = signals[i];
                     if (options[userKey][1] > 0 && (inflSec[targetNode_][1] < options[userKey][1])) {
                         options[nodeKey][0] -= options[userKey][0];

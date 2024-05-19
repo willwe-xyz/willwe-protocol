@@ -50,11 +50,13 @@ struct NodeState {
     uint256 inflation;
     uint256 balanceAnchor;
     uint256 balanceBudget;
+    uint256 value;
     uint256 membraneId;
     uint256 lastMinted;
     uint256 inflPerSec;
     address[] membersOfNode;
     uint256[] childrenNodes;
+    uint256[] rootPath;
     UserSignal[] signals;
 }
 
@@ -95,4 +97,8 @@ interface IFun is IERC1155 {
         external
         view
         returns (uint256[][2] memory activeBalances, NodeState[] memory);
+
+    function inParentDenomination(uint256 amt_, uint256 id_) external view returns (uint256);
+    function burnPath(uint256 target_, uint256 amount) external;
+    function mintPath(uint256 target_, uint256 amount) external;
 }

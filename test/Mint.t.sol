@@ -68,28 +68,55 @@ contract MintTest is Test, TokenPrep, InitTest {
 
     function testSimpleMint() public {
         vm.startPrank(A1);
+
+        assertTrue(F.toAddress(B1) == address(T20), "b1 not root");
+        assertTrue(F.getParentOf(B1) == B1, "b1 not b1 parent");
+
         vm.expectRevert();
         F.mint(B1, 2 ether);
 
+        assertTrue(F.totalSupply(B1) == 0, "B1 expecte 0 supply");
+
         T20.approve(address(F), 2 ether);
+        uint256 balance0 = T20.balanceOf(A1);
+        uint256 balance0T = T20.balanceOf(address(F));
         F.mint(B1, 2 ether);
+        uint256 balance1T = T20.balanceOf(address(F));
+        uint256 balance1 = T20.balanceOf(A1);
+        assertTrue((balance0 - 1 ether) > balance1, " not transfered");
+        assertTrue(balance0T + 1 ether < balance1T, "did not get T20 bal");
 
         assertTrue(F.totalSupplyOf(B1) == 2 ether, "supply mint missm");
 
         uint256 bal1 = F.balanceOf(A1, B1);
         assertTrue(bal1 == 2 ether, "Qty. mint missmatch");
-
         uint256 rootBal = F.totalSupplyOf(F.toID(T20addr));
 
         B2 = F.spawnBranch(B1);
+        vm.label(F.toAddress(B2), "B2fid");
         assertTrue(F.getParentOf(B2) == B1, "not parent-son");
-
+        assertTrue(F.totalSupplyOf(B2) == 0, "some pre minted");
         assertTrue(B2 < B1, "shloud be smaller");
+        assertTrue(F.getParentOf(B2) == B1, "not expected parent");
+        assertTrue(B1 != B2, "unexpected same");
 
+        T20.approve(address(F), 2 ether);
         F.mint(B2, 2 ether);
+
         uint256 bal2 = F.balanceOf(A1, B2);
         assertTrue(bal2 == 2 ether, "Qty. mint missmatch");
         assertTrue(F.totalSupplyOf(B2) == 2 ether, "supply mint missm");
+
+        console.log("1 eth .. burn started");
+        F.burn(B2, 1 ether);
+        console.log("1 eth .. burn ended");
+
+        assertTrue(F.totalSupplyOf(B2) == 1 ether, "supply mint missm 2 ");
+
+        bal1 = F.totalSupplyOf(B1);
+        F.burn(B1, 1 ether);
+        bal2 = F.totalSupplyOf(B1);
+        assertTrue(bal2 < bal1, "no supply decrease");
 
         vm.stopPrank();
     }
@@ -99,9 +126,13 @@ contract MintTest is Test, TokenPrep, InitTest {
 
         T20.approve(address(F), 2 ether);
         F.mint(B1, 2 ether);
+        assertTrue(T20.balanceOf(address(F)) == 2 ether, "t20 bal f");
 
         vm.warp(1000);
-        assertTrue(F.totalSupplyOf(B1) == 2 ether, "supply mint missm");
+        assertTrue(F.totalSupplyOf(B1) == 2 ether, "supply mint missm 1");
+        vm.expectRevert(); // StableRoot();
+        F.mintInflation(B1);
+        assertTrue(F.totalSupplyOf(B1) == 2 ether, "supply mint missm 2");
 
         uint256 balance1 = T20.balanceOf(A1);
         uint256 totalInternalPre = F.totalSupplyOf(B1);
@@ -119,7 +150,7 @@ contract MintTest is Test, TokenPrep, InitTest {
         assertTrue(FungiTotal20BalPost < FungiTotal20BalPre, "same on burn");
 
         console.log("PRE ... , POST ... ---", totalInternalPre, totalInternalPost);
-        assertTrue(F.totalSupplyOf(B1) == 1 ether, "supply mint missm");
+        assertTrue(F.totalSupplyOf(B1) == 1 ether, "supply mint missm 3");
 
         vm.stopPrank();
     }

@@ -10,7 +10,6 @@ import "./interfaces/IExecution.sol";
 import {IRVT} from "./interfaces/IRVT.sol";
 import {NodeState, UserSignal} from "./interfaces/IFun.sol";
 import "./interfaces/IMembrane.sol";
-
 ///////////////////////////////////////////////
 ////////////////////////////////////
 
@@ -19,7 +18,6 @@ import "./interfaces/IMembrane.sol";
 
 contract Fungido is ERC1155 {
     uint256 immutable initTime = block.timestamp;
-    address virtualAccount;
     uint256 public entityCount;
     address public executionAddress;
     address public RVT;
@@ -45,9 +43,6 @@ contract Fungido is ERC1155 {
     /// @notice stores a users option for change and node state [ wanted value, lastExpressedAt ]
     mapping(bytes32 NodeXUserXValue => uint256[2] valueAtTime) options;
 
-    /// @notice root value balances | ERC20 -> Base Value Token (id) -> ERC20 balance
-    mapping(address => mapping(uint256 => uint256)) E20bvtBalance;
-
     /// @notice tax rate on withdrawals as share in base root value token | 100_00 = 0.1% - gas multiplier
     /// @notice default values: 0.01% - x2
     mapping(address => uint256) taxRate;
@@ -57,6 +52,7 @@ contract Fungido is ERC1155 {
 
     string public name;
     string public symbol;
+    bool useBefore;
 
     constructor(address executionAddr, address membranes) {
         taxRate[address(0)] = 100_00;
@@ -69,6 +65,7 @@ contract Fungido is ERC1155 {
         symbol = "BB";
 
         IRVT(RVT).pingInit();
+        useBefore = true;
     }
 
     ////////////////////////////////////////////////
@@ -76,6 +73,7 @@ contract Fungido is ERC1155 {
 
     error UniniMembrane();
     error BaseOrNonFungible();
+    error StableRoot();
     error AlreadyMember();
     error BranchNotFound();
     error Unqualified();
@@ -95,6 +93,9 @@ contract Fungido is ERC1155 {
     error CoreGasTransferFailed();
     error NoControl();
     error Unautorised();
+    //////
+    error ThisShouldBeUnreachable();
+    error InsufficientAmt();
 
     ////////////////////////////////////////////////
     //////________MODIFIER________/////////////////
@@ -132,6 +133,7 @@ contract Fungido is ERC1155 {
 
         newID = (fid_ - block.timestamp - childrenOf[fid_].length) - entityCount;
 
+        _setApprovalForAll(toAddress(newID), address(this), true);
         _localizeNode(newID, fid_);
         _giveMembership(_msgSender(), newID);
     }
@@ -163,33 +165,74 @@ contract Fungido is ERC1155 {
         }
     }
 
-    function asRootValuation(uint256 target_, uint256 amount) public view {
-        true;
+    function asRootValuation(uint256 target_, uint256 amount) public view returns (uint256 rAmt) {
+        uint256[] memory paths = getFidPath(target_);
+        uint256 x;
+        for (uint256 i; i < paths.length; ++i) {
+            x = paths.length - 1 - i;
+            target_ = paths[x];
+            if (parentOf[target_] == target_) break;
+            amount = inParentDenomination(amount, target_);
+        }
+        rAmt = amount;
+    }
+
+    function inParentDenomination(uint256 amt_, uint256 id_) public view returns (uint256 inParentVal) {
+        inParentVal = amt_ * balanceOf(toAddress(id_), parentOf[id_]) / totalSupplyOf[id_];
     }
 
     /// @notice retrieves token path id array from root to target id
     /// @param fid_ target fid to trace path to from root
     /// @return fids lineage in chronologic order
     function getFidPath(uint256 fid_) public view returns (uint256[] memory fids) {
-        uint256 fidCount;
+        uint256 fidCount = 1;
         uint256 parent = parentOf[fid_];
-        while (parent >= 1) {
-            ++fidCount;
+        while (parent >= (fid_ + 1)) {
             if (parent == parentOf[parent]) break;
+            ++fidCount;
             parent = parentOf[parent];
         }
         fids = new uint256[](fidCount);
 
         delete parent;
-        for (parent; parent < fids.length; ++parent) {
-            fids[fids.length - parent - 1] = parentOf[fid_];
+        for (parent; parent < fidCount; ++parent) {
+            fids[fidCount - parent - 1] = parentOf[fid_];
             fid_ = parentOf[fid_];
         }
     }
 
-    function burn(uint256 fid_, uint256 amount_) public virtual {
+    function burn(uint256 fid_, uint256 amount_) public virtual returns (uint256 topVal) {
         if (parentOf[fid_] == 0) revert BaseOrNonFungible();
+        topVal = parentOf[fid_] == fid_ ? amount_ : inParentDenomination(amount_, fid_);
+        if (parentOf[fid_] != fid_) {
+            this.safeTransferFrom(toAddress(fid_), _msgSender(), parentOf[fid_], topVal, abi.encodePacked("burn"));
+        } else {
+            uint256 taxAmount = taxRate[toAddress(fid_)] == 0 ? taxRate[address(0)] : taxRate[toAddress(fid_)];
+            taxAmount = amount_ / taxAmount;
+            uint256 refundAmount = amount_ - taxAmount;
+            if (amount_ <= refundAmount) revert No();
+
+            if (
+                !(
+                    IERC20(toAddress(fid_)).transfer(RVT, taxAmount)
+                        && IERC20(toAddress(fid_)).transfer(_msgSender(), refundAmount)
+                )
+            ) revert BurnE20TransferFailed();
+        }
         _burn(_msgSender(), fid_, amount_);
+    }
+
+    function burnPath(uint256 target_, uint256 amount) external {
+        if (parentOf[target_] == 0) revert BaseOrNonFungible();
+
+        uint256[] memory paths = getFidPath(target_);
+        uint256 x;
+        for (uint256 i; i < paths.length; ++i) {
+            x = paths.length - 1 - i;
+            if (balanceOf(_msgSender(), target_) < amount) revert InsufficientAmt();
+            amount = burn(target_, amount);
+            target_ = paths[x];
+        }
     }
 
     //// @notice enforces membership conditions on target
@@ -197,21 +240,24 @@ contract Fungido is ERC1155 {
     //// @param fid_ entity of belonging
     function membershipEnforce(address target, uint256 fid_) public virtual returns (bool s) {
         if (balanceOf(target, membershipID(fid_)) != 1) revert NotMember();
-        if (members[fid_].length < 1) revert NoMembership();
-
-        s = !M.gCheck(target, getMembraneOf(fid_));
-        if (s) _burn(target, membershipID(fid_), 1);
         if (target == _msgSender()) {
             _burn(target, membershipID(fid_), 1);
+            return true;
         }
+
+        s = !M.gCheck(target, getMembraneOf(fid_));
+        fid_ = membershipID(fid_);
+
+        if (s) _burn(target, fid_, 1);
     }
 
     function mintInflation(uint256 node) public virtual returns (uint256 amount) {
+        if (parentOf[node] == node) revert StableRoot();
         amount = (block.timestamp - inflSec[node][2]) * inflSec[node][0];
         if (amount == 0) return amount;
         inflSec[node][2] = block.timestamp;
 
-        _mint(address(uint160(node)), node, amount, abi.encodePacked(node, "inflation", amount));
+        _mint(address(uint160(node)), node, amount, abi.encodePacked("inflation"));
     }
 
     function _giveMembership(address to, uint256 id) private {
@@ -270,7 +316,7 @@ contract Fungido is ERC1155 {
     }
 
     function _useBeforeTokenTransfer() internal view override returns (bool) {
-        return true;
+        return useBefore;
     }
 
     function _beforeTokenTransfer(
@@ -280,15 +326,13 @@ contract Fungido is ERC1155 {
         uint256[] memory amounts,
         bytes memory data
     ) internal virtual override {
-        if (virtualAccount != address(0)) return;
         if (msg.sig == this.membershipEnforce.selector) {
             return;
         }
-
-        if (from != address(0) && to != address(0)) revert UnsupportedTransfer();
         for (uint256 i; ids.length > i;) {
             uint256 currentID = ids[i];
             uint256 currentAmt = amounts[i];
+            if ((from != address(0) && to != address(0)) && (parentOf[currentID] == 0)) revert UnsupportedTransfer();
 
             if (currentID < 10 ether) {
                 if (
@@ -298,51 +342,19 @@ contract Fungido is ERC1155 {
                             || (msg.sig != this.spawnBranchWithMembrane.selector) || (msg.sig != this.spawnBranch.selector)
                     )
                 ) revert MembershipOp();
-                totalSupplyOf[currentID] = members[currentID].length;
 
                 return;
             }
 
-            if (msg.sig == this.mint.selector) {
+            if (msg.sig == this.mint.selector || msg.sig == this.mintPath.selector) {
                 if (parentOf[currentID] == currentID) {
-                    E20bvtBalance[toAddress(parentOf[currentID])][currentID] += currentAmt;
-
-                    if (!IERC20(toAddress(parentOf[currentID])).transferFrom(_msgSender(), address(this), currentAmt)) {
+                    if (!IERC20(toAddress(currentID)).transferFrom(to, address(this), currentAmt)) {
                         revert MintE20TransferFailed();
                     }
                 } else {
-                    virtualAccount = toAddress(currentID);
-                    safeTransferFrom(_msgSender(), virtualAccount, parentOf[currentID], currentAmt, msg.data[0:1]);
-                    delete virtualAccount;
-                }
-            }
-
-            if (msg.sig == this.burn.selector) {
-                uint256 refundAmount;
-                address token20 = toAddress(parentOf[currentID]);
-                if (parentOf[currentID] == currentID) {
-                    if (E20bvtBalance[token20][currentID] < currentAmt) {
-                        revert InsufficientRootBalance();
-                    }
-                    refundAmount = currentAmt * totalSupplyOf[currentID] / E20bvtBalance[token20][currentID];
-
-                    if (currentAmt < refundAmount) revert No();
-                    E20bvtBalance[token20][currentID] -= currentAmt;
-
-                    uint256 taxAmount = taxRate[token20] == 0 ? taxRate[address(0)] : taxRate[token20];
-                    taxAmount = refundAmount / taxAmount;
-                    refundAmount = refundAmount - taxAmount;
-
-                    IERC20(token20).transfer(RVT, taxAmount);
-
-                    if (!IERC20(token20).transfer(_msgSender(), refundAmount)) {
-                        revert BurnE20TransferFailed();
-                    }
-                } else {
-                    refundAmount = currentAmt * totalSupplyOf[currentID] / totalSupplyOf[parentOf[currentID]];
-                    virtualAccount = toAddress(currentID);
-                    safeTransferFrom(virtualAccount, _msgSender(), parentOf[currentID], refundAmount, msg.data[0:1]);
-                    delete virtualAccount;
+                    useBefore = false;
+                    safeTransferFrom(_msgSender(), toAddress(currentID), parentOf[currentID], currentAmt, msg.data[0:1]);
+                    useBefore = true;
                 }
             }
 
@@ -350,6 +362,7 @@ contract Fungido is ERC1155 {
                 ++i;
             }
         }
+        useBefore = true;
     }
 
     function _mint(address to, uint256 id, uint256 amount, bytes memory data) internal override {
@@ -358,8 +371,17 @@ contract Fungido is ERC1155 {
     }
 
     function _burn(address from, uint256 id, uint256 amount) internal override {
-        super._burn(from, id, amount);
         totalSupplyOf[id] -= amount;
+
+        if (parentOf[id] > id && id > 10 ether) {
+            mintInflation(id);
+
+            super._burn(_msgSender(), id, amount);
+            useBefore = true;
+            return;
+        } else {
+            super._burn(from, id, amount);
+        }
     }
 
     function _msgSender() internal view virtual returns (address) {
@@ -435,9 +457,11 @@ contract Fungido is ERC1155 {
             N.inflation = inflSec[n][0];
             N.balanceAnchor = balanceOf(toAddress(n), parentOf[n]);
             N.balanceBudget = balanceOf(toAddress(n), n);
+            N.value = asRootValuation(n, N.balanceBudget);
             N.membraneId = inUseMembraneId[n][0];
             N.membersOfNode = members[n];
             N.childrenNodes = childrenOf[n];
+            N.rootPath = getFidPath(n);
 
             uint256 len = childrenOf[n].length;
 

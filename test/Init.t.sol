@@ -47,9 +47,6 @@ contract InitTest is Test {
         vm.label(address(F20), "F20");
         vm.label(address(E), "Execution");
         vm.label(address(F), "BagBok");
-        vm.label(address(F20), "F20");
-        vm.label(address(E), "Execution");
-        vm.label(address(F), "Fun");
         vm.label(address(A1), "A1");
         vm.label(address(A2), "A2");
         vm.label(address(A3), "A3");

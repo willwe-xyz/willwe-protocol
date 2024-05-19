@@ -257,14 +257,22 @@ contract FunTests is Test, TokenPrep, InitTest {
     }
 
     function testMintPath() public {
-        uint256 b22_1 = F.balanceOf(A1, B22);
-        uint256 b2_1 = F.balanceOf(A1, F.getParentOf(B22));
+        vm.prank(address(1));
+        T1.transfer(A2, 10 ether);
 
-        vm.prank(A1);
+        vm.prank(address(A2));
+        T1.approve(address(F), 10 ether);
+
+        uint256 b22_1 = F.balanceOf(A2, B22);
+        uint256 b2_1 = F.balanceOf(A2, F.getParentOf(B22));
+
+        vm.assertTrue(T1.balanceOf(A2) > 1 ether, "not enough balance");
+
+        vm.prank(A2);
         F.mintPath(B22, 1 ether);
 
-        uint256 b22_2 = F.balanceOf(A1, B22);
-        uint256 b2_2 = F.balanceOf(A1, F.getParentOf(B22));
+        uint256 b22_2 = F.balanceOf(A2, B22);
+        uint256 b2_2 = F.balanceOf(A2, F.getParentOf(B22));
 
         assertTrue(b22_1 + 1 ether >= b22_2, "diff not constant1");
         assertTrue(b2_1 + 1 ether >= b2_2, "diff not constant2");
