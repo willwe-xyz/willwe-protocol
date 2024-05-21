@@ -45,16 +45,12 @@ contract Fun is Fungido {
 
         uint256 i;
 
-        for (i; i < signals.length;) {
+        for (i; i < signals.length; ++i) {
             emit Signal(targetNode_, _msgSender(), signals[i]);
 
             if (i <= 1) {
-                if (signals[i] == 0) {
-                    unchecked {
-                        ++i;
-                    }
-                    continue;
-                }
+                if (signals[i] == 0) continue;
+    
 
                 bytes32 userKey = keccak256((abi.encodePacked(targetNode_, user, signals[i])));
                 bytes32 nodeKey = keccak256((abi.encodePacked(targetNode_, signals[i])));
@@ -62,7 +58,7 @@ contract Fun is Fungido {
                 childrenOf[targetNode_ + user - 1].push(signals[0]);
                 childrenOf[targetNode_ + user - 2].push(signals[1]);
 
-                if (i == 0 && (parentOf[targetNode_] != targetNode_)) {
+                if (i == 0) {
                     i = signals[i];
                     if (i < type(uint160).max) revert BadLen();
                     if (!(M.getMembraneById(i).tokens.length > 0)) revert MembraneNotFound();
@@ -103,9 +99,6 @@ contract Fun is Fungido {
                     i = 1;
                 }
 
-                unchecked {
-                    ++i;
-                }
                 continue;
             }
             uint256[] memory children = childrenOf[targetNode_];
@@ -132,9 +125,7 @@ contract Fun is Fungido {
                 options[childParentEligibilityPerSec][1] = block.timestamp;
             }
 
-            unchecked {
-                ++i;
-            }
+
         }
     }
 
@@ -143,12 +134,14 @@ contract Fun is Fungido {
     function redistribute(uint256 nodeId_) public returns (uint256 distributedAmt) {
         uint256 parent = parentOf[nodeId_];
         if (parent == 0) revert NoSoup();
-        mintInflation(nodeId_);
+        mintInflation(parentOf[nodeId_]);
 
         bytes32 childParentEligibility = keccak256((abi.encodePacked(nodeId_, parent)));
         distributedAmt = options[childParentEligibility][0] * (block.timestamp - options[childParentEligibility][1]);
+        options[childParentEligibility][0] = block.timestamp;
 
-        _mint(address(uint160(nodeId_)), parent, distributedAmt, abi.encodePacked("redistribution"));
+        // _mint(address(uint160(nodeId_)), parent, distributedAmt, abi.encodePacked("redistribution"));
+        _safeTransfer(toAddress(parent), toAddress(nodeId_), parent, distributedAmt, abi.encodePacked("redistribution"));
     }
 
     /////////// External
