@@ -118,7 +118,7 @@ contract InflationTest is Test, TokenPrep, InitTest {
         vm.revertTo(snap1); //// 2 step
 
         F.mint(root, b1);
-        F.mintMembership(root, A100);
+        F.mintMembership(root);
         uint256 root2 = F.spawnBranch(root);
         F.mint(root2, b1);
         vm.warp(block.timestamp + 100000);

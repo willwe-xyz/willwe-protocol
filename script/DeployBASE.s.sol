@@ -2,13 +2,14 @@
 pragma solidity ^0.8.18;
 
 import "forge-std/Script.sol";
-import {BagBok} from "../src/BagBok.sol";
+import {WillWe} from "../src/WillWe.sol";
 import {Execution} from "../src/Execution.sol";
 import {Membranes} from "../src/Membranes.sol";
 import {RVT} from "../src/RVT.sol";
+import {TokenPrep} from "../test/mock/Tokens.sol";
 
-contract DeployBASE is Script {
-    BagBok FunFun;
+contract DeployBASE is Script, TokenPrep {
+    WillWe FunFun;
     Execution E;
     RVT F20;
 
@@ -26,7 +27,12 @@ contract DeployBASE is Script {
     function run() public {
         uint256 runPVK = uint256(vm.envUint("BASE_DEP_PVK4"));
         address deployer = vm.addr(runPVK);
+
+        ////////////////// MOCK token
+        address randomToken = makeReturnX20RON();
         vm.label(deployer, "deployer");
+        console.log("##### mockRON token ", randomToken);
+        ////////////////// MOCK
 
         console.log("##### Deployer : ", deployer, "| expected", "0xcEEeDDD949C41b1086FC7Aa6d953a8c254160A90");
         console.log("#________________________________");
@@ -49,7 +55,7 @@ contract DeployBASE is Script {
         Membranes M = new Membranes();
 
         E = new Execution(address(F20));
-        FunFun = new BagBok(address(E), address(M));
+        FunFun = new WillWe(address(E), address(M));
         vm.label(address(FunFun), "FunFun");
 
         console.log("###############################");
@@ -93,7 +99,7 @@ contract DeployBASE is Script {
         console.log("RVI: ", address(F20));
         console.log("Membrane: ", address(M));
         console.log("Execution: ", address(E));
-        console.log("BagBok: ", address(FunFun));
+        console.log("WillWe: ", address(FunFun));
         console.log("###############################");
 
         vm.stopBroadcast();

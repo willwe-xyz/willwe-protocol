@@ -11,6 +11,12 @@ contract X20 is ERC20("AnERC20Token", "USDC") {
     }
 }
 
+contract X20RON is ERC20("New Romanes Leu", "RON") {
+    constructor() {
+        _mint(address(msg.sender), 1_000_000 ether);
+    }
+}
+
 // contract X721 is ERC721("AnERC721Token", "aE20") {
 //        constructor() {
 //        }
@@ -22,6 +28,9 @@ contract TokenPrep {
         return address(new X20());
     }
 
+    function makeReturnX20RON() public returns (address) {
+        return address(new X20RON());
+    }
     // function makeReturnERC721() {
     //      return address( new X721());
     // }

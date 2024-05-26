@@ -2,14 +2,14 @@
 pragma solidity 0.8.19;
 
 import "forge-std/Script.sol";
-import {BagBok} from "../src/BagBok.sol";
+import {WillWe} from "../src/WillWe.sol";
 import {Execution} from "../src/Execution.sol";
 import {Membranes} from "../src/Membranes.sol";
 import {RVT} from "../src/RVT.sol";
 
 //// @notice !
-contract BagBokDeploy is Script {
-    BagBok FunFun;
+contract WillWeDeploy is Script {
+    WillWe FunFun;
     Execution E;
     RVT F20;
     Membranes M;
@@ -32,7 +32,7 @@ contract BagBokDeploy is Script {
         M = Membranes(0x9B94428204D2988078c5296202450d615279358c);
         E = Execution(0x984c510F515a1c0F9a254A421B60F80ec56D1439);
         F20 = RVT(0x3954625a8CB896DC5076E790F397DF9ce6Ca339b);
-        FunFun = BagBok(0x1C51DeBD74b8f8aCf7BD1F6e9606195af65285AC);
+        FunFun = WillWe(0x1C51DeBD74b8f8aCf7BD1F6e9606195af65285AC);
         rootNode = 327294304350120122462208761167117298133480649627;
         govNodeParent = 327294304350120122462208761167117298131766957534;
 
@@ -74,7 +74,7 @@ contract BagBokDeploy is Script {
         vm.label(address(F20), "deployer");
         Membranes M = new Membranes();
         E = new Execution(address(F20));
-        FunFun = new BagBok(address(E), address(M));
+        FunFun = new WillWe(address(E), address(M));
         vm.label(address(FunFun), "FunFun"); */
 
     ////////////////////////////////////////////

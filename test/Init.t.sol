@@ -7,7 +7,7 @@ import "../src/Fungido.sol";
 import {RVT} from "../src/RVT.sol";
 import {Execution} from "../src/Execution.sol";
 
-import {BagBok} from "../src/BagBok.sol";
+import {WillWe} from "../src/WillWe.sol";
 
 import {IFun} from "../src/interfaces/IFun.sol";
 
@@ -17,7 +17,7 @@ import "forge-std/console.sol";
 
 contract InitTest is Test {
     RVT public F20;
-    BagBok public F;
+    WillWe public F;
     Membranes public M;
     address public E;
 
@@ -42,11 +42,11 @@ contract InitTest is Test {
         F20 = new RVT(10, 1, founders, amounts);
         M = new Membranes();
         E = address(new Execution(address(F20)));
-        F = new BagBok(E, address(M));
+        F = new WillWe(E, address(M));
 
         vm.label(address(F20), "F20");
         vm.label(address(E), "Execution");
-        vm.label(address(F), "BagBok");
+        vm.label(address(F), "WillWe");
         vm.label(address(A1), "A1");
         vm.label(address(A2), "A2");
         vm.label(address(A3), "A3");

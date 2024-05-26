@@ -26,4 +26,8 @@ interface IPowerProxy {
     function tryAggregate(bool requireSuccess, Call[] calldata calls) external returns (Result[] memory returnData);
     function setImplementation(address implementation_) external;
     function setOwner(address owner_) external;
+
+    function isValidSignature(bytes32 hash_, bytes calldata _signature) external view returns (bytes4);
+    function setSignedHash(bytes32 hash_) external;
+
 }

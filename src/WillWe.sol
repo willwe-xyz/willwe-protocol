@@ -16,9 +16,9 @@ pragma solidity ^0.8.19;
 
 import {Fun} from "./Fun.sol";
 
-/// @title BagBok
+/// @title WillWe
 /// @author parseb
 /// @notice Experimental. Do not use.
-contract BagBok is Fun {
+contract WillWe is Fun {
     constructor(address Execution, address Membrane) Fun(Execution, Membrane) {}
 }

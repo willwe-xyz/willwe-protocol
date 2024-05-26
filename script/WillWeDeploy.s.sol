@@ -2,13 +2,13 @@
 pragma solidity ^0.8.18;
 
 import "forge-std/Script.sol";
-import {BagBok} from "../src/BagBok.sol";
+import {WillWe} from "../src/WillWe.sol";
 import {Execution} from "../src/Execution.sol";
 import {Membranes} from "../src/Membranes.sol";
 import {RVT} from "../src/RVT.sol";
 
-contract BagBokDeploy is Script {
-    BagBok FunFun;
+contract WillWeDeploy is Script {
+    WillWe FunFun;
     Execution E;
     RVT F20;
 
@@ -48,7 +48,7 @@ contract BagBokDeploy is Script {
         Membranes M = new Membranes();
 
         E = new Execution(address(F20));
-        FunFun = new BagBok(address(E), address(M));
+        FunFun = new WillWe(address(E), address(M));
         vm.label(address(FunFun), "FunFun");
 
         console.log("###############################");
@@ -85,7 +85,7 @@ contract BagBokDeploy is Script {
         console.log("RVT: ", address(F20));
         console.log("Membrane: ", address(M));
         console.log("Execution: ", address(E));
-        console.log("bagBok: ", address(FunFun));
+        console.log("WillWe: ", address(FunFun));
         console.log("###############################");
         vm.stopBroadcast();
     }

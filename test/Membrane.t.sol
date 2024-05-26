@@ -104,13 +104,13 @@ contract MembraneTests is Test, InitTest {
 
         vm.expectRevert();
         vm.prank(address(5));
-        F.mintMembership(B1, address(5));
+        F.mintMembership(B1);
 
         vm.prank(address(1));
         X20token.transfer(address(5), 2 ether);
 
         vm.prank(address(5));
-        F.mintMembership(B1, address(5));
+        F.mintMembership(B1);
 
         uint256 snapfor_renounce = vm.snapshot();
 

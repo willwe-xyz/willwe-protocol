@@ -31,7 +31,7 @@ contract Fun is Fungido {
     /// @notice formatted as follows: membrane, inflation, [recognition]
     /// @param targetNode_ node for which to signal
     /// @param signals array of signaling values constructed starting with membrane, inflation, and [redistributive preferences for sub-entities]
-
+    /// @dev skips values over 100_00
     function sendSignal(uint256 targetNode_, uint256[] memory signals) external {
         if (parentOf[targetNode_] == targetNode_) revert RootNodeOrNone();
         if (!(isMember(msg.sender, targetNode_))) revert NotMember();
@@ -44,13 +44,13 @@ contract Fun is Fungido {
         if (balanceOfSender < targetTotalS / 100_00) revert Noise();
 
         uint256 i;
+        uint256 sigSum;
 
         for (i; i < signals.length; ++i) {
             emit Signal(targetNode_, _msgSender(), signals[i]);
 
             if (i <= 1) {
                 if (signals[i] == 0) continue;
-    
 
                 bytes32 userKey = keccak256((abi.encodePacked(targetNode_, user, signals[i])));
                 bytes32 nodeKey = keccak256((abi.encodePacked(targetNode_, signals[i])));
@@ -101,6 +101,10 @@ contract Fun is Fungido {
 
                 continue;
             }
+            if (signals[i] > 100_00) continue;
+            sigSum += signals[i];
+            if (sigSum > 100_00) revert SignalOverflow();
+
             uint256[] memory children = childrenOf[targetNode_];
             if (children.length != (signals.length - 2)) revert BadLen();
             bytes32 userTargetedPreference = keccak256((abi.encodePacked(user, targetNode_, children[i - 2])));
@@ -124,9 +128,8 @@ contract Fun is Fungido {
 
                 options[childParentEligibilityPerSec][1] = block.timestamp;
             }
-
-
         }
+        if (sigSum != 0 && sigSum != 100_00) revert IncompleteSign();
     }
 
     //// @notice redistributes eligible acummulated inflationary flows
@@ -140,7 +143,6 @@ contract Fun is Fungido {
         distributedAmt = options[childParentEligibility][0] * (block.timestamp - options[childParentEligibility][1]);
         options[childParentEligibility][0] = block.timestamp;
 
-        // _mint(address(uint160(nodeId_)), parent, distributedAmt, abi.encodePacked("redistribution"));
         _safeTransfer(toAddress(parent), toAddress(nodeId_), parent, distributedAmt, abi.encodePacked("redistribution"));
     }
 

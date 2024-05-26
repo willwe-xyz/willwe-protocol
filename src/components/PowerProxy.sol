@@ -1,5 +1,7 @@
 pragma solidity ^0.8.19;
 
+import {Receiver} from "solady/accounts/Receiver.sol";
+
 /**
  * @dev This abstract contract provides a fallback function that delegates all calls to another contract using the EVM
  * instruction `delegatecall`. We refer to the second contract as the _implementation_ behind the proxy, and it has to
@@ -19,9 +21,11 @@ pragma solidity ^0.8.19;
 /// @author OpenZeppelin OpenZeppelin.com
 
 /// @notice A simple authenticated proxy. A mashup of (MakerDAO) MulticallV2 and simple (OpenZeppelin) proxy.
-contract PowerProxy {
+contract PowerProxy is Receiver {
     address public owner;
     address public implementation;
+
+    mapping(bytes32 => bool) isSignedHash;
 
     constructor(address proxyOwner_) {
         owner = proxyOwner_;
@@ -63,11 +67,24 @@ contract PowerProxy {
         owner = owner_;
     }
 
+    function setSignedHash(bytes32 hash_) external {
+        if (msg.sender != owner) revert NotOwner();
+        isSignedHash[hash_] = !isSignedHash[hash_];
+    }
+
+    /**
+     * @notice Verifies that the signer is the owner of the signing contract.
+     */
+    function isValidSignature(bytes32 hash_, bytes calldata _signature) external view returns (bytes4) {
+        // Validate signatures
+        if (isSignedHash[hash_]) return 0x1626ba7e;
+    }
+
     /**
      * @dev Fallback function that delegates calls to the address returned by `_implementation()`. Will run if no other
      * function in the contract matches the call data.
      */
-    fallback() external payable {
+    fallback() external payable override receiverFallback {
         if (implementation == address(0)) revert noFallback();
 
         address i;
@@ -90,5 +107,12 @@ contract PowerProxy {
             case 0 { revert(0, returndatasize()) }
             default { return(0, returndatasize()) }
         }
+    }
+
+    function onERC1155Received(address operator, address from, uint256 id, uint256 value, bytes calldata data)
+        external pure
+        returns (bytes4)
+    {
+        return 0xf23a6e61;
     }
 }

@@ -13,12 +13,14 @@ import {EIP712} from "./info/EIP712.sol";
 
 import {PowerProxy} from "./components/PowerProxy.sol";
 
+import {Receiver} from "solady/accounts/Receiver.sol";
+
 ///////////////////////////////////////////////
 ////////////////////////////////////
 
 /// @title Fungido
 /// @author parseb
-contract Execution is IERC1155Receiver, EIP712 {
+contract Execution is EIP712, Receiver {
     using Address for address;
     using Strings for string;
 
@@ -368,26 +370,5 @@ contract Execution is IERC1155Receiver, EIP712 {
 
     function getSigQueue(bytes32 hash_) public view returns (SignatureQueue memory) {
         return getSigQueueByHash[hash_];
-    }
-
-    function onERC1155BatchReceived(
-        address operator,
-        address from,
-        uint256[] calldata ids,
-        uint256[] calldata values,
-        bytes calldata data
-    ) external override returns (bytes4) {
-        return bytes4(keccak256("onERC1155BatchReceived(address,address,uint256[],uint256[],bytes)"));
-    }
-
-    function onERC1155Received(address operator, address from, uint256 id, uint256 value, bytes calldata data)
-        external
-        returns (bytes4)
-    {
-        return bytes4(keccak256("onERC1155Received(address,address,uint256,uint256,bytes)"));
-    }
-
-    function supportsInterface(bytes4 interfaceID) external view override returns (bool) {
-        return false;
     }
 }

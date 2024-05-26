@@ -61,8 +61,8 @@ contract Fungido is ERC1155 {
         control[0] = msg.sender;
         M = IMembrane(membranes);
 
-        name = "BagBok.com";
-        symbol = "BB";
+        name = "WillWe.xyz";
+        symbol = "WILL";
 
         IRVT(RVT).pingInit();
         useBefore = true;
@@ -93,9 +93,9 @@ contract Fungido is ERC1155 {
     error CoreGasTransferFailed();
     error NoControl();
     error Unautorised();
-    //////
-    error ThisShouldBeUnreachable();
+    error SignalOverflow();
     error InsufficientAmt();
+    error IncompleteSign();
 
     ////////////////////////////////////////////////
     //////________MODIFIER________/////////////////
@@ -145,17 +145,17 @@ contract Fungido is ERC1155 {
         inUseMembraneId[newID][1] = block.timestamp;
     }
 
-    function mintMembership(uint256 fid_, address to_) public virtual {
+    function mintMembership(uint256 fid_) public virtual {
         if (parentOf[fid_] == 0) revert BranchNotFound();
-        if (isMember(to_, fid_)) revert AlreadyMember();
-        if (!M.gCheck(to_, getMembraneOf(fid_))) revert Unqualified();
+        if (isMember(_msgSender(), fid_)) revert AlreadyMember();
+        if (!M.gCheck(_msgSender(), getMembraneOf(fid_))) revert Unqualified();
 
-        _giveMembership(to_, fid_);
+        _giveMembership(_msgSender(), fid_);
     }
 
     function mint(uint256 fid_, uint256 amount_) public virtual {
         if (parentOf[fid_] == 0) revert UnregisteredFungible();
-        _mint(_msgSender(), fid_, amount_, abi.encodePacked(fid_, "fungible", amount_));
+        _mint(_msgSender(), fid_, amount_, abi.encodePacked("fungible"));
     }
 
     function mintPath(uint256 target_, uint256 amount_) external {
@@ -389,11 +389,11 @@ contract Fungido is ERC1155 {
         return msg.sender;
     }
 
-    function toAddress(uint256 x) public view returns (address) {
+    function toAddress(uint256 x) public pure returns (address) {
         return x > type(uint160).max ? address(0) : address(uint160(x));
     }
 
-    function toID(address x) public view returns (uint256) {
+    function toID(address x) public pure returns (uint256) {
         return uint256(uint160(x));
     }
 

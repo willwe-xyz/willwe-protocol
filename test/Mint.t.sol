@@ -99,9 +99,14 @@ contract MintTest is Test, TokenPrep, InitTest {
         assertTrue(B2 < B1, "shloud be smaller");
         assertTrue(F.getParentOf(B2) == B1, "not expected parent");
         assertTrue(B1 != B2, "unexpected same");
+        assertTrue(F.getParentOf(B1) == B1, "expected B1 root");
+
+        uint256 t20_0b1 = T20.balanceOf(address(F));
 
         T20.approve(address(F), 2 ether);
         F.mint(B2, 2 ether);
+
+        assertTrue(t20_0b1 == T20.balanceOf(address(F)), "core balance change");
 
         uint256 bal2 = F.balanceOf(A1, B2);
         assertTrue(bal2 == 2 ether, "Qty. mint missmatch");

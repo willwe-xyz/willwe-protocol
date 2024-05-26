@@ -68,10 +68,10 @@ contract Endpoints is Test, TokenPrep, InitTest {
         vm.stopPrank();
 
         vm.prank(A2);
-        F.mintMembership(rootBranchID, A2);
+        F.mintMembership(rootBranchID);
 
         vm.prank(A3);
-        F.mintMembership(rootBranchID, A3);
+        F.mintMembership(rootBranchID);
 
         receiver = address(bytes20(type(uint160).max / 2));
     }

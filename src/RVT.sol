@@ -16,7 +16,7 @@ contract RVT is ERC20ASG {
     error OnlyPointer();
 
     constructor(uint256 price_, uint256 pps_, address[] memory initMintAddrs_, uint256[] memory initMintAmts_)
-        ERC20ASG("BagBok Development", "BD", price_, pps_, initMintAddrs_, initMintAmts_)
+        ERC20ASG("WillWe", "WILL", price_, pps_, initMintAddrs_, initMintAmts_)
     {
         Pointer = msg.sender;
     }

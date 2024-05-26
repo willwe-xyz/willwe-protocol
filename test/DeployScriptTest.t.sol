@@ -8,14 +8,14 @@ import {TokenPrep} from "./mock/Tokens.sol";
 import {RVT} from "../src/RVT.sol";
 import {Execution} from "../src/Execution.sol";
 
-import {BagBok} from "../src/BagBok.sol";
+import {WillWe} from "../src/WillWe.sol";
 import {IPowerProxy} from "../src/interfaces/IPowerProxy.sol";
 
 import {InitTest} from "./Init.t.sol";
 
-import {BagBokDeploy} from "../script/BagBokDeploy.s.sol";
+import {WillWeDeploy} from "../script/WillWeDeploy.s.sol";
 
-contract LocalG is Test, TokenPrep, BagBokDeploy {
+contract LocalG is Test, TokenPrep, WillWeDeploy {
     IPowerProxy FoundingSafe;
     address deployer;
 
