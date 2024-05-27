@@ -5,13 +5,13 @@ import "forge-std/Script.sol";
 import {WillWe} from "../src/WillWe.sol";
 import {Execution} from "../src/Execution.sol";
 import {Membranes} from "../src/Membranes.sol";
-import {RVT} from "../src/RVT.sol";
+import {Will} from "../src/Will.sol";
 
 //// @notice !
 contract WillWeDeploy is Script {
     WillWe FunFun;
     Execution E;
-    RVT F20;
+    Will F20;
     Membranes M;
     uint256 govNodeParent;
     uint256 rootNode;
@@ -31,7 +31,7 @@ contract WillWeDeploy is Script {
 
         M = Membranes(0x9B94428204D2988078c5296202450d615279358c);
         E = Execution(0x984c510F515a1c0F9a254A421B60F80ec56D1439);
-        F20 = RVT(0x3954625a8CB896DC5076E790F397DF9ce6Ca339b);
+        F20 = Will(0x3954625a8CB896DC5076E790F397DF9ce6Ca339b);
         FunFun = WillWe(0x1C51DeBD74b8f8aCf7BD1F6e9606195af65285AC);
         rootNode = 327294304350120122462208761167117298133480649627;
         govNodeParent = 327294304350120122462208761167117298131766957534;
@@ -70,7 +70,7 @@ contract WillWeDeploy is Script {
     /* vm.startBroadcast(runPVK);
         //////////////////////////////////////////////////////
         
-        F20 = new RVT(1_000_000_000, piper_sec, founders, amounts);
+        F20 = new Will(1_000_000_000, piper_sec, founders, amounts);
         vm.label(address(F20), "deployer");
         Membranes M = new Membranes();
         E = new Execution(address(F20));

@@ -4,7 +4,7 @@ pragma solidity 0.8.19;
 import "forge-std/Test.sol";
 import "../src/Fungido.sol";
 import {TokenPrep} from "./mock/Tokens.sol";
-import {RVT} from "../src/RVT.sol";
+import {Will} from "../src/Will.sol";
 import {Execution} from "../src/Execution.sol";
 
 import {Fun} from "../src/Fun.sol";

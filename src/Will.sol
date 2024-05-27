@@ -9,7 +9,7 @@ import {IFun} from "./interfaces/IFun.sol";
 /// @title Root Value Token
 /// @author Bogdan A. | parseb
 /// @notice this is the token of the protocol
-contract RVT is ERC20ASG {
+contract Will is ERC20ASG {
     address BagBok;
     address Pointer;
 

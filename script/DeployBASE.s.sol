@@ -5,13 +5,13 @@ import "forge-std/Script.sol";
 import {WillWe} from "../src/WillWe.sol";
 import {Execution} from "../src/Execution.sol";
 import {Membranes} from "../src/Membranes.sol";
-import {RVT} from "../src/RVT.sol";
+import {Will} from "../src/Will.sol";
 import {TokenPrep} from "../test/mock/Tokens.sol";
 
 contract DeployBASE is Script, TokenPrep {
     WillWe FunFun;
     Execution E;
-    RVT F20;
+    Will F20;
 
     //// @dev foundationAgent transit value.
 
@@ -49,8 +49,8 @@ contract DeployBASE is Script, TokenPrep {
 
         vm.startBroadcast(runPVK);
 
-        F20 = new RVT(1_000_000_000, piper_sec, founders, amounts);
-        vm.label(address(F20), "RVT");
+        F20 = new Will(1_000_000_000, piper_sec, founders, amounts);
+        vm.label(address(F20), "Will");
 
         Membranes M = new Membranes();
 

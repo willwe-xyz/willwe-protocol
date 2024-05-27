@@ -7,14 +7,14 @@ import {Execution} from "../src/Execution.sol";
 
 import {Membranes} from "../src/Membranes.sol";
 
-import {RVT} from "../src/RVT.sol";
+import {Will} from "../src/Will.sol";
 import {X20} from "../test/mock/Tokens.sol";
 
 contract LineaDeployAndPopulate is Script {
     Fun FunFun;
     Execution E;
     Membranes M;
-    RVT RVT20;
+    Will Will20;
     X20 MockUSDC;
 
     address Normie1;
@@ -47,16 +47,16 @@ contract LineaDeployAndPopulate is Script {
         amounts[0] = 1 ether * 10_000_000;
         amounts[1] = 1 ether * 10_000_000;
 
-        RVT20 = new RVT(1000, 1, founders, amounts);
+        Will20 = new Will(1000, 1, founders, amounts);
 
-        E = new Execution(address(RVT20));
+        E = new Execution(address(Will20));
         M = new Membranes();
 
         FunFun = new Fun(address(E), address(M));
 
-        RVT20.transfer(Normie1, 10 ether);
-        RVT20.transfer(Normie2, 20 ether);
-        RVT20.transfer(Normie3, 30 ether);
+        Will20.transfer(Normie1, 10 ether);
+        Will20.transfer(Normie2, 20 ether);
+        Will20.transfer(Normie3, 30 ether);
 
         MockUSDC = new X20();
         MockUSDC.transfer(Normie1, 11 ether);
@@ -67,7 +67,7 @@ contract LineaDeployAndPopulate is Script {
         console.log("                                                             ");
         console.log("###############################");
         console.log("                                                             ");
-        console.log("RootValueToken RVT20 deployed at : ", address(RVT20));
+        console.log("RootValueToken Will20 deployed at : ", address(Will20));
         console.log("                                                             ");
         console.log("###############################");
         console.log("                                                             ");

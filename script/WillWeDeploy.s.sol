@@ -5,12 +5,12 @@ import "forge-std/Script.sol";
 import {WillWe} from "../src/WillWe.sol";
 import {Execution} from "../src/Execution.sol";
 import {Membranes} from "../src/Membranes.sol";
-import {RVT} from "../src/RVT.sol";
+import {Will} from "../src/Will.sol";
 
 contract WillWeDeploy is Script {
     WillWe FunFun;
     Execution E;
-    RVT F20;
+    Will F20;
 
     function setUp() public virtual {
         console.log("###############################");
@@ -42,8 +42,8 @@ contract WillWeDeploy is Script {
 
         vm.startBroadcast(runPVK);
 
-        F20 = new RVT(1_000_000_000, piper_sec, founders, amounts);
-        vm.label(address(F20), "RVT");
+        F20 = new Will(1_000_000_000, piper_sec, founders, amounts);
+        vm.label(address(F20), "Will");
 
         Membranes M = new Membranes();
 
@@ -82,7 +82,7 @@ contract WillWeDeploy is Script {
         console.log(" ");
         console.log("###############################");
         console.log("Foundation Agent Safe at: ", E.FoundationAgent());
-        console.log("RVT: ", address(F20));
+        console.log("Will: ", address(F20));
         console.log("Membrane: ", address(M));
         console.log("Execution: ", address(E));
         console.log("WillWe: ", address(FunFun));

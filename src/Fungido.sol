@@ -7,7 +7,7 @@ import {ERC1155} from "solady/tokens/ERC1155.sol";
 import {IERC20} from "openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 
 import "./interfaces/IExecution.sol";
-import {IRVT} from "./interfaces/IRVT.sol";
+import {IWill} from "./interfaces/IWill.sol";
 import {NodeState, UserSignal} from "./interfaces/IFun.sol";
 import "./interfaces/IMembrane.sol";
 ///////////////////////////////////////////////
@@ -20,7 +20,7 @@ contract Fungido is ERC1155 {
     uint256 immutable initTime = block.timestamp;
     uint256 public entityCount;
     address public executionAddress;
-    address public RVT;
+    address public Will;
     IMembrane M;
     /// @notice stores the total supply of each id | id -> supply
     mapping(uint256 => uint256) public totalSupplyOf;
@@ -57,14 +57,14 @@ contract Fungido is ERC1155 {
     constructor(address executionAddr, address membranes) {
         taxRate[address(0)] = 100_00;
         executionAddress = executionAddr;
-        RVT = IExecution(executionAddr).RootValueToken();
+        Will = IExecution(executionAddr).RootValueToken();
         control[0] = msg.sender;
         M = IMembrane(membranes);
 
         name = "WillWe.xyz";
         symbol = "WILL";
 
-        IRVT(RVT).pingInit();
+        IWill(Will).pingInit();
         useBefore = true;
     }
 
@@ -214,7 +214,7 @@ contract Fungido is ERC1155 {
 
             if (
                 !(
-                    IERC20(toAddress(fid_)).transfer(RVT, taxAmount)
+                    IERC20(toAddress(fid_)).transfer(Will, taxAmount)
                         && IERC20(toAddress(fid_)).transfer(_msgSender(), refundAmount)
                 )
             ) revert BurnE20TransferFailed();
@@ -385,7 +385,7 @@ contract Fungido is ERC1155 {
     }
 
     function _msgSender() internal view virtual returns (address) {
-        if (msg.sender == RVT) return address(this);
+        if (msg.sender == Will) return address(this);
         return msg.sender;
     }
 
@@ -494,6 +494,6 @@ contract Fungido is ERC1155 {
      * actual token type ID.
      */
     function uri(uint256 id_) public view virtual override returns (string memory) {
-        return string(abi.encodePacked("https://bagbok.com/node-meta/", abi.encode(id_)));
+        return string(abi.encodePacked("https://willwe.xyz/metadata/", id_));
     }
 }

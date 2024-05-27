@@ -11,7 +11,7 @@ import {SignatureQueue, SQState, MovementType} from "../src/interfaces/IExecutio
 import {Movement, Call} from "../src/interfaces/IFun.sol";
 import {IERC20} from "openzeppelin/token/ERC20/IERC20.sol";
 
-import {RVT} from "../src/RVT.sol";
+import {Will} from "../src/Will.sol";
 import {InitTest} from "./Init.t.sol";
 import {ECDSA} from "openzeppelin/utils/cryptography/ECDSA.sol";
 import {IPowerProxy} from "../src/interfaces/IPowerProxy.sol";

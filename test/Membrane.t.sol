@@ -8,7 +8,7 @@ import {ERC721} from "openzeppelin-contracts/contracts/token/ERC721/ERC721.sol";
 
 import {ERC721} from "openzeppelin-contracts/contracts/token/ERC721/ERC721.sol";
 import {X20} from "./mock/Tokens.sol";
-import {RVT} from "../src/RVT.sol";
+import {Will} from "../src/Will.sol";
 import {Execution} from "../src/Execution.sol";
 
 import {Fun} from "../src/Fun.sol";

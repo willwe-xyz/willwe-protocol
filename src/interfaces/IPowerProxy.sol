@@ -29,5 +29,4 @@ interface IPowerProxy {
 
     function isValidSignature(bytes32 hash_, bytes calldata _signature) external view returns (bytes4);
     function setSignedHash(bytes32 hash_) external;
-
 }

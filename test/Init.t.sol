@@ -4,7 +4,7 @@ pragma solidity 0.8.19;
 import "forge-std/Test.sol";
 import "../src/Fungido.sol";
 
-import {RVT} from "../src/RVT.sol";
+import {Will} from "../src/Will.sol";
 import {Execution} from "../src/Execution.sol";
 
 import {WillWe} from "../src/WillWe.sol";
@@ -16,7 +16,7 @@ import {Membranes} from "../src/Membranes.sol";
 import "forge-std/console.sol";
 
 contract InitTest is Test {
-    RVT public F20;
+    Will public F20;
     WillWe public F;
     Membranes public M;
     address public E;
@@ -39,7 +39,7 @@ contract InitTest is Test {
         founders[0] = address(A1);
         amounts[0] = 1 ether * 10_000_000;
 
-        F20 = new RVT(10, 1, founders, amounts);
+        F20 = new Will(10, 1, founders, amounts);
         M = new Membranes();
         E = address(new Execution(address(F20)));
         F = new WillWe(E, address(M));

@@ -110,7 +110,8 @@ contract PowerProxy is Receiver {
     }
 
     function onERC1155Received(address operator, address from, uint256 id, uint256 value, bytes calldata data)
-        external pure
+        external
+        pure
         returns (bytes4)
     {
         return 0xf23a6e61;

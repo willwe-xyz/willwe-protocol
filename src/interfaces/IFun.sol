@@ -90,7 +90,7 @@ interface IFun is IERC1155 {
     function totalSupply(uint256 nodeId) external view returns (uint256);
     function executionEngineAddress() external view returns (address);
     function rule() external;
-    function RVT() external view returns (address);
+    function Will() external view returns (address);
     function getUserInteractions(address user_) external view returns (uint256[][2] memory);
     function removeSignature(bytes32 sigHash_, uint256 index_) external;
     function getInteractionDataOf(address user_)
