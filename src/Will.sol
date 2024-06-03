@@ -10,7 +10,7 @@ import {IFun} from "./interfaces/IFun.sol";
 /// @author Bogdan A. | parseb
 /// @notice this is the token of the protocol
 contract Will is ERC20ASG {
-    address BagBok;
+    address WillWe;
     address Pointer;
 
     error OnlyPointer();
@@ -28,8 +28,8 @@ contract Will is ERC20ASG {
     error PayCallF();
 
     function pingInit() external {
-        if (BagBok == address(0) && msg.sender.code.length == 0) {
-            BagBok = msg.sender;
+        if (WillWe == address(0) && msg.sender.code.length == 0) {
+            WillWe = msg.sender;
         } else {
             revert PingF();
         }
@@ -67,12 +67,9 @@ contract Will is ERC20ASG {
         amtValReturned = burn(amountToBurn_);
     }
 
-    function transferGas(address from, address to, uint256 amount) external returns (bool) {
-        if (msg.sender != BagBok) revert OnlyFun();
-        if (to == BagBok && msg.sender == BagBok) _approve(from, to, amount);
-        transferFrom(from, to, amount);
-        IFun(BagBok).mint(uint256(uint160(BagBok)), amount);
-        burnTo(amount / 1 ether, from);
+    function mintFromETH() public payable returns (uint256 howMuchMinted) {
+        howMuchMinted = msg.value / currentPrice();
+        mint(howMuchMinted);
     }
 
     function setPointer(address newPointer_) external {
@@ -80,8 +77,12 @@ contract Will is ERC20ASG {
         Pointer = newPointer_;
     }
 
-    function setBagBook(address bagb_) external {
+    function setWillWe(address willWe_) external {
         if (msg.sender != Pointer) revert OnlyPointer();
-        BagBok = bagb_;
+        WillWe = willWe_;
+    }
+
+    receive() external payable {
+        mintFromETH();
     }
 }

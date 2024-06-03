@@ -43,14 +43,14 @@ contract Fun is Fungido {
         uint256 targetTotalS = totalSupplyOf[targetNode_];
         if (balanceOfSender < targetTotalS / 100_00) revert Noise();
 
-        uint256 i;
         uint256 sigSum;
+        uint256 i;
 
         for (i; i < signals.length; ++i) {
-            emit Signal(targetNode_, _msgSender(), signals[i]);
 
             if (i <= 1) {
                 if (signals[i] == 0) continue;
+                emit Signal(targetNode_, _msgSender(), signals[i]);
 
                 bytes32 userKey = keccak256((abi.encodePacked(targetNode_, user, signals[i])));
                 bytes32 nodeKey = keccak256((abi.encodePacked(targetNode_, signals[i])));
@@ -101,13 +101,16 @@ contract Fun is Fungido {
 
                 continue;
             }
-            if (signals[i] > 100_00) continue;
-            sigSum += signals[i];
-            if (sigSum > 100_00) revert SignalOverflow();
-
+            
             uint256[] memory children = childrenOf[targetNode_];
             if (children.length != (signals.length - 2)) revert BadLen();
+            
             bytes32 userTargetedPreference = keccak256((abi.encodePacked(user, targetNode_, children[i - 2])));
+            if (signals[i] > 100_00 && options[userTargetedPreference][0] == 0 ) continue;
+
+            sigSum += signals[i];
+            if (sigSum > 100_00) revert SignalOverflow();
+            emit Signal(targetNode_, _msgSender(), signals[i]);
 
             if (!(options[userTargetedPreference][0] == signals[i])) {
                 options[userTargetedPreference][0] = signals[i];

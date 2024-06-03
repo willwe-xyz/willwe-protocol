@@ -23,7 +23,7 @@ contract Fungido is ERC1155 {
     address public Will;
     IMembrane M;
     /// @notice stores the total supply of each id | id -> supply
-    mapping(uint256 => uint256) public totalSupplyOf;
+    mapping(uint256 => uint256) totalSupplyOf;
 
     /// @notice gets children of parent entity given its id | parent => [child...]
     mapping(uint256 => uint256[]) childrenOf;

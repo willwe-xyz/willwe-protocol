@@ -25,29 +25,26 @@ contract DeployBASE is Script, TokenPrep {
     }
 
     function run() public {
-        uint256 runPVK = uint256(vm.envUint("BASE_DEP_PVK4"));
+        uint256 runPVK = uint256(vm.envUint("WEWILL_DE_PVK"));
         address deployer = vm.addr(runPVK);
 
         ////////////////// MOCK token
-        address randomToken = makeReturnX20RON();
         vm.label(deployer, "deployer");
-        console.log("##### mockRON token ", randomToken);
         ////////////////// MOCK
 
-        console.log("##### Deployer : ", deployer, "| expected", "0xcEEeDDD949C41b1086FC7Aa6d953a8c254160A90");
+        console.log("##### Deployer : ", deployer, "| expected", "0xB76eF2DdE3d0b8AE716272f1BB943610C77a4C93");
         console.log("#________________________________");
 
         address[] memory founders = new address[](1);
         uint256[] memory amounts = new uint256[](1);
 
         founders[0] = deployer;
-
-        /// address(0xE7b30A037F5598E4e73702ca66A59Af5CC650Dcd);
         amounts[0] = 10_000_000 * 1 ether;
-
         uint256 piper_sec = 69;
 
         vm.startBroadcast(runPVK);
+        address randomToken = makeReturnX20RON();
+        console.log("##### mockRON token ", randomToken);
 
         F20 = new Will(1_000_000_000, piper_sec, founders, amounts);
         vm.label(address(F20), "Will");

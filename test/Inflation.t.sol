@@ -45,7 +45,7 @@ contract InflationTest is Test, TokenPrep, InitTest {
         F.mint(B1, 1 ether);
         F.mintInflation(B1);
 
-        console.log("1 - T0 default inflation, balance", F.inflationOf(B1), F.totalSupplyOf(B1));
+        console.log("1 - T0 default inflation, balance", F.inflationOf(B1), F.totalSupply(B1));
         uint256 snap1 = vm.snapshot();
 
         vm.warp(block.timestamp + 1000);
@@ -60,15 +60,15 @@ contract InflationTest is Test, TokenPrep, InitTest {
         signals[1] = 1 ether;
         vm.prank(A1);
         F.sendSignal(B1, signals);
-        console.log("2 - T1 default inflation, balance", F.inflationOf(B1), F.totalSupplyOf(B1));
-        uint256 Bt0 = F.totalSupplyOf(B1);
+        console.log("2 - T1 default inflation, balance", F.inflationOf(B1), F.totalSupply(B1));
+        uint256 Bt0 = F.totalSupply(B1);
         console.log("+ 100 seconds");
         vm.warp(block.timestamp + 100);
 
         F.mintInflation(B1);
-        uint256 Bt1 = F.totalSupplyOf(B1);
+        uint256 Bt1 = F.totalSupply(B1);
 
-        console.log("2 - T1 default inflation, balance", F.inflationOf(B1), F.totalSupplyOf(B1));
+        console.log("2 - T1 default inflation, balance", F.inflationOf(B1), F.totalSupply(B1));
         console.log(Bt1 - Bt0, "diff after 100 sec. of 1 ether inflation");
         assertTrue((Bt1 - Bt0) == 1 ether * 1 gwei * 100, "inflation mism or not in gwei");
     }
@@ -143,7 +143,7 @@ contract InflationTest is Test, TokenPrep, InitTest {
         assertTrue(F.balanceOf(A100, root2) == F.balanceOf(A100, root3), "equal o");
         F.burn(root3, b_x2);
         assertTrue(F.balanceOf(A100, root3) == 0, "all bruned");
-        assertTrue(F.totalSupplyOf(root3) == 0);
+        assertTrue(F.totalSupply(root3) == 0);
         assertTrue(F.balanceOf(A100, root2) > F.balanceOf(A100, root3), "equal o");
 
         vm.revertTo(snap2);
@@ -154,22 +154,22 @@ contract InflationTest is Test, TokenPrep, InitTest {
         F.burn(root2, b_x2);
         vm.warp(block.timestamp + 1_234_564);
         F.mintInflation(root3);
-        assertTrue(F.totalSupplyOf(root3) > F.totalSupplyOf(root2), "no infl diff");
-        assertTrue(F.totalSupplyOf(root3) > F.totalSupplyOf(root2), "inval default infl");
+        assertTrue(F.totalSupply(root3) > F.totalSupply(root2), "no infl diff");
+        assertTrue(F.totalSupply(root3) > F.totalSupply(root2), "inval default infl");
         F.mintInflation(root2);
-        assertTrue(F.totalSupplyOf(root3) < F.totalSupplyOf(root2), "inval default infl");
+        assertTrue(F.totalSupply(root3) < F.totalSupply(root2), "inval default infl");
         vm.warp((uint256(block.timestamp) + uint256(1_234_564) / 100_00));
         F.mintInflation(root3);
-        assertFalse(F.totalSupplyOf(root3) > F.totalSupplyOf(root2), "inval default infl");
+        assertFalse(F.totalSupply(root3) > F.totalSupply(root2), "inval default infl");
 
         vm.warp((uint256(block.timestamp) + 1_000_01));
         F.mintInflation(root3);
-        assertTrue(F.totalSupplyOf(root3) > F.totalSupplyOf(root2), "inval default infl");
+        assertTrue(F.totalSupply(root3) > F.totalSupply(root2), "inval default infl");
 
         ///###
         F.burn(root3, b_x2);
         assertFalse(F.balanceOf(A100, root2) == F.balanceOf(A100, root3), "! equal o");
-        assertTrue(F.totalSupplyOf(root3) > 0);
+        assertTrue(F.totalSupply(root3) > 0);
         assertTrue(F.balanceOf(A100, root3) == 0, "has balance");
 
         F.burn(root2, F.balanceOf(A100, root2));

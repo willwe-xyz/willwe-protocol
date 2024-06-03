@@ -13,6 +13,4 @@ interface IWill is IERC20ASG {
     function simpleBurn(uint256 amountToBurn_) external returns (uint256 amtValReturned);
 
     function pingInit() external;
-
-    function transferGas(address from, address to, uint256 amount) external returns (bool);
 }

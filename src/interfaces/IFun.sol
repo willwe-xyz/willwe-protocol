@@ -99,6 +99,7 @@ interface IFun is IERC1155 {
         returns (uint256[][2] memory activeBalances, NodeState[] memory);
 
     function inParentDenomination(uint256 amt_, uint256 id_) external view returns (uint256);
+    function getFidPath(uint256 fid_) external view returns (uint256[] memory fids);
     function burnPath(uint256 target_, uint256 amount) external;
     function mintPath(uint256 target_, uint256 amount) external;
 }

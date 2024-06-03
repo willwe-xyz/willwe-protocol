@@ -146,11 +146,11 @@ contract FunTests is Test, TokenPrep, InitTest {
 
         uint256 defaultRateB = F.inflationOf(B1);
         console.log("default inflation rate B1 - ", defaultRateB);
-        uint256 totalSupB1 = F.totalSupplyOf(B1);
+        uint256 totalSupB1 = F.totalSupply(B1);
         F.mintInflation(B1);
         skip(block.timestamp + 120333);
         F.mintInflation(B1);
-        uint256 totalSuppostB1 = F.totalSupplyOf(B1);
+        uint256 totalSuppostB1 = F.totalSupply(B1);
         console.log("supply B1 before - after inflation : - ", totalSupB1, totalSuppostB1);
 
         assertTrue(totalSuppostB1 > totalSupB1 + B1inflation * 120332, "expected inflation print");

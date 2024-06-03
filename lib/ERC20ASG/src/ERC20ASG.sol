@@ -52,7 +52,7 @@ contract ERC20ASG is ERC20, IERC20ASG {
     }
 
     //// @inheritdoc IERC20GM
-    function mint(uint256 howMany_) external payable {
+    function mint(uint256 howMany_) public payable {
         if (msg.value < mintCost(howMany_)) revert ValueMismatch();
         _mint(msg.sender, howMany_);
     }

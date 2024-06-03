@@ -150,4 +150,22 @@ contract MintTest is Test {
 
         /// 2
     }
+
+    function testMintFrE() public {
+        address Y = address(465345643561111111);
+        vm.startPrank(Y);
+        deal(Y, 100 ether);
+        uint256 cost = Will20.mintCost(100);
+        uint256 b0 = Will20.balanceOf(Y);
+        uint256 snap0 = vm.snapshot();
+
+        Will20.mintFromETH{value: cost}();
+
+        assertTrue(Will20.balanceOf(Y) == b0 + 100, "unexpec. sequence bal 1");
+
+        vm.revertTo(snap0);
+
+        address(Will20).call{value: cost}("");
+        assertTrue(Will20.balanceOf(Y) == b0 + 100, "unexpec. sequence bal 2");
+    }
 }
