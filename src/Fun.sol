@@ -27,10 +27,10 @@ contract Fun is Fungido {
     event NewMovement(uint256 indexed nodeID, bytes32 movementID, bytes32 descriptionHash);
 
     /// @notice processes and stores user signal
-    /// @notice in case threashold is reached, the change is applied.
-    /// @notice formatted as follows: membrane, inflation, [recognition]
-    /// @param targetNode_ node for which to signal
-    /// @param signals array of signaling values constructed starting with membrane, inflation, and [redistributive preferences for sub-entities]
+    /// @notice in case threashold is reached, for inflation and membrane, the change is applied.
+    /// @notice formatted as follows: membrane, inflation, r&r
+    /// @param targetNode_ node for which to signal preferences
+    /// @param signals array of signaling values constructed starting with membrane, inflation, subnodes in default order
     /// @dev skips values over 100_00
     function sendSignal(uint256 targetNode_, uint256[] memory signals) external {
         if (parentOf[targetNode_] == targetNode_) revert RootNodeOrNone();

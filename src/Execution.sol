@@ -26,7 +26,7 @@ contract Execution is EIP712, Receiver {
 
     address public RootValueToken;
     address public FoundationAgent;
-    IFun public BagBok;
+    IFun public WillWe;
 
     bytes4 internal constant EIP1271_MAGICVALUE = 0x1626ba7e;
     bytes4 internal constant EIP1271_MAGIC_VALUE_LEGACY = 0x20c13b0b;
@@ -62,7 +62,7 @@ contract Execution is EIP712, Receiver {
     /// events
     event NewMovementCreated(bytes32 indexed movementHash, uint256 indexed node_);
     event EndpointCreatedForAgent(uint256 indexed nodeid, address endpoint, address agent);
-    event BagBokSet(address BBImplementation);
+    event WillWeSet(address BBImplementation);
 
     /// @notice signature by hash
     mapping(bytes32 hash => SignatureQueue SigQueue) getSigQueueByHash;
@@ -78,9 +78,9 @@ contract Execution is EIP712, Receiver {
     mapping(uint256 agentPlusNode => bool) hasEndpointOrInteraction;
 
     function setBagBook(address bb_) external {
-        if (address(BagBok) == address(0)) BagBok = IFun(bb_);
-        if (msg.sender == FoundationAgent) BagBok = IFun(bb_);
-        emit BagBokSet(bb_);
+        if (address(WillWe) == address(0)) WillWe = IFun(bb_);
+        if (msg.sender == FoundationAgent) WillWe = IFun(bb_);
+        emit WillWeSet(bb_);
     }
 
     constructor(address rootValueToken_) {
@@ -101,10 +101,10 @@ contract Execution is EIP712, Receiver {
         bytes32 descriptionHash,
         bytes memory data
     ) external virtual returns (bytes32 movementHash) {
-        if (msg.sender != address(BagBok)) revert OnlyFun();
+        if (msg.sender != address(WillWe)) revert OnlyFun();
 
         if (typeOfMovement > 2) revert NoType();
-        if (!BagBok.isMember(origin, node_)) revert NotNodeMember();
+        if (!WillWe.isMember(origin, node_)) revert NotNodeMember();
 
         if (((typeOfMovement * node_ * expiresInDays) == 0)) revert EmptyUnallowed();
         if (uint256(descriptionHash) == 0) revert EXEC_NoDescription();
@@ -117,7 +117,7 @@ contract Execution is EIP712, Receiver {
             engineOwner[executingAccount] = node_;
 
             if (typeOfMovement == 1) {
-                members = BagBok.allMembersOf(node_);
+                members = WillWe.allMembersOf(node_);
                 if (members.length == 0) revert NoMembersForNode();
             } else {
                 members = new address[](1);
@@ -150,7 +150,7 @@ contract Execution is EIP712, Receiver {
     }
 
     function executeQueue(bytes32 SignatureQueueHash_) public virtual returns (bool s) {
-        if (msg.sender != address(BagBok)) revert OnlyFun();
+        if (msg.sender != address(WillWe)) revert OnlyFun();
 
         SignatureQueue memory SQ = validateQueue(SignatureQueueHash_);
 
@@ -167,7 +167,7 @@ contract Execution is EIP712, Receiver {
     }
 
     function submitSignatures(bytes32 sigHash, address[] memory signers, bytes[] memory signatures) external {
-        if (msg.sender != address(BagBok)) revert OnlyFun();
+        if (msg.sender != address(WillWe)) revert OnlyFun();
 
         SignatureQueue memory SQ = getSigQueueByHash[sigHash];
 
@@ -185,7 +185,7 @@ contract Execution is EIP712, Receiver {
                 continue;
             }
 
-            if (!(BagBok.isMember(signers[i], SQ.Action.viaNode))) {
+            if (!(WillWe.isMember(signers[i], SQ.Action.viaNode))) {
                 ++i;
                 continue;
             }
@@ -260,7 +260,7 @@ contract Execution is EIP712, Receiver {
     }
 
     function removeSignature(bytes32 sigHash_, uint256 index_, address who_) external {
-        if (msg.sender != address(BagBok)) revert OnlyFun();
+        if (msg.sender != address(WillWe)) revert OnlyFun();
         SignatureQueue memory SQ = getSigQueueByHash[sigHash_];
 
         if (SQ.Signers[index_] != who_) revert EXEC_OnlySigner();
@@ -284,9 +284,9 @@ contract Execution is EIP712, Receiver {
         external
         returns (address endpoint)
     {
-        if ((msg.sender != address(BagBok) && owner != address(this))) revert OnlyFun();
+        if ((msg.sender != address(WillWe) && owner != address(this))) revert OnlyFun();
 
-        if (!BagBok.isMember(origin, nodeId_) && owner != address(this)) revert NotNodeMember();
+        if (!WillWe.isMember(origin, nodeId_) && owner != address(this)) revert NotNodeMember();
         if (hasEndpointOrInteraction[nodeId_ + uint160(bytes20(owner))]) revert AlreadyHasEndpoint();
         hasEndpointOrInteraction[nodeId_ + uint160(bytes20(owner))] = true;
 
@@ -333,7 +333,7 @@ contract Execution is EIP712, Receiver {
             if (!SignatureChecker.isValidSignatureNow(signers[i], signedHash, signatures[i])) return false;
 
             if (SQM.Action.category == MovementType.EnergeticMajority) {
-                power += BagBok.balanceOf(signers[i], SQM.Action.viaNode);
+                power += WillWe.balanceOf(signers[i], SQM.Action.viaNode);
             }
 
             unchecked {
@@ -341,7 +341,7 @@ contract Execution is EIP712, Receiver {
             }
         }
 
-        if (power > 0) return (power > ((BagBok.totalSupply(SQM.Action.viaNode) / 2)));
+        if (power > 0) return (power > ((WillWe.totalSupply(SQM.Action.viaNode) / 2)));
 
         return true;
     }
@@ -354,7 +354,7 @@ contract Execution is EIP712, Receiver {
             endpoint = createNodeEndpoint(address(this));
             engineOwner[endpoint] = endpointOwner_;
         }
-        BagBok.localizeEndpoint(endpoint, endpointOwner_, origin);
+        WillWe.localizeEndpoint(endpoint, endpointOwner_, origin);
     }
 
     function isValidSignature(bytes32 _hash, bytes memory _signature) public view returns (bytes4) {
