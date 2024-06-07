@@ -131,7 +131,7 @@ contract Fungido is ERC1155 {
             ++entityCount;
         }
 
-        newID = (fid_ - block.timestamp - childrenOf[fid_].length) - entityCount;
+        newID = (fid_ - block.chainid - block.timestamp - childrenOf[fid_].length) - entityCount;
 
         _setApprovalForAll(toAddress(newID), address(this), true);
         _localizeNode(newID, fid_);

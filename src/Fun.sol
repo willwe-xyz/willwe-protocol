@@ -120,6 +120,9 @@ contract Fun is Fungido {
 
                 bytes32 childParentEligibilityPerSec = keccak256((abi.encodePacked(children[i - 2], targetNode_)));
 
+
+                //// options[childParentEligibilityPerSec][0] /// @todo - 
+
                 options[childParentEligibilityPerSec][0] = options[childParentEligibilityPerSec][0]
                     > options[userTargetedPreference][1]
                     ? options[childParentEligibilityPerSec][0] - options[userTargetedPreference][1]

@@ -12,6 +12,8 @@ import {IFun} from "./interfaces/IFun.sol";
 contract Will is ERC20ASG {
     address WillWe;
     address Pointer;
+    bool entered;
+
 
     error OnlyPointer();
 
@@ -21,11 +23,12 @@ contract Will is ERC20ASG {
         Pointer = msg.sender;
     }
 
-    error TrippinFrFr();
+    error ATransferFailed();
     error InsufficentBalance();
     error OnlyFun();
     error PingF();
     error PayCallF();
+    error Reentrant();
 
     function pingInit() external {
         if (WillWe == address(0) && msg.sender.code.length == 0) {
@@ -41,24 +44,26 @@ contract Will is ERC20ASG {
     function deconstructBurn(uint256 amountToBurn_, address[] memory tokensToRedeem)
         external
         returns (uint256 shareBurned)
-    {
+    {   
         if (balanceOf(msg.sender) < amountToBurn_) revert InsufficentBalance();
         shareBurned = totalSupply() / amountToBurn_;
         _burn(msg.sender, amountToBurn_);
-
+        if (entered) revert Reentrant();
+        entered = true;
         uint256 i;
         bool s = true;
         for (i; i < tokensToRedeem.length;) {
             IERC20 T = IERC20(tokensToRedeem[i]);
             amountToBurn_ = T.balanceOf(address(this));
             if (s) s = s && T.transfer(msg.sender, (amountToBurn_ / shareBurned));
+            if (!s) revert ATransferFailed();
             unchecked {
                 ++i;
             }
         }
-        if (!s) revert TrippinFrFr();
-        (s,) = payable(msg.sender).call{value: address(this).balance / shareBurned}("");
+        (s,) = payable(msg.sender).call{value: address(this).balance / shareBurned}(""); /// 
         if (!s) revert PayCallF();
+        entered = false;
     }
 
     function simpleBurn(uint256 amountToBurn_) external returns (uint256 amtValReturned) {

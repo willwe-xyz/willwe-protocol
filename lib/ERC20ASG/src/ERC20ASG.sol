@@ -4,7 +4,6 @@ pragma solidity 0.8.19;
 import {IERC20ASG} from "./IERC20ASG.sol";
 import {ERC20} from "openzeppelin-contracts/token/ERC20/ERC20.sol";
 
-import "forge-std/console.sol";
 
 //// @notice ERC20GM: Fungible, Uncapped ETH Dutch Auction
 /// @author parseb
