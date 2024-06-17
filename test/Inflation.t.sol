@@ -79,7 +79,7 @@ contract InflationTest is Test, TokenPrep, InitTest {
         F.spawnBranch(B1);
 
         console.log("######### tesBasicInflationEnd() #######");
-        (uint256[][2] memory AB, NodeState[] memory NS) = F.getInteractionDataOf(A1);
+        (string[][2] memory AB, NodeState[] memory NS) = F.getInteractionDataOf(A1);
 
         assertTrue(AB.length > 0, "no basic balances");
         assertTrue(NS.length > 0, "no NS");

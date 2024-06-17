@@ -41,22 +41,20 @@ struct SignatureQueue {
 }
 
 struct UserSignal {
-    uint256[][2] MembraneInflation;
-    uint256[] lastRedistSignal;
+    string[][2] MembraneInflation;
+    string[] lastRedistSignal;
 }
 
 struct NodeState {
-    uint256 nodeId;
-    uint256 inflation;
-    uint256 balanceAnchor;
-    uint256 balanceBudget;
-    uint256 value;
-    uint256 membraneId;
-    uint256 lastMinted;
-    uint256 inflPerSec;
+    string nodeId;
+    string inflation;
+    string balanceAnchor;
+    string balanceBudget;
+    string value;
+    string membraneId;
     address[] membersOfNode;
-    uint256[] childrenNodes;
-    uint256[] rootPath;
+    string[] childrenNodes;
+    string[] rootPath;
     UserSignal[] signals;
 }
 
@@ -96,7 +94,7 @@ interface IFun is IERC1155 {
     function getInteractionDataOf(address user_)
         external
         view
-        returns (uint256[][2] memory activeBalances, NodeState[] memory);
+        returns (string[][2] memory activeBalances, NodeState[] memory);
 
     function inParentDenomination(uint256 amt_, uint256 id_) external view returns (uint256);
     function getFidPath(uint256 fid_) external view returns (uint256[] memory fids);

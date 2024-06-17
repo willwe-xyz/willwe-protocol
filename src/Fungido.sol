@@ -9,6 +9,8 @@ import {IERC20} from "openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 import "./interfaces/IExecution.sol";
 import {IWill} from "./interfaces/IWill.sol";
 import {NodeState, UserSignal} from "./interfaces/IFun.sol";
+import {Strings} from "openzeppelin-contracts/contracts/utils/Strings.sol";
+import {PureUtils} from "./components/PureUtils.sol";
 import "./interfaces/IMembrane.sol";
 ///////////////////////////////////////////////
 ////////////////////////////////////
@@ -16,7 +18,9 @@ import "./interfaces/IMembrane.sol";
 /// @title Fungido
 /// @author Bogdan A. | parseb
 
-contract Fungido is ERC1155 {
+contract Fungido is ERC1155, PureUtils {
+    using Strings for uint256;
+
     uint256 immutable initTime = block.timestamp;
     uint256 public entityCount;
     address public executionAddress;
@@ -160,9 +164,11 @@ contract Fungido is ERC1155 {
 
     function mintPath(uint256 target_, uint256 amount_) external {
         uint256[] memory fidPath = getFidPath(target_);
-        for (uint256 i; i < fidPath.length; ++i) {
+        uint256 i;
+        for (i; i < fidPath.length; ++i) {
             mint(fidPath[i], amount_);
         }
+        if (i > 0) mint(target_, amount_);
     }
 
     function asRootValuation(uint256 target_, uint256 amount) public view returns (uint256 rAmt) {
@@ -439,8 +445,9 @@ contract Fungido is ERC1155 {
     function getInteractionDataOf(address user_)
         external
         view
-        returns (uint256[][2] memory activeBalances, NodeState[] memory NSs)
+        returns (string[][2] memory activeBalancesResponse, NodeState[] memory NSs)
     {
+        uint256[][2] memory activeBalances;
         activeBalances[0] = childrenOf[uint160(user_)];
         activeBalances[1] = new uint256[](activeBalances[0].length);
         uint256 i;
@@ -453,34 +460,40 @@ contract Fungido is ERC1155 {
             activeBalances[1][i] = balanceOf(user_, n);
             NodeState memory N;
 
-            N.nodeId = n;
-            N.inflation = inflSec[n][0];
-            N.balanceAnchor = balanceOf(toAddress(n), parentOf[n]);
-            N.balanceBudget = balanceOf(toAddress(n), n);
-            N.value = asRootValuation(n, N.balanceBudget);
-            N.membraneId = inUseMembraneId[n][0];
+            N.nodeId = n.toString();
+            N.inflation = inflSec[n][0].toString();
+            N.balanceAnchor = balanceOf(toAddress(n), parentOf[n]).toString();
+            N.balanceBudget = balanceOf(toAddress(n), n).toString();
+            N.value = (asRootValuation(n, balanceOf(toAddress(n), n))).toString();
+            N.membraneId = (inUseMembraneId[n][0]).toString();
             N.membersOfNode = members[n];
-            N.childrenNodes = childrenOf[n];
-            N.rootPath = getFidPath(n);
+
+            N.childrenNodes = uintArrayToStringArray(childrenOf[n]);
+            N.rootPath = uintArrayToStringArray(getFidPath(n));
 
             uint256 len = childrenOf[n].length;
 
             UserSignal memory U;
             UserSignal[] memory Uss = new UserSignal[](len);
 
-            U.MembraneInflation[0] = childrenOf[n + u - 1];
-            U.MembraneInflation[1] = childrenOf[n + u - 2];
+            childrenOf[n + u - 1];
+
+            U.MembraneInflation[0] = uintArrayToStringArray(childrenOf[n + u - 1]);
+            U.MembraneInflation[1] = uintArrayToStringArray(childrenOf[n + u - 2]);
             if (len == 0) continue;
-            uint256[] memory sigs = new uint256[](len);
+            string[] memory sigs = new string[](len);
             for (uint256 x; x < len; ++x) {
                 bytes32 targetedPref = keccak256((abi.encodePacked(u, n, childrenOf[n][x])));
-                sigs[x] = options[targetedPref][0];
+                sigs[x] = options[targetedPref][0].toString();
                 U.lastRedistSignal = sigs;
                 Uss[x] = U;
             }
             N.signals = Uss;
             NSs[i] = N;
         }
+
+        activeBalancesResponse[0] = uintArrayToStringArray(childrenOf[uint160(user_)]);
+        activeBalancesResponse[1] = uintArrayToStringArray(activeBalances[1]);
     }
 
     /**

@@ -47,7 +47,6 @@ contract Fun is Fungido {
         uint256 i;
 
         for (i; i < signals.length; ++i) {
-
             if (i <= 1) {
                 if (signals[i] == 0) continue;
                 emit Signal(targetNode_, _msgSender(), signals[i]);
@@ -101,12 +100,12 @@ contract Fun is Fungido {
 
                 continue;
             }
-            
+
             uint256[] memory children = childrenOf[targetNode_];
             if (children.length != (signals.length - 2)) revert BadLen();
-            
+
             bytes32 userTargetedPreference = keccak256((abi.encodePacked(user, targetNode_, children[i - 2])));
-            if (signals[i] > 100_00 && options[userTargetedPreference][0] == 0 ) continue;
+            if (signals[i] > 100_00 && options[userTargetedPreference][0] == 0) continue;
 
             sigSum += signals[i];
             if (sigSum > 100_00) revert SignalOverflow();
@@ -120,8 +119,7 @@ contract Fun is Fungido {
 
                 bytes32 childParentEligibilityPerSec = keccak256((abi.encodePacked(children[i - 2], targetNode_)));
 
-
-                //// options[childParentEligibilityPerSec][0] /// @todo - 
+                //// options[childParentEligibilityPerSec][0] /// @todo -
 
                 options[childParentEligibilityPerSec][0] = options[childParentEligibilityPerSec][0]
                     > options[userTargetedPreference][1]

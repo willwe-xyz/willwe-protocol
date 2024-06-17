@@ -14,11 +14,10 @@ contract Will is ERC20ASG {
     address Pointer;
     bool entered;
 
-
     error OnlyPointer();
 
     constructor(uint256 price_, uint256 pps_, address[] memory initMintAddrs_, uint256[] memory initMintAmts_)
-        ERC20ASG("WillWe", "WILL", price_, pps_, initMintAddrs_, initMintAmts_)
+        ERC20ASG("Base Will", "WILL", price_, pps_, initMintAddrs_, initMintAmts_)
     {
         Pointer = msg.sender;
     }
@@ -44,7 +43,7 @@ contract Will is ERC20ASG {
     function deconstructBurn(uint256 amountToBurn_, address[] memory tokensToRedeem)
         external
         returns (uint256 shareBurned)
-    {   
+    {
         if (balanceOf(msg.sender) < amountToBurn_) revert InsufficentBalance();
         shareBurned = totalSupply() / amountToBurn_;
         _burn(msg.sender, amountToBurn_);
@@ -61,7 +60,8 @@ contract Will is ERC20ASG {
                 ++i;
             }
         }
-        (s,) = payable(msg.sender).call{value: address(this).balance / shareBurned}(""); /// 
+        (s,) = payable(msg.sender).call{value: address(this).balance / shareBurned}("");
+        ///
         if (!s) revert PayCallF();
         entered = false;
     }

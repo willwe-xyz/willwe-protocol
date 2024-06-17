@@ -7,8 +7,13 @@ import {Execution} from "../src/Execution.sol";
 import {Membranes} from "../src/Membranes.sol";
 import {Will} from "../src/Will.sol";
 import {TokenPrep} from "../test/mock/Tokens.sol";
+import {AliasPicker} from "./Alias.sol";
+import {Strings} from "openzeppelin-contracts/contracts/utils/Strings.sol";
+import {StringUtils} from "./StringSlicer.sol";
 
-contract DeployBASE is Script, TokenPrep {
+contract DeployBASE is Script, TokenPrep, AliasPicker {
+    using StringUtils for string;
+
     WillWe FunFun;
     Execution E;
     Will F20;
@@ -40,13 +45,17 @@ contract DeployBASE is Script, TokenPrep {
 
         founders[0] = deployer;
         amounts[0] = 10_000_000 * 1 ether;
-        uint256 piper_sec = 69;
+        uint256 piper_sec = 21;
 
         vm.startBroadcast(runPVK);
-        address randomToken = makeReturnX20RON();
+        string memory name =
+            AliasPicker.getAlias(uint8(block.timestamp % 100 > 99 ? block.timestamp % 10 : block.timestamp % 100 + 1));
+        address randomToken = makeReturnX20RONWalias(
+            name, string.concat(StringUtils.substring(name, 0, 2), StringUtils.substring(name, 5, 6))
+        );
         console.log("##### mockRON token ", randomToken);
-
-        F20 = new Will(1_000_000_000, piper_sec, founders, amounts);
+        //// [0] in gwei
+        F20 = new Will(36, piper_sec, founders, amounts);
         vm.label(address(F20), "Will");
 
         Membranes M = new Membranes();
