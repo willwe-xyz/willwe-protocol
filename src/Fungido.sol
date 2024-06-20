@@ -458,19 +458,8 @@ contract Fungido is ERC1155, PureUtils {
         for (i; i < activeBalances[0].length; ++i) {
             n = activeBalances[0][i];
             activeBalances[1][i] = balanceOf(user_, n);
-            NodeState memory N;
 
-            N.nodeId = n.toString();
-            N.inflation = inflSec[n][0].toString();
-            N.balanceAnchor = balanceOf(toAddress(n), parentOf[n]).toString();
-            N.balanceBudget = balanceOf(toAddress(n), n).toString();
-            N.value = (asRootValuation(n, balanceOf(toAddress(n), n))).toString();
-            N.membraneId = (inUseMembraneId[n][0]).toString();
-            N.membersOfNode = members[n];
-
-            N.childrenNodes = uintArrayToStringArray(childrenOf[n]);
-            N.rootPath = uintArrayToStringArray(getFidPath(n));
-
+            NodeState memory N = getNodeData(n);
             uint256 len = childrenOf[n].length;
 
             UserSignal memory U;
@@ -495,6 +484,21 @@ contract Fungido is ERC1155, PureUtils {
         activeBalancesResponse[0] = uintArrayToStringArray(childrenOf[uint160(user_)]);
         activeBalancesResponse[1] = uintArrayToStringArray(activeBalances[1]);
     }
+
+
+    function getNodeData(uint256 n) public view returns (NodeState memory N) {
+            N.nodeId = n.toString();
+            N.inflation = inflSec[n][0].toString();
+            N.balanceAnchor = balanceOf(toAddress(n), parentOf[n]).toString();
+            N.balanceBudget = balanceOf(toAddress(n), n).toString();
+            N.value = (asRootValuation(n, balanceOf(toAddress(n), n))).toString();
+            N.membraneId = (inUseMembraneId[n][0]).toString();
+            N.membersOfNode = members[n];
+            N.childrenNodes = uintArrayToStringArray(childrenOf[n]);
+            N.rootPath = uintArrayToStringArray(getFidPath(n));
+    }
+
+
 
     /**
      * @dev See {IERC1155MetadataURI-uri}.
