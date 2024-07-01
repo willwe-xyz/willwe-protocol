@@ -2,19 +2,25 @@
 src = "src"
 out = "out"
 libs = ["lib"]
-optimizer= true
-optimizer_runs= 4_306
-# optimizer_runs= 100
+optimizer = true
+optimizer_runs = 4_306
 ffi = true
+allow_ffi = true
 ast = true
 build_info = true
 extra_output = ["storageLayout"]
 solc_version = "0.8.19"
 
-# See more config options https://github.com/foundry-rs/foundry/tree/master/config
+fs_permissions = [
+    { access = "read", path = "./"},
+    { access = "read", path = "./broadcast"},
+    { access = "read", path = "./out"}
+]
 
-# [etherscan] 
+# Uncomment and adjust the following section if you need Etherscan API integration
+# [etherscan]
 # mainnet = { key = "${ETHERSCAN_API_KEY}" }
-# mainnet2 = { key = "ABCDEFG", chain = "mainnet" }
-# optimism = { key = "1234567" }
-# unknown_chain = { key = "ABCDEFG", url = "<etherscan api url for this chain>" }
+# optimism = { key = "${OPTIMISM_API_KEY}" }
+# base = { key = "${BASE_API_KEY}" }
+
+# See more config options https://github.com/foundry-rs/foundry/tree/master/config
