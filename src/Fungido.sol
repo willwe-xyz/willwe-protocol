@@ -124,12 +124,12 @@ contract Fungido is ERC1155, PureUtils {
         if (parentOf[fID] == fID) revert RootExists();
 
         _localizeNode(fID, fID);
-        _giveMembership(_msgSender(), fID);
+        members[fID].push(fungible20_);
     }
 
     function spawnBranch(uint256 fid_) public virtual returns (uint256 newID) {
         if (parentOf[fid_] == 0) revert UnregisteredFungible();
-        if (!isMember(_msgSender(), fid_)) revert NotMember();
+        if (!isMember(_msgSender(), fid_)  && (parentOf[fid_] != fid_ ) ) revert NotMember();
 
         unchecked {
             ++entityCount;
@@ -285,6 +285,7 @@ contract Fungido is ERC1155, PureUtils {
             childrenOf[parentId].push(newID);
             inflSec[newID][0] = 1 gwei;
             inflSec[newID][2] = block.timestamp;
+            members[getFidPath(parentId)[0]].push(toAddress(newID));
         }
     }
 
@@ -485,20 +486,32 @@ contract Fungido is ERC1155, PureUtils {
         activeBalancesResponse[1] = uintArrayToStringArray(activeBalances[1]);
     }
 
-
     function getNodeData(uint256 n) public view returns (NodeState memory N) {
-            N.nodeId = n.toString();
-            N.inflation = inflSec[n][0].toString();
-            N.balanceAnchor = balanceOf(toAddress(n), parentOf[n]).toString();
-            N.balanceBudget = balanceOf(toAddress(n), n).toString();
-            N.value = (asRootValuation(n, balanceOf(toAddress(n), n))).toString();
-            N.membraneId = (inUseMembraneId[n][0]).toString();
-            N.membersOfNode = members[n];
-            N.childrenNodes = uintArrayToStringArray(childrenOf[n]);
-            N.rootPath = uintArrayToStringArray(getFidPath(n));
+        N.nodeId = n.toString();
+        N.inflation = inflSec[n][0].toString();
+        N.balanceAnchor = balanceOf(toAddress(n), parentOf[n]).toString();
+        N.balanceBudget = balanceOf(toAddress(n), n).toString();
+        N.value = (asRootValuation(n, balanceOf(toAddress(n), n))).toString();
+        N.membraneId = (inUseMembraneId[n][0]).toString();
+        N.membersOfNode = members[n];
+        N.childrenNodes = uintArrayToStringArray(childrenOf[n]);
+        N.rootPath = uintArrayToStringArray(getFidPath(n));
     }
 
+    function getNodes(uint256[] memory nodeIds) public view returns (NodeState[] memory nodes) {
+        nodes = new NodeState[](nodeIds.length);
+        for (uint256 i = 0; i < nodeIds.length; i++) {
+            nodes[i] = getNodeData(nodeIds[i]);
+        }
+    }
 
+    function getAllNodesForRoot(address rootAddress) external view returns (NodeState[] memory nodes) {
+        uint256 rootId = toID(rootAddress);
+        nodes = new NodeState[](members[rootId].length); 
+        for (uint256 i; i < members[rootId].length; ++i ) {
+            nodes[i] = getNodeData(toID(members[rootId][i]));
+        }
+    }
 
     /**
      * @dev See {IERC1155MetadataURI-uri}.

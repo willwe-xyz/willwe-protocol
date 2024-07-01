@@ -82,7 +82,6 @@ contract Endpoints is Test, TokenPrep, InitTest {
 
         assertTrue(B1 > 1);
         assertTrue(F.balanceOf(A1, rootBranchID) == 0, "unexpected balance");
-        assertTrue(F.isMember(A1, rootBranchID), "branch creator should be member");
 
         uint256 before = T1.balanceOf(A1);
 
@@ -146,15 +145,15 @@ contract Endpoints is Test, TokenPrep, InitTest {
         vm.startPrank(A1);
 
         vm.expectRevert(Execution.EmptyUnallowed.selector);
-        F.proposeMovement(0, rootBranchID, 12, address(0), description, data);
+        F.proposeMovement(0, B2, 12, address(0), description, data);
 
         vm.expectRevert(Execution.NotExeAccOwner.selector);
-        F.proposeMovement(1, rootBranchID, 12, address(1), description, data);
+        F.proposeMovement(1, B2, 12, address(1), description, data);
 
-        address[] memory members = F.allMembersOf(rootBranchID);
+        address[] memory members = F.allMembersOf(B2);
         assertTrue(members.length > 0, "shoudl have members for majority");
 
-        moveHash = F.proposeMovement(2, rootBranchID, 12, address(0), description, data);
+        moveHash = F.proposeMovement(2, B2, 12, address(0), description, data);
 
         assertTrue(uint256(moveHash) > 0, "empty hash returned");
         SignatureQueue memory SQ = F.getSigQueue(moveHash);
@@ -299,6 +298,20 @@ contract Endpoints is Test, TokenPrep, InitTest {
         signatures[2] = sigA3;
 
         snapSig1 = vm.snapshot();
+
+                assertFalse(F.isMember(A2, B2), 'notmember');
+        vm.prank(A2);
+        F.mintMembership(B2);
+        assertTrue(F.isMember(A2, B2), 'notmember');
+
+
+        assertFalse(F.isMember(A3, B2), 'notmember');
+        vm.prank(A3);
+        F.mintMembership(B2);
+        assertTrue(F.isMember(A3, B2), 'notmember');
+        assertTrue(F.isMember(A1, B2), 'notmember');
+
+
         //// submit empty signatures (0)
         F.submitSignatures(move, signers, signatures);
 
@@ -306,8 +319,16 @@ contract Endpoints is Test, TokenPrep, InitTest {
 
         SQ = F.getSigQueue(move);
 
+
+
+        assertTrue(M.viaNode == B2, 'unexp node');
+
+        assertTrue(SQ.Action.viaNode == B2, 'expected b1');
         assertTrue(SQ.Signers.length == SQ.Sigs.length, "len mism");
         assertTrue(SQ.Signers.length == 3, "unexp sig len");
+
+
+
 
         assertTrue(SQ.Signers[0] == A2, "firs signer A2");
         assertTrue(SQ.Signers[1] == A3, "signer not A3");
