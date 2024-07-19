@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.18;
 
-import {Movement, MovementType, SQState, SignatureQueue, Call} from "../interfaces/IFun.sol";
+import {Movement, MovementType, SQState, SignatureQueue, Call} from "../interfaces/IExecution.sol";
 
 // EIP712 domain separator
 struct EIP712Domain {

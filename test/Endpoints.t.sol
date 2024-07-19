@@ -8,7 +8,7 @@ import {SignatureQueue, IExecution} from "../src/interfaces/IExecution.sol";
 import {TokenPrep} from "./mock/Tokens.sol";
 
 import {SignatureQueue, SQState, MovementType} from "../src/interfaces/IExecution.sol";
-import {Movement, Call} from "../src/interfaces/IFun.sol";
+import {Movement, Call} from "../src/interfaces/IExecution.sol";
 import {IERC20} from "openzeppelin/token/ERC20/IERC20.sol";
 
 import {Will} from "../src/Will.sol";
@@ -299,18 +299,16 @@ contract Endpoints is Test, TokenPrep, InitTest {
 
         snapSig1 = vm.snapshot();
 
-                assertFalse(F.isMember(A2, B2), 'notmember');
+        assertFalse(F.isMember(A2, B2), "notmember");
         vm.prank(A2);
         F.mintMembership(B2);
-        assertTrue(F.isMember(A2, B2), 'notmember');
+        assertTrue(F.isMember(A2, B2), "notmember");
 
-
-        assertFalse(F.isMember(A3, B2), 'notmember');
+        assertFalse(F.isMember(A3, B2), "notmember");
         vm.prank(A3);
         F.mintMembership(B2);
-        assertTrue(F.isMember(A3, B2), 'notmember');
-        assertTrue(F.isMember(A1, B2), 'notmember');
-
+        assertTrue(F.isMember(A3, B2), "notmember");
+        assertTrue(F.isMember(A1, B2), "notmember");
 
         //// submit empty signatures (0)
         F.submitSignatures(move, signers, signatures);
@@ -319,16 +317,11 @@ contract Endpoints is Test, TokenPrep, InitTest {
 
         SQ = F.getSigQueue(move);
 
+        assertTrue(M.viaNode == B2, "unexp node");
 
-
-        assertTrue(M.viaNode == B2, 'unexp node');
-
-        assertTrue(SQ.Action.viaNode == B2, 'expected b1');
+        assertTrue(SQ.Action.viaNode == B2, "expected b1");
         assertTrue(SQ.Signers.length == SQ.Sigs.length, "len mism");
         assertTrue(SQ.Signers.length == 3, "unexp sig len");
-
-
-
 
         assertTrue(SQ.Signers[0] == A2, "firs signer A2");
         assertTrue(SQ.Signers[1] == A3, "signer not A3");

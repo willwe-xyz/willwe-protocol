@@ -1,7 +1,60 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity >=0.8.3;
 
-import "./IFun.sol";
+enum SQState {
+    None,
+    Initialized,
+    Valid,
+    Executed,
+    Stale
+}
+
+enum MovementType {
+    Revert,
+    AgentMajority,
+    EnergeticMajority
+}
+
+struct Call {
+    address target;
+    bytes callData;
+}
+
+struct Movement {
+    MovementType category;
+    address initiatior;
+    address exeAccount;
+    uint256 viaNode;
+    uint256 expiresAt;
+    bytes32 descriptionHash;
+    bytes executedPayload;
+}
+
+struct SignatureQueue {
+    SQState state;
+    Movement Action;
+    address[] Signers;
+    bytes[] Sigs;
+    bytes32 exeSig;
+}
+
+struct UserSignal {
+    string[][2] MembraneInflation;
+    string[] lastRedistSignal;
+}
+
+struct NodeState {
+    string nodeId;
+    string inflation;
+    string balanceAnchor;
+    string balanceBudget;
+    string value;
+    string membraneId;
+    address[] membersOfNode;
+    string[] childrenNodes;
+    string[] rootPath;
+    UserSignal[] signals;
+}
 
 interface IExecution {
     function createEndpointForOwner(address origin, uint256 nodeId_, address owner)

@@ -8,7 +8,7 @@ import {IERC20} from "openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 
 import "./interfaces/IExecution.sol";
 import {IWill} from "./interfaces/IWill.sol";
-import {NodeState, UserSignal} from "./interfaces/IFun.sol";
+import {NodeState} from "./interfaces/IExecution.sol";
 import {Strings} from "openzeppelin-contracts/contracts/utils/Strings.sol";
 import {PureUtils} from "./components/PureUtils.sol";
 import "./interfaces/IMembrane.sol";
@@ -129,7 +129,7 @@ contract Fungido is ERC1155, PureUtils {
 
     function spawnBranch(uint256 fid_) public virtual returns (uint256 newID) {
         if (parentOf[fid_] == 0) revert UnregisteredFungible();
-        if (!isMember(_msgSender(), fid_)  && (parentOf[fid_] != fid_ ) ) revert NotMember();
+        if (!isMember(_msgSender(), fid_) && (parentOf[fid_] != fid_)) revert NotMember();
 
         unchecked {
             ++entityCount;
@@ -507,8 +507,8 @@ contract Fungido is ERC1155, PureUtils {
 
     function getAllNodesForRoot(address rootAddress) external view returns (NodeState[] memory nodes) {
         uint256 rootId = toID(rootAddress);
-        nodes = new NodeState[](members[rootId].length); 
-        for (uint256 i; i < members[rootId].length; ++i ) {
+        nodes = new NodeState[](members[rootId].length);
+        for (uint256 i; i < members[rootId].length; ++i) {
             nodes[i] = getNodeData(toID(members[rootId][i]));
         }
     }

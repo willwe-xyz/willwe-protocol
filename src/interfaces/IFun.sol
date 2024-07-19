@@ -2,63 +2,9 @@
 pragma solidity >=0.8.3;
 
 import {IERC1155} from "openzeppelin-contracts/contracts/token/ERC1155/IERC1155.sol";
+import {IExecution, SignatureQueue, NodeState} from "./IExecution.sol";
 
-enum SQState {
-    None,
-    Initialized,
-    Valid,
-    Executed,
-    Stale
-}
-
-enum MovementType {
-    Revert,
-    AgentMajority,
-    EnergeticMajority
-}
-
-struct Call {
-    address target;
-    bytes callData;
-}
-
-struct Movement {
-    MovementType category;
-    address initiatior;
-    address exeAccount;
-    uint256 viaNode;
-    uint256 expiresAt;
-    bytes32 descriptionHash;
-    bytes executedPayload;
-}
-
-struct SignatureQueue {
-    SQState state;
-    Movement Action;
-    address[] Signers;
-    bytes[] Sigs;
-    bytes32 exeSig;
-}
-
-struct UserSignal {
-    string[][2] MembraneInflation;
-    string[] lastRedistSignal;
-}
-
-struct NodeState {
-    string nodeId;
-    string inflation;
-    string balanceAnchor;
-    string balanceBudget;
-    string value;
-    string membraneId;
-    address[] membersOfNode;
-    string[] childrenNodes;
-    string[] rootPath;
-    UserSignal[] signals;
-}
-
-interface IFun is IERC1155 {
+interface IFun is IERC1155, IExecution {
     function spawnRootBranch(address fungible20_) external returns (uint256 fID);
 
     function spawnBranch(uint256 fid_) external returns (uint256 newID);

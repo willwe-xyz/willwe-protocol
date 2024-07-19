@@ -7,7 +7,8 @@ import {Strings} from "openzeppelin-contracts/contracts/utils/Strings.sol";
 
 import {Strings, ECDSA} from "openzeppelin-contracts/contracts/utils/cryptography/ECDSA.sol";
 
-import {IFun, SignatureQueue, SQState, MovementType, Movement, Call} from "./interfaces/IFun.sol";
+import {SignatureQueue, SQState, MovementType, Movement, Call} from "./interfaces/IExecution.sol";
+import {IFun} from "./interfaces/IFun.sol";
 import {IERC1155Receiver} from "openzeppelin-contracts/contracts/token/ERC1155/IERC1155Receiver.sol";
 import {EIP712} from "./info/EIP712.sol";
 
@@ -48,6 +49,7 @@ contract Execution is EIP712, Receiver {
     error LenErr();
     error AlreadyInit();
     error OnlyFun();
+    error NoSignatures();
     error EXEC_SQInvalid();
     error EXEC_NoType();
     error EXEC_NoDescription();
@@ -293,6 +295,17 @@ contract Execution is EIP712, Receiver {
         endpoint = createNodeEndpoint(origin, nodeId_);
     }
 
+    function createNodeEndpoint(address origin, uint256 endpointOwner_) internal returns (address endpoint) {
+        if (msg.sig == this.createEndpointForOwner.selector) {
+            endpoint = createNodeEndpoint(origin);
+            engineOwner[endpoint] = origin == address(this) ? endpointOwner_ : uint160(origin);
+        } else {
+            endpoint = createNodeEndpoint(address(this));
+            engineOwner[endpoint] = endpointOwner_;
+        }
+        WillWe.localizeEndpoint(endpoint, endpointOwner_, origin);
+    }
+
     function createNodeEndpoint(address proxyOwner_) private returns (address) {
         return address(new PowerProxy(proxyOwner_));
     }
@@ -324,6 +337,7 @@ contract Execution is EIP712, Receiver {
         bytes[] memory signatures = SQM.Sigs;
 
         bytes32 signedHash = ECDSA.toEthSignedMessageHash(sigHash);
+        if (signatures.length == 0) revert NoSignatures();
 
         for (i; i < signatures.length;) {
             if (signers[i] == address(0)) {
@@ -344,17 +358,6 @@ contract Execution is EIP712, Receiver {
         if (power > 0) return (power > ((WillWe.totalSupply(SQM.Action.viaNode) / 2)));
 
         return true;
-    }
-
-    function createNodeEndpoint(address origin, uint256 endpointOwner_) internal returns (address endpoint) {
-        if (msg.sig == this.createEndpointForOwner.selector) {
-            endpoint = createNodeEndpoint(origin);
-            engineOwner[endpoint] = uint160(origin);
-        } else {
-            endpoint = createNodeEndpoint(address(this));
-            engineOwner[endpoint] = endpointOwner_;
-        }
-        WillWe.localizeEndpoint(endpoint, endpointOwner_, origin);
     }
 
     function isValidSignature(bytes32 _hash, bytes memory _signature) public view returns (bytes4) {

@@ -2,9 +2,7 @@
 pragma solidity >=0.8.3;
 
 import {Fungido} from "./Fungido.sol";
-import {IExecution, SignatureQueue} from "./interfaces/IExecution.sol";
-
-import {Call} from "./interfaces/IFun.sol";
+import {IExecution, SignatureQueue, Call} from "./interfaces/IExecution.sol";
 
 /////////////////////////////////////////
 /// @title Fun
