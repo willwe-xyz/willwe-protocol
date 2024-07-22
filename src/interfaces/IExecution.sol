@@ -65,7 +65,7 @@ interface IExecution {
 
     function submitSignatures(bytes32 sigHash, address[] memory signers, bytes[] memory signatures) external;
 
-    function proposeMovement(
+    function startMovement(
         address origin,
         uint256 typeOfMovement,
         uint256 node_,
@@ -75,7 +75,7 @@ interface IExecution {
         bytes memory data
     ) external returns (bytes32 movementHash);
 
-    function setBagBook(address newBB) external;
+    function setWillWe(address newBB) external;
     function setFoundationAgent(address fa_) external;
 
     /// View

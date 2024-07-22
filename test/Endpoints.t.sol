@@ -34,7 +34,7 @@ contract Endpoints is Test, TokenPrep, InitTest {
 
     function setUp() public override {
         super.setUp();
-
+        vm.prank(address(1));
         T1 = IERC20(makeReturnERC20());
         vm.label(address(T1), "Token1");
 
@@ -72,6 +72,15 @@ contract Endpoints is Test, TokenPrep, InitTest {
 
         vm.prank(A3);
         F.mintMembership(rootBranchID);
+
+        vm.startPrank(address(1));
+
+        T1.transfer(A1, 10 ether);
+        T1.transfer(A2, 10 ether);
+        T1.transfer(A3, 10 ether);
+
+        vm.stopPrank();
+
 
         receiver = address(bytes20(type(uint160).max / 2));
     }
@@ -145,15 +154,15 @@ contract Endpoints is Test, TokenPrep, InitTest {
         vm.startPrank(A1);
 
         vm.expectRevert(Execution.EmptyUnallowed.selector);
-        F.proposeMovement(0, B2, 12, address(0), description, data);
+        F.startMovement(0, B2, 12, address(0), description, data);
 
         vm.expectRevert(Execution.NotExeAccOwner.selector);
-        F.proposeMovement(1, B2, 12, address(1), description, data);
+        F.startMovement(1, B2, 12, address(1), description, data);
 
         address[] memory members = F.allMembersOf(B2);
         assertTrue(members.length > 0, "shoudl have members for majority");
 
-        moveHash = F.proposeMovement(2, B2, 12, address(0), description, data);
+        moveHash = F.startMovement(2, B2, 12, address(0), description, data);
 
         assertTrue(uint256(moveHash) > 0, "empty hash returned");
         SignatureQueue memory SQ = F.getSigQueue(moveHash);
@@ -189,7 +198,7 @@ contract Endpoints is Test, TokenPrep, InitTest {
         bytes32 description = keccak256("this is a description");
         bytes memory data = _getCallData();
 
-        bytes32 moveHash = F.proposeMovement(1, rootBranchID, 12, address(0), description, data);
+        bytes32 moveHash = F.startMovement(1, rootBranchID, 12, address(0), description, data);
         SignatureQueue memory SQ = F.getSigQueue(moveHash);
 
         assertTrue(SQ.state == SQState.Initialized, "expected intiailized");
@@ -202,7 +211,7 @@ contract Endpoints is Test, TokenPrep, InitTest {
         skip(block.timestamp + 10);
         description = keccak256("this is a description");
 
-        moveHash = F.proposeMovement(1, rootBranchID, 12, SQ.Action.exeAccount, description, data);
+        moveHash = F.startMovement(1, rootBranchID, 12, SQ.Action.exeAccount, description, data);
         SQ = F.getSigQueue(moveHash);
 
         assertTrue(SQ.state == SQState.Initialized, "expected intiailized");
@@ -215,7 +224,7 @@ contract Endpoints is Test, TokenPrep, InitTest {
         skip(block.timestamp + 10);
         description = keccak256("this is a description");
 
-        moveHash = F.proposeMovement(2, rootBranchID, 12, SQ.Action.exeAccount, description, data);
+        moveHash = F.startMovement(2, rootBranchID, 12, SQ.Action.exeAccount, description, data);
         SQ = F.getSigQueue(moveHash);
 
         assertTrue(SQ.state == SQState.Initialized, "expected intiailized");
@@ -327,13 +336,30 @@ contract Endpoints is Test, TokenPrep, InitTest {
         assertTrue(SQ.Signers[1] == A3, "signer not A3");
         assertTrue(SQ.Signers[2] == A1, "signer not A1");
 
-        snapSig2 = vm.snapshot();
 
         assertFalse(F.isValidSignature(move, sigb) == 0x1626ba7e, "sig not valid");
-        assertTrue(F.isQueueValid(move), "sq not valid");
+        snapSig2 = vm.snapshot();
+
+
+        assertFalse(F.isQueueValid(move), "sq not valid");
+
+        vm.prank(A1);
+        F.mintPath(B2, 1 ether);
+        
+        vm.prank(A2);
+        F.mintPath(B2, 1 ether);
+        
+        vm.prank(A3);
+        F.mintPath(B2, 1 ether);
+
 
         console.log("----- Submitted Signatures");
     }
+
+
+
+
+    
 
     function testExecutesSignatureQueue() public {
         bytes32 move = testSubmitsSignatures();

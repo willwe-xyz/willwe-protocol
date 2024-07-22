@@ -84,7 +84,7 @@
 //         uint256 snap0 = vm.snapshot();
 //         Call memory transferCall = _calldataTx();
 
-//         bytes32 moveHash = W_W.proposeMovement(
+//         bytes32 moveHash = W_W.startMovement(
 //             2,
 //             1210283800312505576802985017589078370463982878496,
 //             2,

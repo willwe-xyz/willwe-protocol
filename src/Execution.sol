@@ -16,6 +16,8 @@ import {PowerProxy} from "./components/PowerProxy.sol";
 
 import {Receiver} from "solady/accounts/Receiver.sol";
 
+import {console} from "forge-std/console.sol";
+
 ///////////////////////////////////////////////
 ////////////////////////////////////
 
@@ -79,7 +81,9 @@ contract Execution is EIP712, Receiver {
     /// @notice stores agent signatures to prevent double signing  | ( uint256(hash) - uint256(_msgSender()  ) - signer can be simple or composed agent
     mapping(uint256 agentPlusNode => bool) hasEndpointOrInteraction;
 
-    function setBagBook(address bb_) external {
+
+
+    function setWillWe(address bb_) external {
         if (address(WillWe) == address(0)) WillWe = IFun(bb_);
         if (msg.sender == FoundationAgent) WillWe = IFun(bb_);
         emit WillWeSet(bb_);
@@ -94,7 +98,7 @@ contract Execution is EIP712, Receiver {
         FoundationAgent = this.createEndpointForOwner(address(this), baseNodeId_, address(this));
     }
 
-    function proposeMovement(
+    function startMovement (
         address origin,
         uint256 typeOfMovement,
         uint256 node_,
@@ -111,20 +115,10 @@ contract Execution is EIP712, Receiver {
         if (((typeOfMovement * node_ * expiresInDays) == 0)) revert EmptyUnallowed();
         if (uint256(descriptionHash) == 0) revert EXEC_NoDescription();
 
-        address[] memory members;
-
         if (executingAccount == address(0)) {
             executingAccount = createNodeEndpoint(origin, node_);
 
             engineOwner[executingAccount] = node_;
-
-            if (typeOfMovement == 1) {
-                members = WillWe.allMembersOf(node_);
-                if (members.length == 0) revert NoMembersForNode();
-            } else {
-                members = new address[](1);
-                members[0] = address(this);
-            }
         } else {
             if (!(engineOwner[executingAccount] == node_)) revert NotExeAccOwner();
         }
@@ -282,12 +276,15 @@ contract Execution is EIP712, Receiver {
         getSigQueueByHash[actionHash_] = SQ;
     }
 
+//   function createEndpointForOwner(uint256 nodeId_, address owner) external returns (address endpoint) {
+//         return IExecution(executionAddress).createEndpointForOwner(_msgSender(), nodeId_, owner);
+//     }
+
     function createEndpointForOwner(address origin, uint256 nodeId_, address owner)
         external
         returns (address endpoint)
     {
         if ((msg.sender != address(WillWe) && owner != address(this))) revert OnlyFun();
-
         if (!WillWe.isMember(origin, nodeId_) && owner != address(this)) revert NotNodeMember();
         if (hasEndpointOrInteraction[nodeId_ + uint160(bytes20(owner))]) revert AlreadyHasEndpoint();
         hasEndpointOrInteraction[nodeId_ + uint160(bytes20(owner))] = true;
@@ -295,15 +292,15 @@ contract Execution is EIP712, Receiver {
         endpoint = createNodeEndpoint(origin, nodeId_);
     }
 
-    function createNodeEndpoint(address origin, uint256 endpointOwner_) internal returns (address endpoint) {
+    function createNodeEndpoint(address originOrNode, uint256 endpointOwner_) internal returns (address endpoint) {
         if (msg.sig == this.createEndpointForOwner.selector) {
-            endpoint = createNodeEndpoint(origin);
-            engineOwner[endpoint] = origin == address(this) ? endpointOwner_ : uint160(origin);
+            endpoint = createNodeEndpoint(originOrNode);
+            engineOwner[endpoint] = originOrNode == address(this) ? endpointOwner_ : uint160(originOrNode);
         } else {
             endpoint = createNodeEndpoint(address(this));
             engineOwner[endpoint] = endpointOwner_;
         }
-        WillWe.localizeEndpoint(endpoint, endpointOwner_, origin);
+        WillWe.localizeEndpoint(endpoint, endpointOwner_, originOrNode);
     }
 
     function createNodeEndpoint(address proxyOwner_) private returns (address) {
@@ -330,14 +327,15 @@ contract Execution is EIP712, Receiver {
         if (SQM.state == SQState.Valid) return true;
         if (SQM.state == SQState.Stale) return false;
         if (SQM.state != SQState.Initialized) return false;
-
+        if (SQM.Signers.length == 0) return false;
+        if (SQM.Signers.length != SQM.Sigs.length) return false;
+        
         uint256 i;
         uint256 power;
         address[] memory signers = SQM.Signers;
         bytes[] memory signatures = SQM.Sigs;
 
         bytes32 signedHash = ECDSA.toEthSignedMessageHash(sigHash);
-        if (signatures.length == 0) revert NoSignatures();
 
         for (i; i < signatures.length;) {
             if (signers[i] == address(0)) {
@@ -346,18 +344,20 @@ contract Execution is EIP712, Receiver {
             }
             if (!SignatureChecker.isValidSignatureNow(signers[i], signedHash, signatures[i])) return false;
 
-            if (SQM.Action.category == MovementType.EnergeticMajority) {
-                power += WillWe.balanceOf(signers[i], SQM.Action.viaNode);
-            }
+            power = (SQM.Action.category == MovementType.EnergeticMajority) ? power + WillWe.balanceOf(signers[i], SQM.Action.viaNode) : power + 1;
 
             unchecked {
                 ++i;
             }
         }
 
-        if (power > 0) return (power > ((WillWe.totalSupply(SQM.Action.viaNode) / 2)));
+        if (power > 0) {
 
-        return true;
+         if (SQM.Action.category == MovementType.EnergeticMajority) return (power > ((WillWe.totalSupply(SQM.Action.viaNode) / 2)));
+         if (SQM.Action.category == MovementType.AgentMajority) return (power > ((WillWe.allMembersOf(SQM.Action.viaNode).length / 2) ));
+
+        }
+        return false;
     }
 
     function isValidSignature(bytes32 _hash, bytes memory _signature) public view returns (bytes4) {

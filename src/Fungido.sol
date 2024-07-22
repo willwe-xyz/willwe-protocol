@@ -12,12 +12,12 @@ import {NodeState} from "./interfaces/IExecution.sol";
 import {Strings} from "openzeppelin-contracts/contracts/utils/Strings.sol";
 import {PureUtils} from "./components/PureUtils.sol";
 import "./interfaces/IMembrane.sol";
-///////////////////////////////////////////////
-////////////////////////////////////
 
+///////////////////////////////////////////////
+//////////////////////////////////////////////
 /// @title Fungido
 /// @author Bogdan A. | parseb
-
+////////////////////////////////////////////
 contract Fungido is ERC1155, PureUtils {
     using Strings for uint256;
 
@@ -47,10 +47,8 @@ contract Fungido is ERC1155, PureUtils {
     /// @notice stores a users option for change and node state [ wanted value, lastExpressedAt ]
     mapping(bytes32 NodeXUserXValue => uint256[2] valueAtTime) options;
 
-    /// @notice tax rate on withdrawals as share in base root value token | 100_00 = 0.1% - gas multiplier
-    /// @notice default values: 0.01% - x2
+    /// @notice tax rate on withdrawals as share in base root value token (default: 0.01%)
     mapping(address => uint256) taxRate;
-    /// @dev ensure consistency of tax calculation such as enfocing a multiple of 100 on setting
 
     address[2] public control;
 
@@ -104,6 +102,10 @@ contract Fungido is ERC1155, PureUtils {
     ////////////////////////////////////////////////
     //////________MODIFIER________/////////////////
 
+    /// @notice sets address in control of fiscal policy
+    /// @notice can chenge token specific tax rates, should be an endpoint
+    /// @notice two step function
+    /// @param newController address of new controller
     function setControl(address newController) external {
         if (msg.sender != control[0]) revert NoControl();
         if (control[1] == newController) {
@@ -117,6 +119,11 @@ contract Fungido is ERC1155, PureUtils {
     ////////////////////////////////////////////////
     //////______EXTERNAL______/////////////////////
 
+
+    /// @notice spawns core branch for a token
+    /// @notice acts as port for token value
+    /// @notice nests all token specific contexts
+    /// @param fungible20_ address of ERC20 token
     function spawnRootBranch(address fungible20_) public virtual returns (uint256 fID) {
         if (fungible20_.code.length == 0) revert EOA();
 
@@ -127,6 +134,9 @@ contract Fungido is ERC1155, PureUtils {
         members[fID].push(fungible20_);
     }
 
+    /// @notice creates new context nested under a parent node id
+    /// @notice agent spawning a new underlink needs to be a member in containing context
+    /// @param fid_ context node id
     function spawnBranch(uint256 fid_) public virtual returns (uint256 newID) {
         if (parentOf[fid_] == 0) revert UnregisteredFungible();
         if (!isMember(_msgSender(), fid_) && (parentOf[fid_] != fid_)) revert NotMember();
@@ -135,13 +145,16 @@ contract Fungido is ERC1155, PureUtils {
             ++entityCount;
         }
 
-        newID = (fid_ - block.chainid - block.timestamp - childrenOf[fid_].length) - entityCount;
+        newID = (fid_ / block.chainid - block.timestamp - childrenOf[fid_].length) - entityCount;
 
         _setApprovalForAll(toAddress(newID), address(this), true);
         _localizeNode(newID, fid_);
         _giveMembership(_msgSender(), newID);
     }
 
+    /// @notice spawns branch with an enforceable membership mechanism
+    /// @param fid_ context (parent) node
+    /// @param membraneID_ id of membrane to be used by new entity
     function spawnBranchWithMembrane(uint256 fid_, uint256 membraneID_) public virtual returns (uint256 newID) {
         if (M.getMembraneById(membraneID_).tokens.length == 0) revert UniniMembrane();
         newID = spawnBranch(fid_);
@@ -149,6 +162,8 @@ contract Fungido is ERC1155, PureUtils {
         inUseMembraneId[newID][1] = block.timestamp;
     }
 
+    /// @notice mints membership to calling address if it satisfies membership conditions
+    /// @param fid_ node for which to mint membership
     function mintMembership(uint256 fid_) public virtual {
         if (parentOf[fid_] == 0) revert BranchNotFound();
         if (isMember(_msgSender(), fid_)) revert AlreadyMember();
@@ -157,11 +172,19 @@ contract Fungido is ERC1155, PureUtils {
         _giveMembership(_msgSender(), fid_);
     }
 
+    /// @notice mints amount of specified fid
+    /// @notice requires an equal deposit of parent fid or root to be added to target reserve
+    /// @param fid_ id to target for mint of kind
+    /// @param amount_ amout to be minted
     function mint(uint256 fid_, uint256 amount_) public virtual {
         if (parentOf[fid_] == 0) revert UnregisteredFungible();
         _mint(_msgSender(), fid_, amount_, abi.encodePacked("fungible"));
     }
 
+    /// @notice mints the specified amount of target fid
+    /// @notice transfers the amount specified of erc 20 and mints all fids on path to target root
+    /// @param target_ id to target for mint of kind
+    /// @param amount_ amout to be minted
     function mintPath(uint256 target_, uint256 amount_) external {
         uint256[] memory fidPath = getFidPath(target_);
         uint256 i;
@@ -171,42 +194,9 @@ contract Fungido is ERC1155, PureUtils {
         if (i > 0) mint(target_, amount_);
     }
 
-    function asRootValuation(uint256 target_, uint256 amount) public view returns (uint256 rAmt) {
-        uint256[] memory paths = getFidPath(target_);
-        uint256 x;
-        for (uint256 i; i < paths.length; ++i) {
-            x = paths.length - 1 - i;
-            target_ = paths[x];
-            if (parentOf[target_] == target_) break;
-            amount = inParentDenomination(amount, target_);
-        }
-        rAmt = amount;
-    }
-
-    function inParentDenomination(uint256 amt_, uint256 id_) public view returns (uint256 inParentVal) {
-        inParentVal = amt_ * balanceOf(toAddress(id_), parentOf[id_]) / totalSupplyOf[id_];
-    }
-
-    /// @notice retrieves token path id array from root to target id
-    /// @param fid_ target fid to trace path to from root
-    /// @return fids lineage in chronologic order
-    function getFidPath(uint256 fid_) public view returns (uint256[] memory fids) {
-        uint256 fidCount = 1;
-        uint256 parent = parentOf[fid_];
-        while (parent >= (fid_ + 1)) {
-            if (parent == parentOf[parent]) break;
-            ++fidCount;
-            parent = parentOf[parent];
-        }
-        fids = new uint256[](fidCount);
-
-        delete parent;
-        for (parent; parent < fidCount; ++parent) {
-            fids[fidCount - parent - 1] = parentOf[fid_];
-            fid_ = parentOf[fid_];
-        }
-    }
-
+    /// @notice burn the amount of targeted node id
+    /// @param fid_ id of node 
+    /// @param amount_ amount to burn
     function burn(uint256 fid_, uint256 amount_) public virtual returns (uint256 topVal) {
         if (parentOf[fid_] == 0) revert BaseOrNonFungible();
         topVal = parentOf[fid_] == fid_ ? amount_ : inParentDenomination(amount_, fid_);
@@ -257,6 +247,9 @@ contract Fungido is ERC1155, PureUtils {
         if (s) _burn(target, fid_, 1);
     }
 
+    /// @notice mints the inflation of a specific context token
+    /// @notice increases ratio of reserve to context denomination
+    /// @param node identifier of node context
     function mintInflation(uint256 node) public virtual returns (uint256 amount) {
         if (parentOf[node] == node) revert StableRoot();
         amount = (block.timestamp - inflSec[node][2]) * inflSec[node][0];
@@ -276,7 +269,7 @@ contract Fungido is ERC1155, PureUtils {
         if (msg.sender != executionAddress) revert ExecutionOnly();
         _localizeNode(toID(endpoint_), endpointParent_);
 
-        if (endpointOwner_ != address(0)) _giveMembership(endpointOwner_, toID(endpoint_));
+        //  if (endpointOwner_ != address(0)) _giveMembership(endpointOwner_, toID(endpoint_));
     }
 
     function _localizeNode(uint256 newID, uint256 parentId) private {
@@ -289,9 +282,61 @@ contract Fungido is ERC1155, PureUtils {
         }
     }
 
+    //// @notice sets default or specific tax policy preference
+    //// @param rootToken_ address (root node) for which to change tax rate
+    /// @param taxRate_ share retained at full exit withdrawal expressed as basis points (default 0.01% or 100)
     function taxPolicyPreference(address rootToken_, uint256 taxRate_) external {
         if (_msgSender() != control[0]) revert Unautorised();
         taxRate[rootToken_] = taxRate_;
+    }
+
+
+    /////////////////////////////////////////////////
+    //////______ VIEW __________////////////////////
+
+
+    /// @notice calculates and returns the value of a number of context tokens in terms of its root reserve
+    /// @param target_ target node and its context token
+    /// @param amount how many of to price
+    function asRootValuation(uint256 target_, uint256 amount) public view returns (uint256 rAmt) {
+        uint256[] memory paths = getFidPath(target_);
+        uint256 x;
+        for (uint256 i; i < paths.length; ++i) {
+            x = paths.length - 1 - i;
+            target_ = paths[x];
+            if (parentOf[target_] == target_) break;
+            amount = inParentDenomination(amount, target_);
+        }
+        rAmt = amount;
+    }
+
+    /// @notice calculates the value of a number of context tokens in terms of reserve token
+    /// @notice reserve token is allways smaller
+    /// @param id_ target node by id and its context token
+    /// @param amt_ how many of to price
+    /// @return inParentVal max price of inputs at current minted inflation
+    function inParentDenomination(uint256 amt_, uint256 id_) public view returns (uint256 inParentVal) {
+        inParentVal = amt_ * balanceOf(toAddress(id_), parentOf[id_]) / totalSupplyOf[id_];
+    }
+
+    /// @notice retrieves token path id array from root to target id
+    /// @param fid_ target fid to trace path to from root
+    /// @return fids lineage in chronologic order
+    function getFidPath(uint256 fid_) public view returns (uint256[] memory fids) {
+        uint256 fidCount = 1;
+        uint256 parent = parentOf[fid_];
+        while (parent >= (fid_ + 1)) {
+            if (parent == parentOf[parent]) break;
+            ++fidCount;
+            parent = parentOf[parent];
+        }
+        fids = new uint256[](fidCount);
+
+        delete parent;
+        for (parent; parent < fidCount; ++parent) {
+            fids[fidCount - parent - 1] = parentOf[fid_];
+            fid_ = parentOf[fid_];
+        }
     }
 
     ////////////////////////////////////////////////

@@ -12,7 +12,7 @@ import {IExecution, SignatureQueue, Call} from "./interfaces/IExecution.sol";
 contract Fun is Fungido {
     constructor(address ExeAddr, address Membranes_) Fungido(ExeAddr, Membranes_) {
         executionAddress = ExeAddr;
-        IExecution(ExeAddr).setBagBook(address(this));
+        IExecution(ExeAddr).setWillWe(address(this));
     }
 
     error BadLen();
@@ -117,13 +117,13 @@ contract Fun is Fungido {
 
                 bytes32 childParentEligibilityPerSec = keccak256((abi.encodePacked(children[i - 2], targetNode_)));
 
-                //// options[childParentEligibilityPerSec][0] /// @todo -
+                //// @dev 
 
                 options[childParentEligibilityPerSec][0] = options[childParentEligibilityPerSec][0]
                     > options[userTargetedPreference][1]
                     ? options[childParentEligibilityPerSec][0] - options[userTargetedPreference][1]
                     : 0;
-
+                //// 
                 options[userTargetedPreference][1] = (balanceOfSender * 1 ether / targetTotalS)
                     * (signals[i] * inflSec[targetNode_][0] / 100_00) / 1 ether;
                 options[childParentEligibilityPerSec][0] += options[userTargetedPreference][1];
@@ -150,28 +150,42 @@ contract Fun is Fungido {
 
     /////////// External
 
-    function proposeMovement(
+
+    //// @notice instantiates a new movement
+    //// @param typeOfMovement 1 agent majority 2 value majority
+    //// @param node identifiable atomic entity doing the moving, must be owner of the executing account
+    /// @param expiresInDays deadline for expiry now plus days
+    /// @param executingAccount external address acting as execution environment for movement
+    /// @param descriptionHash hash of descrptive metadata
+    /// @param data calldata for execution call or executive payload
+    function startMovement(
         uint256 typeOfMovement,
-        uint256 node_,
+        uint256 node,
         uint256 expiresInDays,
         address executingAccount,
         bytes32 descriptionHash,
         bytes memory data
     ) external returns (bytes32 movementHash) {
-        movementHash = IExecution(executionAddress).proposeMovement(
-            _msgSender(), typeOfMovement, node_, expiresInDays, executingAccount, descriptionHash, data
+        movementHash = IExecution(executionAddress).startMovement(
+            _msgSender(), typeOfMovement, node, expiresInDays, executingAccount, descriptionHash, data
         );
-        emit NewMovement(node_, movementHash, descriptionHash);
+        emit NewMovement(node, movementHash, descriptionHash);
     }
 
+    /// @notice creates an external endpoint for an agent in node context
+    /// @notice node owner can be external
+    /// @param nodeId_ id of context node
+    /// @param owner address of agent that will control the endpoint
     function createEndpointForOwner(uint256 nodeId_, address owner) external returns (address endpoint) {
         return IExecution(executionAddress).createEndpointForOwner(_msgSender(), nodeId_, owner);
     }
 
+    /// @notice executes the signature queue identified by its hash if signing requirements
     function executeQueue(bytes32 SignatureQueueHash_) external returns (bool s) {
         return IExecution(executionAddress).executeQueue(SignatureQueueHash_);
     }
 
+    /// @notice submits a list of signatures to a specific movement queue
     function submitSignatures(bytes32 sigHash, address[] memory signers, bytes[] memory signatures) external {
         return IExecution(executionAddress).submitSignatures(sigHash, signers, signatures);
     }
