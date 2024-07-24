@@ -117,13 +117,13 @@ contract Fun is Fungido {
 
                 bytes32 childParentEligibilityPerSec = keccak256((abi.encodePacked(children[i - 2], targetNode_)));
 
-                //// @dev 
+                //// @dev
 
                 options[childParentEligibilityPerSec][0] = options[childParentEligibilityPerSec][0]
                     > options[userTargetedPreference][1]
                     ? options[childParentEligibilityPerSec][0] - options[userTargetedPreference][1]
                     : 0;
-                //// 
+                ////
                 options[userTargetedPreference][1] = (balanceOfSender * 1 ether / targetTotalS)
                     * (signals[i] * inflSec[targetNode_][0] / 100_00) / 1 ether;
                 options[childParentEligibilityPerSec][0] += options[userTargetedPreference][1];
@@ -149,7 +149,6 @@ contract Fun is Fungido {
     }
 
     /////////// External
-
 
     //// @notice instantiates a new movement
     //// @param typeOfMovement 1 agent majority 2 value majority

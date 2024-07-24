@@ -119,7 +119,6 @@ contract Fungido is ERC1155, PureUtils {
     ////////////////////////////////////////////////
     //////______EXTERNAL______/////////////////////
 
-
     /// @notice spawns core branch for a token
     /// @notice acts as port for token value
     /// @notice nests all token specific contexts
@@ -195,7 +194,7 @@ contract Fungido is ERC1155, PureUtils {
     }
 
     /// @notice burn the amount of targeted node id
-    /// @param fid_ id of node 
+    /// @param fid_ id of node
     /// @param amount_ amount to burn
     function burn(uint256 fid_, uint256 amount_) public virtual returns (uint256 topVal) {
         if (parentOf[fid_] == 0) revert BaseOrNonFungible();
@@ -290,10 +289,8 @@ contract Fungido is ERC1155, PureUtils {
         taxRate[rootToken_] = taxRate_;
     }
 
-
     /////////////////////////////////////////////////
     //////______ VIEW __________////////////////////
-
 
     /// @notice calculates and returns the value of a number of context tokens in terms of its root reserve
     /// @param target_ target node and its context token

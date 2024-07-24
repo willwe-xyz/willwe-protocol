@@ -51,18 +51,15 @@ contract EIP712 {
         return keccak256(
             abi.encode(
                 keccak256(
-                    bytes(
-                        "Movement(uint8 category,address initiatior,address exeAccount,uint256 viaNode,uint256 expiresAt,bytes32 descriptionHash,Call(address target,bytes callData))"
-                    )
+                    "Movement(uint8 category,address initiatior,address exeAccount,uint256 viaNode,uint256 expiresAt,bytes32 descriptionHash,bytes executedPayload)"
                 ),
-                keccak256(abi.encode(movement)),
-                uint8(movement.category),
+                movement.category,
                 movement.initiatior,
                 movement.exeAccount,
                 movement.viaNode,
                 movement.expiresAt,
                 movement.descriptionHash,
-                movement.executedPayload
+                keccak256(movement.executedPayload)
             )
         );
     }

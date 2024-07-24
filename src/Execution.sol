@@ -16,8 +16,6 @@ import {PowerProxy} from "./components/PowerProxy.sol";
 
 import {Receiver} from "solady/accounts/Receiver.sol";
 
-import {console} from "forge-std/console.sol";
-
 ///////////////////////////////////////////////
 ////////////////////////////////////
 
@@ -33,6 +31,12 @@ contract Execution is EIP712, Receiver {
 
     bytes4 internal constant EIP1271_MAGICVALUE = 0x1626ba7e;
     bytes4 internal constant EIP1271_MAGIC_VALUE_LEGACY = 0x20c13b0b;
+
+    bytes32 public constant EIP712_DOMAIN_TYPEHASH =
+        keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)");
+    bytes32 public constant MOVEMENT_TYPEHASH = keccak256(
+        "Movement(uint8 category,address initiatior,address exeAccount,uint256 viaNode,uint256 expiresAt,bytes32 descriptionHash,bytes executedPayload)"
+    );
 
     /// errors
     error UninitQueue();
@@ -67,6 +71,7 @@ contract Execution is EIP712, Receiver {
     event NewMovementCreated(bytes32 indexed movementHash, uint256 indexed node_);
     event EndpointCreatedForAgent(uint256 indexed nodeid, address endpoint, address agent);
     event WillWeSet(address BBImplementation);
+    event NewSignaturesSubmitted(bytes32 hashOfQueue);
 
     /// @notice signature by hash
     mapping(bytes32 hash => SignatureQueue SigQueue) getSigQueueByHash;
@@ -81,7 +86,18 @@ contract Execution is EIP712, Receiver {
     /// @notice stores agent signatures to prevent double signing  | ( uint256(hash) - uint256(_msgSender()  ) - signer can be simple or composed agent
     mapping(uint256 agentPlusNode => bool) hasEndpointOrInteraction;
 
+    //////////////////////////////////////////////////////
 
+    constructor(address rootValueToken_) {
+        RootValueToken = rootValueToken_;
+        DOMAIN_SEPARATOR = keccak256(
+            abi.encode(
+                EIP712_DOMAIN_TYPEHASH, keccak256(bytes("WillWe")), keccak256(bytes("1")), block.chainid, address(this)
+            )
+        );
+    }
+
+    ///////////////////////////////////////////////////
 
     function setWillWe(address bb_) external {
         if (address(WillWe) == address(0)) WillWe = IFun(bb_);
@@ -89,16 +105,12 @@ contract Execution is EIP712, Receiver {
         emit WillWeSet(bb_);
     }
 
-    constructor(address rootValueToken_) {
-        RootValueToken = rootValueToken_;
-    }
-
     function setFoundationAgent(uint256 baseNodeId_) external {
         if (FoundationAgent != address(0)) revert();
         FoundationAgent = this.createEndpointForOwner(address(this), baseNodeId_, address(this));
     }
 
-    function startMovement (
+    function startMovement(
         address origin,
         uint256 typeOfMovement,
         uint256 node_,
@@ -170,89 +182,53 @@ contract Execution is EIP712, Receiver {
         if (signatures.length < SQ.Sigs.length) revert EXEC_OnlyMore();
         if (signers.length * signatures.length == 0) revert EXEC_ZeroLen();
         if (signers.length != signatures.length) revert LenErr();
-        uint256 i;
-        uint256[] memory validIndexes = new uint256[](signers.length + 1);
 
-        for (i; i < signers.length;) {
+        bytes32 structHash = hashMessage(SQ.Action);
+        bytes32 digest = keccak256(abi.encodePacked("\x19\x01", DOMAIN_SEPARATOR, structHash));
+
+        uint256 validCount;
+        for (uint256 i = 0; i < signers.length; i++) {
             if (signers[i] == address(0)) revert EXEC_A0sig();
 
             if (hasEndpointOrInteraction[uint256(sigHash) - uint160(signers[i])]) {
-                ++i;
                 continue;
             }
 
             if (!(WillWe.isMember(signers[i], SQ.Action.viaNode))) {
-                ++i;
                 continue;
             }
 
-            if (
-                !(SignatureChecker.isValidSignatureNow(signers[i], ECDSA.toEthSignedMessageHash(sigHash), signatures[i]))
-            ) {
-                validIndexes[i] = 0;
-                unchecked {
-                    ++i;
-                }
-                continue;
-            }
+            (uint8 v, bytes32 r, bytes32 s) = splitSignature(signatures[i]);
+            address recovered = ecrecover(digest, v, r, s);
+            if (recovered != signers[i]) continue;
 
-            i == 0 ? validIndexes[validIndexes.length - 1] = type(uint256).max : validIndexes[i] = i;
             hasEndpointOrInteraction[uint256(sigHash) - uint160(signers[i])] = true;
-            unchecked {
-                ++i;
-            }
+            validCount++;
         }
 
-        delete i;
-        uint256 len;
-        for (i; i < validIndexes.length;) {
-            if (validIndexes[i] > 0) {
-                unchecked {
-                    ++len;
-                }
+        if (validCount > 0) {
+            uint256 newSize = SQ.Signers.length + validCount;
+            address[] memory newSigners = new address[](newSize);
+            bytes[] memory newSignatures = new bytes[](newSize);
+
+            for (uint256 i = 0; i < SQ.Signers.length; i++) {
+                newSigners[i] = SQ.Signers[i];
+                newSignatures[i] = SQ.Sigs[i];
             }
-            unchecked {
-                ++i;
-            }
-        }
 
-        i = len + SQ.Sigs.length;
-
-        address[] memory newSigners = new address[](i);
-        bytes[] memory newSignatures = new bytes[](i);
-
-        delete i;
-        delete len;
-
-        for (i; i < validIndexes.length;) {
-            uint256 val = validIndexes[i];
-            if (val > 0 && val < type(uint256).max) {
-                newSigners[len] = signers[val];
-                newSignatures[len] = signatures[val];
-                unchecked {
-                    ++len;
-                }
-            } else {
-                if (val == type(uint256).max) {
-                    newSigners[len] = signers[validIndexes[0]];
-                    newSignatures[len] = signatures[validIndexes[0]];
-
-                    unchecked {
-                        ++len;
-                    }
+            uint256 j = SQ.Signers.length;
+            for (uint256 i = 0; i < signers.length; i++) {
+                if (hasEndpointOrInteraction[uint256(sigHash) - uint160(signers[i])]) {
+                    newSigners[j] = signers[i];
+                    newSignatures[j] = signatures[i];
+                    j++;
                 }
             }
 
-            unchecked {
-                ++i;
-            }
+            getSigQueueByHash[sigHash].Signers = newSigners;
+            getSigQueueByHash[sigHash].Sigs = newSignatures;
         }
-
-        SQ.Signers = newSigners;
-        SQ.Sigs = newSignatures;
-
-        getSigQueueByHash[sigHash].Signers = newSigners;
-        getSigQueueByHash[sigHash].Sigs = newSignatures;
+        emit NewSignaturesSubmitted(sigHash);
     }
 
     function removeSignature(bytes32 sigHash_, uint256 index_, address who_) external {
@@ -275,10 +251,6 @@ contract Execution is EIP712, Receiver {
         if (uint256(latentActions[SQ.Action.viaNode][0]) > index) latentActions[SQ.Action.viaNode][0] = bytes32(index);
         getSigQueueByHash[actionHash_] = SQ;
     }
-
-//   function createEndpointForOwner(uint256 nodeId_, address owner) external returns (address endpoint) {
-//         return IExecution(executionAddress).createEndpointForOwner(_msgSender(), nodeId_, owner);
-//     }
 
     function createEndpointForOwner(address origin, uint256 nodeId_, address owner)
         external
@@ -313,8 +285,8 @@ contract Execution is EIP712, Receiver {
             SQM.state = SQState.Stale;
             getSigQueueByHash[sigHash] = SQM;
         }
-
-        if (!isQueueValid(sigHash)) revert EXEC_SQInvalid();
+        bytes32 hashedOne = hashMovement(SQM.Action);
+        if (!isQueueValid(hashedOne)) revert EXEC_SQInvalid();
 
         SQM.state = SQState.Valid;
         getSigQueueByHash[sigHash] = SQM;
@@ -329,33 +301,31 @@ contract Execution is EIP712, Receiver {
         if (SQM.state != SQState.Initialized) return false;
         if (SQM.Signers.length == 0) return false;
         if (SQM.Signers.length != SQM.Sigs.length) return false;
-        
+
         uint256 i;
         uint256 power;
         address[] memory signers = SQM.Signers;
         bytes[] memory signatures = SQM.Sigs;
 
-        bytes32 signedHash = ECDSA.toEthSignedMessageHash(sigHash);
+        bytes32 signedHash = keccak256(abi.encodePacked("\x19\x01", DOMAIN_SEPARATOR, sigHash));
 
-        for (i; i < signatures.length;) {
-            if (signers[i] == address(0)) {
-                ++i;
-                continue;
-            }
+        for (i; i < signatures.length; ++i) {
+            if (signers[i] == address(0)) continue;
+
             if (!SignatureChecker.isValidSignatureNow(signers[i], signedHash, signatures[i])) return false;
 
-            power = (SQM.Action.category == MovementType.EnergeticMajority) ? power + WillWe.balanceOf(signers[i], SQM.Action.viaNode) : power + 1;
-
-            unchecked {
-                ++i;
-            }
+            power = (SQM.Action.category == MovementType.EnergeticMajority)
+                ? power + WillWe.balanceOf(signers[i], SQM.Action.viaNode)
+                : power + 1;
         }
 
         if (power > 0) {
-
-         if (SQM.Action.category == MovementType.EnergeticMajority) return (power > ((WillWe.totalSupply(SQM.Action.viaNode) / 2)));
-         if (SQM.Action.category == MovementType.AgentMajority) return (power > ((WillWe.allMembersOf(SQM.Action.viaNode).length / 2) ));
-
+            if (SQM.Action.category == MovementType.EnergeticMajority) {
+                return (power > ((WillWe.totalSupply(SQM.Action.viaNode) / 2)));
+            }
+            if (SQM.Action.category == MovementType.AgentMajority) {
+                return (power > ((WillWe.allMembersOf(SQM.Action.viaNode).length / 2)));
+            }
         }
         return false;
     }
@@ -373,5 +343,36 @@ contract Execution is EIP712, Receiver {
 
     function getSigQueue(bytes32 hash_) public view returns (SignatureQueue memory) {
         return getSigQueueByHash[hash_];
+    }
+
+    function hashMovement(Movement memory movement) public pure returns (bytes32) {
+        return keccak256(
+            abi.encode(
+                MOVEMENT_TYPEHASH,
+                movement.category,
+                movement.initiatior,
+                movement.exeAccount,
+                movement.viaNode,
+                movement.expiresAt,
+                movement.descriptionHash,
+                keccak256(movement.executedPayload)
+            )
+        );
+    }
+
+    function splitSignature(bytes memory sig) internal pure returns (uint8 v, bytes32 r, bytes32 s) {
+        require(sig.length == 65, "Invalid signature length");
+
+        assembly {
+            r := mload(add(sig, 32))
+            s := mload(add(sig, 64))
+            v := byte(0, mload(add(sig, 96)))
+        }
+
+        if (v < 27) {
+            v += 27;
+        }
+
+        require(v == 27 || v == 28, "Invalid signature 'v' value");
     }
 }

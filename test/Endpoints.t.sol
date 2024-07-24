@@ -6,17 +6,17 @@ import {Fun} from "../src/Fun.sol";
 import {Execution} from "../src/Execution.sol";
 import {SignatureQueue, IExecution} from "../src/interfaces/IExecution.sol";
 import {TokenPrep} from "./mock/Tokens.sol";
-
 import {SignatureQueue, SQState, MovementType} from "../src/interfaces/IExecution.sol";
 import {Movement, Call} from "../src/interfaces/IExecution.sol";
 import {IERC20} from "openzeppelin/token/ERC20/IERC20.sol";
-
 import {Will} from "../src/Will.sol";
 import {InitTest} from "./Init.t.sol";
 import {ECDSA} from "openzeppelin/utils/cryptography/ECDSA.sol";
 import {IPowerProxy} from "../src/interfaces/IPowerProxy.sol";
 
 contract Endpoints is Test, TokenPrep, InitTest {
+    using ECDSA for bytes32;
+
     IERC20 T1;
     IERC20 T2;
 
@@ -31,6 +31,14 @@ contract Endpoints is Test, TokenPrep, InitTest {
 
     uint256 snapSig1;
     uint256 snapSig2;
+
+    bytes32 constant DOMAIN_SEPARATOR_TYPEHASH =
+        keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)");
+    bytes32 constant MOVEMENT_TYPEHASH = keccak256(
+        "Movement(uint8 category,address initiatior,address exeAccount,uint256 viaNode,uint256 expiresAt,bytes32 descriptionHash,bytes executedPayload)"
+    );
+
+    bytes32 DOMAIN_SEPARATOR;
 
     function setUp() public override {
         super.setUp();
@@ -81,8 +89,11 @@ contract Endpoints is Test, TokenPrep, InitTest {
 
         vm.stopPrank();
 
-
         receiver = address(bytes20(type(uint160).max / 2));
+
+        DOMAIN_SEPARATOR = keccak256(
+            abi.encode(DOMAIN_SEPARATOR_TYPEHASH, keccak256("WillWe"), keccak256("1"), block.chainid, address(E))
+        );
     }
 
     function testSimpleDeposit() public {
@@ -105,13 +116,10 @@ contract Endpoints is Test, TokenPrep, InitTest {
 
         uint256 aaafter = T1.balanceOf(A1);
         console.log(before, aaafter, before - aaafter);
-        ///@dev tax applied
-        // assertTrue(before == aaafter, "before as after");
     }
 
     function testEnergTxIni() public {
         vm.skip(false);
-        /// nothing tested
         vm.prank(address(1));
         T1.transfer(A1, 1 ether);
 
@@ -121,10 +129,7 @@ contract Endpoints is Test, TokenPrep, InitTest {
         vm.prank(address(1));
         T1.transfer(A3, 3 ether);
 
-        /// ##########
-
         vm.startPrank(A1);
-
         F.mint(rootBranchID, 1 ether);
         F.mint(B1, 0.9 ether);
         vm.stopPrank();
@@ -138,13 +143,9 @@ contract Endpoints is Test, TokenPrep, InitTest {
         F.mint(rootBranchID, 2 ether);
         F.mint(B1, 1.2 ether);
         vm.stopPrank();
-
-        /// ############
     }
 
     function testProposesNewMovement() public returns (bytes32 moveHash) {
-        // if (block.chainid != 59140) return moveHash;
-        // if (block.chainid == 31337) vm.skip(true);
         testSimpleDeposit();
         console.log("########### new movement________________");
 
@@ -160,14 +161,14 @@ contract Endpoints is Test, TokenPrep, InitTest {
         F.startMovement(1, B2, 12, address(1), description, data);
 
         address[] memory members = F.allMembersOf(B2);
-        assertTrue(members.length > 0, "shoudl have members for majority");
+        assertTrue(members.length > 0, "should have members for majority");
 
         moveHash = F.startMovement(2, B2, 12, address(0), description, data);
 
         assertTrue(uint256(moveHash) > 0, "empty hash returned");
         SignatureQueue memory SQ = F.getSigQueue(moveHash);
-        assertTrue(SQ.state == SQState.Initialized, "expected intiailized");
-        assertTrue(SQ.Action.descriptionHash == description, "description mism");
+        assertTrue(SQ.state == SQState.Initialized, "expected initialized");
+        assertTrue(SQ.Action.descriptionHash == description, "description mismatch");
         assertTrue(SQ.Action.exeAccount != address(0), "no exe account");
         assertTrue(SQ.Action.category == MovementType.EnergeticMajority, "not type 2");
 
@@ -175,12 +176,10 @@ contract Endpoints is Test, TokenPrep, InitTest {
         return moveHash;
     }
 
-    // function tryAggregate(bool requireSuccess, Call[] calldata calls)
-
     function _getCallData() public returns (bytes memory call) {
         Call memory S;
         S.target = address(address(F20));
-        bytes memory data = abi.encodeWithSelector(IERC20.transfer.selector, receiver, 0.1 ether); //0xa9059cbb000000
+        bytes memory data = abi.encodeWithSelector(IERC20.transfer.selector, receiver, 0.1 ether);
         S.callData = data;
 
         Call[] memory calls = new Call[](1);
@@ -201,10 +200,9 @@ contract Endpoints is Test, TokenPrep, InitTest {
         bytes32 moveHash = F.startMovement(1, rootBranchID, 12, address(0), description, data);
         SignatureQueue memory SQ = F.getSigQueue(moveHash);
 
-        assertTrue(SQ.state == SQState.Initialized, "expected intiailized");
-        assertTrue(SQ.Action.descriptionHash == description, "description mism");
+        assertTrue(SQ.state == SQState.Initialized, "expected initialized");
+        assertTrue(SQ.Action.descriptionHash == description, "description mismatch");
         assertTrue(SQ.Action.exeAccount != address(0), "no exe account");
-
         assertTrue(SQ.Action.category == MovementType.AgentMajority, "not type 1");
 
         console.log("###################  AGAIN with prev exe______________");
@@ -214,10 +212,9 @@ contract Endpoints is Test, TokenPrep, InitTest {
         moveHash = F.startMovement(1, rootBranchID, 12, SQ.Action.exeAccount, description, data);
         SQ = F.getSigQueue(moveHash);
 
-        assertTrue(SQ.state == SQState.Initialized, "expected intiailized");
-        assertTrue(SQ.Action.descriptionHash == description, "description mism");
+        assertTrue(SQ.state == SQState.Initialized, "expected initialized");
+        assertTrue(SQ.Action.descriptionHash == description, "description mismatch");
         assertTrue(SQ.Action.exeAccount != address(0), "no exe account");
-
         assertTrue(SQ.Action.category == MovementType.AgentMajority, "not type 1");
 
         console.log("###################  Again with exe type 2______________");
@@ -227,10 +224,10 @@ contract Endpoints is Test, TokenPrep, InitTest {
         moveHash = F.startMovement(2, rootBranchID, 12, SQ.Action.exeAccount, description, data);
         SQ = F.getSigQueue(moveHash);
 
-        assertTrue(SQ.state == SQState.Initialized, "expected intiailized");
-        assertTrue(SQ.Action.descriptionHash == description, "description mism");
+        assertTrue(SQ.state == SQState.Initialized, "expected initialized");
+        assertTrue(SQ.Action.descriptionHash == description, "description mismatch");
         assertTrue(SQ.Action.exeAccount != address(0), "no exe account");
-        assertTrue(SQ.Action.category == MovementType.EnergeticMajority, "not type 1");
+        assertTrue(SQ.Action.category == MovementType.EnergeticMajority, "not type 2");
 
         vm.stopPrank();
     }
@@ -253,10 +250,39 @@ contract Endpoints is Test, TokenPrep, InitTest {
         vm.stopPrank();
     }
 
-    function _signHash(uint256 signerPVK_, bytes32 hashToSign) public returns (bytes memory signature) {
-        hashToSign = ECDSA.toEthSignedMessageHash(hashToSign);
-        (uint8 v, bytes32 r, bytes32 s) = vm.sign(signerPVK_, hashToSign);
+    function _signHash(uint256 signerPVK_, Movement memory movement) internal view returns (bytes memory signature) {
+        bytes32 domainSeparator = keccak256(
+            abi.encode(
+                keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"),
+                keccak256(bytes("WillWe")),
+                keccak256(bytes("1")),
+                block.chainid,
+                address(E)
+            )
+        );
+
+        bytes32 structHash = keccak256(
+            abi.encode(
+                keccak256(
+                    "Movement(uint8 category,address initiatior,address exeAccount,uint256 viaNode,uint256 expiresAt,bytes32 descriptionHash,bytes executedPayload)"
+                ),
+                movement.category,
+                movement.initiatior,
+                movement.exeAccount,
+                movement.viaNode,
+                movement.expiresAt,
+                movement.descriptionHash,
+                keccak256(movement.executedPayload)
+            )
+        );
+
+        bytes32 hash = keccak256(abi.encodePacked("\x19\x01", domainSeparator, structHash));
+
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(signerPVK_, hash);
         signature = abi.encodePacked(r, s, v);
+
+        console.log("Generated signature length:", signature.length);
+        return signature;
     }
 
     function _getStructsForHash()
@@ -277,89 +303,77 @@ contract Endpoints is Test, TokenPrep, InitTest {
     }
 
     function testSubmitsSignatures() public returns (bytes32 move) {
-        (SignatureQueue memory SQ, Movement memory M, bytes memory STX, bytes32 move_) = _getStructsForHash();
-        move = move_;
-        assertTrue(uint256(IExecution(E).hashMessage(M)) == uint256(move));
+        (SignatureQueue memory SQ, Movement memory M, bytes memory STX, bytes32 m) = _getStructsForHash();
+        move = m;
+        assertTrue(uint256(IExecution(E).hashMessage(M)) == uint256(move), "Movement hash mismatch");
 
         bytes[] memory signatures;
         address[] memory signers;
 
-        //// submit empty signatures (0)
         vm.expectRevert(Execution.EXEC_ZeroLen.selector);
         F.submitSignatures(move, signers, signatures);
 
         signers = new address[](3);
         signatures = new bytes[](3);
 
-        //// submit empty signatures (0)
         vm.expectRevert(Execution.EXEC_A0sig.selector);
         F.submitSignatures(move, signers, signatures);
-
-        bytes memory sigA1 = _signHash(A1pvk, move);
-        bytes memory sigA2 = _signHash(A2pvk, move);
-        bytes memory sigA3 = _signHash(A3pvk, move);
 
         signers[0] = A1;
         signers[1] = A2;
         signers[2] = A3;
-        signatures[0] = sigA1;
-        signatures[1] = sigA2;
-        signatures[2] = sigA3;
+        signatures[0] = _signHash(A1pvk, M);
+        signatures[1] = _signHash(A2pvk, M);
+        signatures[2] = _signHash(A3pvk, M);
 
         snapSig1 = vm.snapshot();
 
-        assertFalse(F.isMember(A2, B2), "notmember");
+        assertFalse(F.isMember(A2, B2), "A2 should not be a member of B2");
         vm.prank(A2);
         F.mintMembership(B2);
-        assertTrue(F.isMember(A2, B2), "notmember");
+        assertTrue(F.isMember(A2, B2), "A2 should be a member of B2");
 
-        assertFalse(F.isMember(A3, B2), "notmember");
+        assertFalse(F.isMember(A3, B2), "A3 should not be a member of B2");
         vm.prank(A3);
         F.mintMembership(B2);
-        assertTrue(F.isMember(A3, B2), "notmember");
-        assertTrue(F.isMember(A1, B2), "notmember");
-
-        //// submit empty signatures (0)
-        F.submitSignatures(move, signers, signatures);
-
-        bytes memory sigb;
-
-        SQ = F.getSigQueue(move);
-
-        assertTrue(M.viaNode == B2, "unexp node");
-
-        assertTrue(SQ.Action.viaNode == B2, "expected b1");
-        assertTrue(SQ.Signers.length == SQ.Sigs.length, "len mism");
-        assertTrue(SQ.Signers.length == 3, "unexp sig len");
-
-        assertTrue(SQ.Signers[0] == A2, "firs signer A2");
-        assertTrue(SQ.Signers[1] == A3, "signer not A3");
-        assertTrue(SQ.Signers[2] == A1, "signer not A1");
-
-
-        assertFalse(F.isValidSignature(move, sigb) == 0x1626ba7e, "sig not valid");
-        snapSig2 = vm.snapshot();
-
-
-        assertFalse(F.isQueueValid(move), "sq not valid");
+        assertTrue(F.isMember(A3, B2), "A3 should be a member of B2");
+        assertTrue(F.isMember(A1, B2), "A1 should be a member of B2");
 
         vm.prank(A1);
         F.mintPath(B2, 1 ether);
-        
+
         vm.prank(A2);
         F.mintPath(B2, 1 ether);
-        
+
         vm.prank(A3);
         F.mintPath(B2, 1 ether);
 
+        bool isValid = F.isQueueValid(move);
+        assertFalse(F.isQueueValid(move), "Queue should not be valid yet");
+
+        console.log("Submitting signatures...");
+        F.submitSignatures(move, signers, signatures);
+        console.log("Signatures submitted.");
+
+        SQ = F.getSigQueue(move);
+
+        console.log("Signature Queue length:", SQ.Signers.length);
+        console.log("Expected length: 3");
+
+        assertTrue(M.viaNode == B2, "Unexpected node");
+        assertTrue(SQ.Action.viaNode == B2, "Expected B2 as viaNode");
+        assertTrue(SQ.Signers.length == SQ.Sigs.length, "Length mismatch between Signers and Sigs");
+        assertTrue(SQ.Signers.length == 3, "Unexpected signature length");
+
+        for (uint256 i = 0; i < SQ.Signers.length; i++) {
+            console.log("Signer", i, ":", SQ.Signers[i]);
+        }
+
+        isValid = F.isQueueValid(move);
+        assertTrue(isValid, "Queue should be valid now");
 
         console.log("----- Submitted Signatures");
     }
-
-
-
-
-    
 
     function testExecutesSignatureQueue() public {
         bytes32 move = testSubmitsSignatures();
