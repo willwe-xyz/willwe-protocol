@@ -1,14 +1,5 @@
-### Based Deployment
+## Under Development
 
-//   Foundation Agent:  0xa3B55A883a982A9bcC370d68D1B2D38877777D83
-//   Will:  0x6CdDcBb43B7E37962E80e026b5C37391fb41c3AC
-//   Membrane:  0x65F1bAA3842B6B852724E57a2006882570b07Bdf
-//   Execution:  0xd3FF00A965cFa1fE6E8767EF0C46ED6AC548fF20
-//   WillWe:  0x2316531d2358Bd040212246466a5784d01268Ff6
-
-### What to know
-Asumming an absence of critical bugs, this is it.
-Asumming the presence of critical bugs, it is something new, first of its kind to make it so far.
 
 ### How to Contribute
 
