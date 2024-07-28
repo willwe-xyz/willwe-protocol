@@ -1,5 +1,7 @@
 ## Under Development
 
+protocolized anarchy    
+for the onchain economy
 
 ### How to Contribute
 
