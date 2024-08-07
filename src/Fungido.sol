@@ -66,7 +66,6 @@ contract Fungido is ERC1155, PureUtils {
         name = "WillWe.xyz";
         symbol = "WILL";
 
-        IWill(Will).pingInit();
         useBefore = true;
     }
 

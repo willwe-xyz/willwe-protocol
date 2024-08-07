@@ -104,7 +104,7 @@ contract FunTests is Test, TokenPrep, InitTest {
 
         signal = new uint256[](4);
         signal[0] = 23452334546645652345;
-        vm.expectRevert(Fun.BadLen.selector);
+        vm.expectRevert(Fun.MembraneNotFound.selector);
         F.sendSignal(B1, signal);
 
         signal[0] = membraneID;

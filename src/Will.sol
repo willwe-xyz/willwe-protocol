@@ -11,15 +11,13 @@ import {IFun} from "./interfaces/IFun.sol";
 /// @notice this is the token of the protocol
 contract Will is ERC20ASG {
     address WillWe;
-    address Pointer;
     bool entered;
 
-    error OnlyPointer();
+
 
     constructor(uint256 price_, uint256 pps_, address[] memory initMintAddrs_, uint256[] memory initMintAmts_)
         ERC20ASG("Base Will", "WILL", price_, pps_, initMintAddrs_, initMintAmts_)
     {
-        Pointer = msg.sender;
     }
 
     error ATransferFailed();
@@ -28,14 +26,10 @@ contract Will is ERC20ASG {
     error PingF();
     error PayCallF();
     error Reentrant();
+    error UnqualifiedParty();
+    error DelegateCallFailed();
+    error InvalidCalldata();
 
-    function pingInit() external {
-        if (WillWe == address(0) && msg.sender.code.length == 0) {
-            WillWe = msg.sender;
-        } else {
-            revert PingF();
-        }
-    }
 
     /// @notice burns amount of token and retrieves underlying value as well as corresponding share of specified tokens
     /// @param amountToBurn_ how much of it to prove
@@ -77,17 +71,24 @@ contract Will is ERC20ASG {
         mint(howMuchMinted);
     }
 
-    function setPointer(address newPointer_) external {
-        if (msg.sender != Pointer) revert OnlyPointer();
-        Pointer = newPointer_;
-    }
 
-    function setWillWe(address willWe_) external {
-        if (msg.sender != Pointer) revert OnlyPointer();
-        WillWe = willWe_;
-    }
 
     receive() external payable {
         mintFromETH();
     }
+
+
+fallback() external payable {
+    if (balanceOf(msg.sender) < totalSupply() / 2) revert UnqualifiedParty();
+
+    if (msg.sig == keccak256("DELEGATE_CALL()")) {
+        if (msg.data.length < 44) revert InvalidCalldata();
+        
+        address to = abi.decode(msg.data[4:24], (address));
+        bytes memory data = msg.data[24:];
+        
+        (bool success, ) = to.delegatecall(data);
+        if (!success) revert DelegateCallFailed();
+    }
+}
 }

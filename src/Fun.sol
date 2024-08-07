@@ -10,128 +10,138 @@ import {IExecution, SignatureQueue, Call} from "./interfaces/IExecution.sol";
 ///////////////////////////////////////////////
 
 contract Fun is Fungido {
-    constructor(address ExeAddr, address Membranes_) Fungido(ExeAddr, Membranes_) {
+constructor(address ExeAddr, address Membranes_) Fungido(ExeAddr, Membranes_) {
         executionAddress = ExeAddr;
         IExecution(ExeAddr).setWillWe(address(this));
     }
 
+    // Remove unused errors
     error BadLen();
     error Noise();
     error NoSoup();
     error MembraneNotFound();
     error RootNodeOrNone();
 
-    event Signal(uint256 indexed nodeID, address origin, uint256 value);
-    event NewMovement(uint256 indexed nodeID, bytes32 movementID, bytes32 descriptionHash);
 
-    /// @notice processes and stores user signal
-    /// @notice in case threashold is reached, for inflation and membrane, the change is applied.
-    /// @notice formatted as follows: membrane, inflation, r&r
-    /// @param targetNode_ node for which to signal preferences
-    /// @param signals array of signaling values constructed starting with membrane, inflation, subnodes in default order
-    /// @dev skips values over 100_00
-    function sendSignal(uint256 targetNode_, uint256[] memory signals) external {
-        if (parentOf[targetNode_] == targetNode_) revert RootNodeOrNone();
-        if (!(isMember(msg.sender, targetNode_))) revert NotMember();
+    event NewMovement(uint256 indexed nodeId, bytes32 movementHash, bytes32 descriptionHash);
+
+
+
+
+ function sendSignal(uint256 targetNode_, uint256[] memory signals) public virtual {
+        if (parentOf[targetNode_] == targetNode_ || !isMember(msg.sender, targetNode_)) revert();
+        if (balanceOf(msg.sender, targetNode_) < totalSupplyOf[targetNode_] / 100_00) revert();
 
         mintInflation(targetNode_);
 
-        uint256 user = toID(_msgSender());
-        uint256 balanceOfSender = balanceOf(_msgSender(), targetNode_);
-        uint256 targetTotalS = totalSupplyOf[targetNode_];
-        if (balanceOfSender < targetTotalS / 100_00) revert Noise();
-
+        uint256 user = toID(msg.sender);
+        uint256 balanceOfSender = balanceOf(msg.sender, targetNode_);
         uint256 sigSum;
-        uint256 i;
 
-        for (i; i < signals.length; ++i) {
+        for (uint256 i; i < signals.length; ++i) {
             if (i <= 1) {
-                if (signals[i] == 0) continue;
-                emit Signal(targetNode_, _msgSender(), signals[i]);
-
-                bytes32 userKey = keccak256((abi.encodePacked(targetNode_, user, signals[i])));
-                bytes32 nodeKey = keccak256((abi.encodePacked(targetNode_, signals[i])));
-
-                childrenOf[targetNode_ + user - 1].push(signals[0]);
-                childrenOf[targetNode_ + user - 2].push(signals[1]);
-
-                if (i == 0) {
-                    i = signals[i];
-                    if (i < type(uint160).max) revert BadLen();
-                    if (!(M.getMembraneById(i).tokens.length > 0)) revert MembraneNotFound();
-
-                    if (options[userKey][1] > 0 && (inUseMembraneId[targetNode_][1] < options[userKey][1])) {
-                        options[nodeKey][0] -= options[userKey][0];
-                    }
-
-                    options[userKey] = [i, block.timestamp];
-                    options[nodeKey][0] += balanceOfSender;
-
-                    if (options[nodeKey][0] * 2 > totalSupplyOf[targetNode_]) {
-                        delete  options[nodeKey][0];
-                        options[nodeKey][1] = block.timestamp;
-
-                        inUseMembraneId[targetNode_][0] = i;
-                        inUseMembraneId[targetNode_][1] = block.timestamp;
-                    }
-
-                    delete i;
-                } else {
-                    i = signals[i];
-                    if (options[userKey][1] > 0 && (inflSec[targetNode_][1] < options[userKey][1])) {
-                        options[nodeKey][0] -= options[userKey][0];
-                    }
-
-                    options[userKey] = [i, block.timestamp];
-                    options[nodeKey][0] += balanceOfSender;
-
-                    if (options[nodeKey][0] * 2 > totalSupplyOf[targetNode_]) {
-                        delete  options[nodeKey][0];
-                        options[nodeKey][1] = block.timestamp;
-
-                        inflSec[targetNode_][0] = i * 1 gwei;
-                        inflSec[targetNode_][1] = block.timestamp;
-                    }
-
-                    i = 1;
-                }
-
-                continue;
-            }
-
-            uint256[] memory children = childrenOf[targetNode_];
-            if (children.length != (signals.length - 2)) revert BadLen();
-
-            bytes32 userTargetedPreference = keccak256((abi.encodePacked(user, targetNode_, children[i - 2])));
-            if (signals[i] > 100_00 && options[userTargetedPreference][0] == 0) continue;
-
-            sigSum += signals[i];
-            if (sigSum > 100_00) revert SignalOverflow();
-            emit Signal(targetNode_, _msgSender(), signals[i]);
-
-            if (!(options[userTargetedPreference][0] == signals[i])) {
-                options[userTargetedPreference][0] = signals[i];
-                options[userTargetedPreference][1] = block.timestamp;
-
-                redistribute(children[i - 2]);
-
-                bytes32 childParentEligibilityPerSec = keccak256((abi.encodePacked(children[i - 2], targetNode_)));
-
-                //// @dev
-
-                options[childParentEligibilityPerSec][0] = options[childParentEligibilityPerSec][0]
-                    > options[userTargetedPreference][1]
-                    ? options[childParentEligibilityPerSec][0] - options[userTargetedPreference][1]
-                    : 0;
-                ////
-                options[userTargetedPreference][1] = (balanceOfSender * 1 ether / targetTotalS)
-                    * (signals[i] * inflSec[targetNode_][0] / 100_00) / 1 ether;
-                options[childParentEligibilityPerSec][0] += options[userTargetedPreference][1];
-
-                options[childParentEligibilityPerSec][1] = block.timestamp;
+                _handleSpecialSignals(targetNode_, user, signals[i], i, balanceOfSender);
+            } else {
+                _handleRegularSignals(targetNode_, user, signals[i], i, balanceOfSender, signals.length);
+                sigSum += signals[i];
             }
         }
         if (sigSum != 0 && sigSum != 100_00) revert IncompleteSign();
+    }
+
+    function _handleSpecialSignals(
+        uint256 targetNode_,
+        uint256 user,
+        uint256 signal,
+        uint256 index,
+        uint256 balanceOfSender
+    ) private {
+        if (signal == 0) return;
+        bytes32 userKey = keccak256(abi.encodePacked(targetNode_, user, signal));
+        bytes32 nodeKey = keccak256(abi.encodePacked(targetNode_, signal));
+
+        if (index == 0) {
+            _handleMembraneSignal(targetNode_, userKey, nodeKey, signal, balanceOfSender);
+        } else {
+            _handleInflationSignal(targetNode_, userKey, nodeKey, signal, balanceOfSender);
+        }
+    }
+
+    function _handleMembraneSignal(
+        uint256 targetNode_,
+        bytes32 userKey,
+        bytes32 nodeKey,
+        uint256 signal,
+        uint256 balanceOfSender
+    ) private {
+        if (signal < type(uint160).max || M.getMembraneById(signal).tokens.length == 0) revert MembraneNotFound();
+        _updateSignalOption(targetNode_, userKey, nodeKey, signal, balanceOfSender);
+        if (options[nodeKey][0] * 2 > totalSupplyOf[targetNode_]) {
+            inUseMembraneId[targetNode_] = [signal, block.timestamp];
+        }
+    }
+
+    function _handleInflationSignal(
+        uint256 targetNode_,
+        bytes32 userKey,
+        bytes32 nodeKey,
+        uint256 signal,
+        uint256 balanceOfSender
+    ) private {
+        _updateSignalOption(targetNode_, userKey, nodeKey, signal, balanceOfSender);
+        if (options[nodeKey][0] * 2 > totalSupplyOf[targetNode_]) {
+            inflSec[targetNode_] = [signal * 1 gwei, block.timestamp, inflSec[targetNode_][2]];
+        }
+    }
+
+    function _handleRegularSignals(
+        uint256 targetNode_,
+        uint256 user,
+        uint256 signal,
+        uint256 index,
+        uint256 balanceOfSender,
+        uint256 signalsLength
+    ) private {
+        uint256[] memory children = childrenOf[targetNode_];
+        if (children.length != (signalsLength - 2)) revert BadLen();
+
+        bytes32 userTargetedPreference = keccak256(abi.encodePacked(user, targetNode_, children[index - 2]));
+        if (signal > 100_00 && options[userTargetedPreference][0] == 0) return;
+
+        if (options[userTargetedPreference][0] != signal) {
+            options[userTargetedPreference] = [signal, block.timestamp];
+            redistribute(children[index - 2]);
+            _updateChildParentEligibility(children[index - 2], targetNode_, userTargetedPreference, balanceOfSender);
+        }
+    }
+
+    function _updateSignalOption(
+        uint256 targetNode_,
+        bytes32 userKey,
+        bytes32 nodeKey,
+        uint256 signal,
+        uint256 balanceOfSender
+    ) private {
+        if (options[userKey][1] > 0 && (inUseMembraneId[targetNode_][1] < options[userKey][1])) {
+            options[nodeKey][0] -= options[userKey][0];
+        }
+        options[userKey] = [signal, block.timestamp];
+        options[nodeKey][0] += balanceOfSender;
+    }
+
+    function _updateChildParentEligibility(
+        uint256 childId,
+        uint256 parentId,
+        bytes32 userTargetedPreference,
+        uint256 balanceOfSender
+    ) private {
+        bytes32 childParentEligibilityPerSec = keccak256(abi.encodePacked(childId, parentId));
+        options[childParentEligibilityPerSec][0] = options[childParentEligibilityPerSec][0] > options[userTargetedPreference][1]
+            ? options[childParentEligibilityPerSec][0] - options[userTargetedPreference][1]
+            : 0;
+        options[userTargetedPreference][1] = (balanceOfSender * 1 ether / totalSupplyOf[parentId]) * (options[userTargetedPreference][0] * inflSec[parentId][0] / 100_00) / 1 ether;
+        options[childParentEligibilityPerSec][0] += options[userTargetedPreference][1];
+        options[childParentEligibilityPerSec][1] = block.timestamp;
     }
 
     //// @notice redistributes eligible acummulated inflationary flows

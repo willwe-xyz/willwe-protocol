@@ -22,27 +22,21 @@ contract WillWeDeploy is Script {
     }
 
     function run() public {
-        uint256 runPVK = uint256(vm.envUint("DEGEN_DEPLOYER_PVK"));
+        uint256 runPVK = uint256(vm.envUint("WILLWE_DEV_0PVK"));
         address deployer = vm.addr(runPVK);
         vm.label(deployer, "deployer");
 
-        console.log("##### Deployer : ", deployer, "| expected", "0x920CbC9893bF12eD967116136653240823686D9c");
+        console.log("##### Deployer : ", deployer, "| expected", "0x259c1F1FaF930a23D009e85867A6b5206b2a6d44");
         console.log("#________________________________");
 
-        address[] memory founders = new address[](2);
-        uint256[] memory amounts = new uint256[](2);
+        address[] memory founders;
+        uint256[] memory amounts;
 
-        founders[0] = address(0xE7b30A037F5598E4e73702ca66A59Af5CC650Dcd);
-        founders[1] = deployer;
-
-        amounts[0] = 1_000_000 * 1 ether;
-        amounts[1] = 1_000_000 * 1 ether;
-
-        uint256 piper_sec = 306;
+        uint256 piper_sec = 1;
 
         vm.startBroadcast(runPVK);
-
-        F20 = new Will(1_000_000_000, piper_sec, founders, amounts);
+        //// price in gwei | price increase per second in gwei | founder addresses | amounts
+        F20 = new Will(1, 1, founders, amounts);
         vm.label(address(F20), "Will");
 
         Membranes M = new Membranes();
@@ -71,11 +65,11 @@ contract WillWeDeploy is Script {
         console.log("Deployer is member ", FunFun.isMember(deployer, govNode));
 
         F20.transfer(E.FoundationAgent(), F20.balanceOf(address(deployer)));
-        F20.setPointer(E.FoundationAgent());
+        // F20.setPointer(E.FoundationAgent());
 
         console.log("###############################");
         console.log("Balances: deployer | Agent | f0");
-        console.log(F20.balanceOf(address(deployer)), F20.balanceOf(E.FoundationAgent()), F20.balanceOf(founders[0]));
+        // console.log(F20.balanceOf(address(deployer)), F20.balanceOf(E.FoundationAgent()), F20.balanceOf(founders[0]));
 
         console.log(" ");
         console.log("###############################");

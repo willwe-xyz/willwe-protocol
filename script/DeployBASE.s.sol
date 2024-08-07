@@ -88,7 +88,7 @@ contract DeployBASE is Script, TokenPrep, AliasPicker {
         console.log("Deployer is member ", FunFun.isMember(deployer, govNode));
 
         if ((address(FA).code.length > 2)) {
-            F20.setPointer(FA);
+            // F20.setPointer(FA);
             F20.transfer(FA, F20.balanceOf(address(deployer)));
         } else {
             console.log("foundation not safe");

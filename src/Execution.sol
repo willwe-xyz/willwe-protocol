@@ -4,22 +4,15 @@ pragma solidity ^0.8.19;
 import {SignatureChecker} from "openzeppelin-contracts/contracts/utils/cryptography/SignatureChecker.sol";
 import {Address} from "openzeppelin-contracts/contracts/utils/Address.sol";
 import {Strings} from "openzeppelin-contracts/contracts/utils/Strings.sol";
-
-import {Strings, ECDSA} from "openzeppelin-contracts/contracts/utils/cryptography/ECDSA.sol";
-
+import {ECDSA} from "openzeppelin-contracts/contracts/utils/cryptography/ECDSA.sol";
 import {SignatureQueue, SQState, MovementType, Movement, Call} from "./interfaces/IExecution.sol";
 import {IFun} from "./interfaces/IFun.sol";
 import {IERC1155Receiver} from "openzeppelin-contracts/contracts/token/ERC1155/IERC1155Receiver.sol";
 import {EIP712} from "./info/EIP712.sol";
-
 import {PowerProxy} from "./components/PowerProxy.sol";
-
 import {Receiver} from "solady/accounts/Receiver.sol";
 
-///////////////////////////////////////////////
-////////////////////////////////////
-
-/// @title Fungido
+/// @title Execution
 /// @author parseb
 contract Execution is EIP712, Receiver {
     using Address for address;
@@ -68,10 +61,14 @@ contract Execution is EIP712, Receiver {
     error EXEC_ActionIndexMismatch();
 
     /// events
-    event NewMovementCreated(bytes32 indexed movementHash, uint256 indexed node_);
-    event EndpointCreatedForAgent(uint256 indexed nodeid, address endpoint, address agent);
-    event WillWeSet(address BBImplementation);
-    event NewSignaturesSubmitted(bytes32 hashOfQueue);
+    event NewMovementCreated(bytes32 indexed movementHash, uint256 indexed nodeId);
+    event EndpointCreatedForAgent(uint256 indexed nodeId, address endpoint, address agent);
+    event WillWeSet(address implementation);
+    event NewSignaturesSubmitted(bytes32 indexed queueHash);
+    event QueueExecuted(uint256 indexed nodeId, bytes32 indexed queueHash);
+    event SignatureRemoved(uint256 indexed nodeId, bytes32 indexed queueHash, address signer);
+    event LatentActionRemoved(uint256 indexed nodeId, bytes32 indexed actionHash, uint256 index);
+    event FoundationAgentSet(address indexed agent);
 
     /// @notice signature by hash
     mapping(bytes32 hash => SignatureQueue SigQueue) getSigQueueByHash;
@@ -86,8 +83,6 @@ contract Execution is EIP712, Receiver {
     /// @notice stores agent signatures to prevent double signing  | ( uint256(hash) - uint256(_msgSender()  ) - signer can be simple or composed agent
     mapping(uint256 agentPlusNode => bool) hasEndpointOrInteraction;
 
-    //////////////////////////////////////////////////////
-
     constructor(address rootValueToken_) {
         RootValueToken = rootValueToken_;
         DOMAIN_SEPARATOR = keccak256(
@@ -97,23 +92,22 @@ contract Execution is EIP712, Receiver {
         );
     }
 
-    ///////////////////////////////////////////////////
-
-    function setWillWe(address bb_) external {
-        if (address(WillWe) == address(0)) WillWe = IFun(bb_);
-        if (msg.sender == FoundationAgent) WillWe = IFun(bb_);
-        emit WillWeSet(bb_);
+    function setWillWe(address implementation) external {
+        if (address(WillWe) == address(0)) WillWe = IFun(implementation);
+        if (msg.sender == FoundationAgent) WillWe = IFun(implementation);
+        emit WillWeSet(implementation);
     }
 
-    function setFoundationAgent(uint256 baseNodeId_) external {
+    function setFoundationAgent(uint256 baseNodeId) external {
         if (FoundationAgent != address(0)) revert();
-        FoundationAgent = this.createEndpointForOwner(address(this), baseNodeId_, address(this));
+        FoundationAgent = this.createEndpointForOwner(address(this), baseNodeId, address(this));
+        emit FoundationAgentSet(FoundationAgent);
     }
 
     function startMovement(
         address origin,
         uint256 typeOfMovement,
-        uint256 node_,
+        uint256 nodeId,
         uint256 expiresInDays,
         address executingAccount,
         bytes32 descriptionHash,
@@ -122,22 +116,21 @@ contract Execution is EIP712, Receiver {
         if (msg.sender != address(WillWe)) revert OnlyFun();
 
         if (typeOfMovement > 2) revert NoType();
-        if (!WillWe.isMember(origin, node_)) revert NotNodeMember();
+        if (!WillWe.isMember(origin, nodeId)) revert NotNodeMember();
 
-        if (((typeOfMovement * node_ * expiresInDays) == 0)) revert EmptyUnallowed();
+        if (((typeOfMovement * nodeId * expiresInDays) == 0)) revert EmptyUnallowed();
         if (uint256(descriptionHash) == 0) revert EXEC_NoDescription();
 
         if (executingAccount == address(0)) {
-            executingAccount = createNodeEndpoint(origin, node_);
-
-            engineOwner[executingAccount] = node_;
+            executingAccount = createNodeEndpoint(origin, nodeId);
+            engineOwner[executingAccount] = nodeId;
         } else {
-            if (!(engineOwner[executingAccount] == node_)) revert NotExeAccOwner();
+            if (!(engineOwner[executingAccount] == nodeId)) revert NotExeAccOwner();
         }
 
         Movement memory M;
         M.initiatior = msg.sender;
-        M.viaNode = node_;
+        M.viaNode = nodeId;
         M.descriptionHash = descriptionHash;
         M.executedPayload = data;
         M.exeAccount = executingAccount;
@@ -145,7 +138,7 @@ contract Execution is EIP712, Receiver {
         M.category = typeOfMovement == 1 ? MovementType.AgentMajority : MovementType.EnergeticMajority;
 
         movementHash = hashMessage(M);
-        latentActions[node_].push(movementHash);
+        latentActions[nodeId].push(movementHash);
 
         SignatureQueue memory SQ;
         SQ.state = SQState.Initialized;
@@ -154,30 +147,32 @@ contract Execution is EIP712, Receiver {
         if (getSigQueueByHash[movementHash].state != SQState.None) revert AlreadyInitialized();
         getSigQueueByHash[movementHash] = SQ;
 
-        emit NewMovementCreated(movementHash, node_);
+        emit NewMovementCreated(movementHash, nodeId);
     }
 
-    function executeQueue(bytes32 SignatureQueueHash_) public virtual returns (bool s) {
+    function executeQueue(bytes32 queueHash) public virtual returns (bool success) {
         if (msg.sender != address(WillWe)) revert OnlyFun();
 
-        SignatureQueue memory SQ = validateQueue(SignatureQueueHash_);
+        SignatureQueue memory SQ = validateQueue(queueHash);
 
         if (SQ.state != SQState.Valid) revert InvalidQueue();
         if (SQ.Action.expiresAt <= block.timestamp) revert ExpiredMovement();
 
         Movement memory M = SQ.Action;
 
-        (s,) = (SQ.Action.exeAccount).call(M.executedPayload);
-        if (!s) revert EXEC_exeQFail();
-
         SQ.state = SQState.Executed;
-        getSigQueueByHash[SignatureQueueHash_] = SQ;
+        getSigQueueByHash[queueHash] = SQ;
+
+        (success,) = (SQ.Action.exeAccount).call(M.executedPayload);
+        if (!success) revert EXEC_exeQFail();
+
+        emit QueueExecuted(SQ.Action.viaNode, queueHash);
     }
 
-    function submitSignatures(bytes32 sigHash, address[] memory signers, bytes[] memory signatures) external {
+    function submitSignatures(bytes32 queueHash, address[] memory signers, bytes[] memory signatures) external {
         if (msg.sender != address(WillWe)) revert OnlyFun();
 
-        SignatureQueue memory SQ = getSigQueueByHash[sigHash];
+        SignatureQueue memory SQ = getSigQueueByHash[queueHash];
 
         if (signatures.length < SQ.Sigs.length) revert EXEC_OnlyMore();
         if (signers.length * signatures.length == 0) revert EXEC_ZeroLen();
@@ -190,7 +185,7 @@ contract Execution is EIP712, Receiver {
         for (uint256 i = 0; i < signers.length; i++) {
             if (signers[i] == address(0)) revert EXEC_A0sig();
 
-            if (hasEndpointOrInteraction[uint256(sigHash) - uint160(signers[i])]) {
+            if (hasEndpointOrInteraction[uint256(queueHash) - uint160(signers[i])]) {
                 continue;
             }
 
@@ -202,7 +197,7 @@ contract Execution is EIP712, Receiver {
             address recovered = ecrecover(digest, v, r, s);
             if (recovered != signers[i]) continue;
 
-            hasEndpointOrInteraction[uint256(sigHash) - uint160(signers[i])] = true;
+            hasEndpointOrInteraction[uint256(queueHash) - uint160(signers[i])] = true;
             validCount++;
         }
 
@@ -218,50 +213,56 @@ contract Execution is EIP712, Receiver {
 
             uint256 j = SQ.Signers.length;
             for (uint256 i = 0; i < signers.length; i++) {
-                if (hasEndpointOrInteraction[uint256(sigHash) - uint160(signers[i])]) {
+                if (hasEndpointOrInteraction[uint256(queueHash) - uint160(signers[i])]) {
                     newSigners[j] = signers[i];
                     newSignatures[j] = signatures[i];
                     j++;
                 }
             }
 
-            getSigQueueByHash[sigHash].Signers = newSigners;
-            getSigQueueByHash[sigHash].Sigs = newSignatures;
+            getSigQueueByHash[queueHash].Signers = newSigners;
+            getSigQueueByHash[queueHash].Sigs = newSignatures;
         }
-        emit NewSignaturesSubmitted(sigHash);
+        emit NewSignaturesSubmitted(queueHash);
     }
 
-    function removeSignature(bytes32 sigHash_, uint256 index_, address who_) external {
+    function removeSignature(bytes32 queueHash, uint256 index, address signer) external {
         if (msg.sender != address(WillWe)) revert OnlyFun();
-        SignatureQueue memory SQ = getSigQueueByHash[sigHash_];
+        SignatureQueue memory SQ = getSigQueueByHash[queueHash];
 
-        if (SQ.Signers[index_] != who_) revert EXEC_OnlySigner();
-        delete SQ.Sigs[index_];
-        delete SQ.Signers[index_];
-        getSigQueueByHash[sigHash_] = SQ;
-        hasEndpointOrInteraction[uint256(sigHash_) - uint160(who_)] = false;
+        if (SQ.Signers[index] != signer) revert EXEC_OnlySigner();
+        delete SQ.Sigs[index];
+        delete SQ.Signers[index];
+        getSigQueueByHash[queueHash] = SQ;
+        hasEndpointOrInteraction[uint256(queueHash) - uint160(signer)] = false;
+
+        emit SignatureRemoved(SQ.Action.viaNode, queueHash, signer);
     }
 
-    function removeLatentAction(bytes32 actionHash_, uint256 index) external {
-        SignatureQueue memory SQ = getSigQueueByHash[actionHash_];
+    function removeLatentAction(bytes32 actionHash, uint256 index) external {
+        SignatureQueue memory SQ = getSigQueueByHash[actionHash];
         if (SQ.Action.expiresAt > block.timestamp) SQ.state = SQState.Stale;
         if (SQ.state == SQState.Initialized || SQ.state == SQState.Valid) revert EXEC_InProgress();
-        if (latentActions[SQ.Action.viaNode][index] != actionHash_) revert EXEC_ActionIndexMismatch();
+        if (latentActions[SQ.Action.viaNode][index] != actionHash) revert EXEC_ActionIndexMismatch();
         delete latentActions[SQ.Action.viaNode][index];
         if (uint256(latentActions[SQ.Action.viaNode][0]) > index) latentActions[SQ.Action.viaNode][0] = bytes32(index);
-        getSigQueueByHash[actionHash_] = SQ;
+        getSigQueueByHash[actionHash] = SQ;
+        
+        emit LatentActionRemoved(SQ.Action.viaNode, actionHash, index);
     }
 
-    function createEndpointForOwner(address origin, uint256 nodeId_, address owner)
+    function createEndpointForOwner(address origin, uint256 nodeId, address owner)
         external
         returns (address endpoint)
     {
         if ((msg.sender != address(WillWe) && owner != address(this))) revert OnlyFun();
-        if (!WillWe.isMember(origin, nodeId_) && owner != address(this)) revert NotNodeMember();
-        if (hasEndpointOrInteraction[nodeId_ + uint160(bytes20(owner))]) revert AlreadyHasEndpoint();
-        hasEndpointOrInteraction[nodeId_ + uint160(bytes20(owner))] = true;
+        if (!WillWe.isMember(origin, nodeId) && owner != address(this)) revert NotNodeMember();
+        if (hasEndpointOrInteraction[nodeId + uint160(bytes20(owner))]) revert AlreadyHasEndpoint();
+        hasEndpointOrInteraction[nodeId + uint160(bytes20(owner))] = true;
 
-        endpoint = createNodeEndpoint(origin, nodeId_);
+        endpoint = createNodeEndpoint(origin, nodeId);
+        
+        emit EndpointCreatedForAgent(nodeId, endpoint, owner);
     }
 
     function createNodeEndpoint(address originOrNode, uint256 endpointOwner_) internal returns (address endpoint) {
@@ -300,7 +301,7 @@ contract Execution is EIP712, Receiver {
         if (SQM.state == SQState.Stale) return false;
         if (SQM.state != SQState.Initialized) return false;
         if (SQM.Signers.length == 0) return false;
-        if (SQM.Signers.length != SQM.Sigs.length) return false;
+if (SQM.Signers.length != SQM.Sigs.length) return false;
 
         uint256 i;
         uint256 power;
@@ -334,9 +335,9 @@ contract Execution is EIP712, Receiver {
         if (getSigQueueByHash[_hash].state == SQState.Valid) return EIP1271_MAGICVALUE;
     }
 
-    /// @notice retrieves the node or agent  that owns the execution account
+    /// @notice retrieves the node or agent that owns the execution account
     /// @param endpointAddress execution account for which to retrieve owner
-    /// @dev in case of user-driven endpoints the returned value is uint160( address of endpoint creator )
+    /// @dev in case of user-driven endpoints the returned value is uint160(address of endpoint creator)
     function endpointOwner(address endpointAddress) public view returns (uint256) {
         return engineOwner[endpointAddress];
     }
