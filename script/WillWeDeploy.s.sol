@@ -29,8 +29,11 @@ contract WillWeDeploy is Script {
         console.log("##### Deployer : ", deployer, "| expected", "0x259c1F1FaF930a23D009e85867A6b5206b2a6d44");
         console.log("#________________________________");
 
-        address[] memory founders;
-        uint256[] memory amounts;
+        address[] memory founders = new address[](1);
+        uint256[] memory amounts = new uint256[](1);
+
+        founders[0] = deployer;
+        amounts[0] = 10_000_000;
 
         uint256 piper_sec = 1;
 
@@ -51,31 +54,32 @@ contract WillWeDeploy is Script {
         console.log(" ");
         console.log("###############################");
 
-        uint256 govNodeParent = FunFun.spawnRootBranch(address(F20));
-        uint256 govNode = FunFun.spawnBranch(govNodeParent);
-        E.setFoundationAgent(govNode);
-
-        vm.label(E.FoundationAgent(), "foundationSafe");
-        FunFun.setControl(E.FoundationAgent());
+        // uint256 govNodeParent = FunFun.spawnRootBranch(address(F20));
+        // uint256 govNode = FunFun.spawnBranch(govNodeParent);
+        FunFun.initSelfControl();
+        vm.label(FunFun.control(1), "foundationSafe");
+        F20.transfer(FunFun.control(1), F20.balanceOf(deployer));
 
         console.log("###############################");
         console.log(" ");
-        console.log("Foundation Agent in Control : ", address(E.FoundationAgent()));
-        console.log("Is Foundation Anget contract: ", E.FoundationAgent());
-        console.log("Deployer is member ", FunFun.isMember(deployer, govNode));
+        console.log("Root Value in Control : ", address(FunFun.control(0)));
+        console.log("Controling Extrmity: ", FunFun.control(1));
+        // console.log("Deployer is member ", FunFun.isMember(deployer, ));
 
-        F20.transfer(E.FoundationAgent(), F20.balanceOf(address(deployer)));
-        // F20.setPointer(E.FoundationAgent());
+        F20.transfer(FunFun.control(1), F20.balanceOf(address(deployer)));
+        // F20.setPointer(E.FoundingAgent());
 
         console.log("###############################");
-        console.log("Balances: deployer | Agent | f0");
-        // console.log(F20.balanceOf(address(deployer)), F20.balanceOf(E.FoundationAgent()), F20.balanceOf(founders[0]));
+        console.log("Balances: deployer | Agent ");
+        console.log(F20.balanceOf(address(deployer)), F20.balanceOf(FunFun.control(1)));
+        console.log("Will Price in ETH:", F20.currentPrice() );
+
 
         console.log(" ");
         console.log("###############################");
         console.log(" ");
         console.log("###############################");
-        console.log("Foundation Agent Safe at: ", E.FoundationAgent());
+        console.log("Foundation Agent Safe at: ", FunFun.control(1));
         console.log("Will: ", address(F20));
         console.log("Membrane: ", address(M));
         console.log("Execution: ", address(E));

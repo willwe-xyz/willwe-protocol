@@ -18,8 +18,7 @@ contract Execution is EIP712, Receiver {
     using Address for address;
     using Strings for string;
 
-    address public RootValueToken;
-    address public FoundationAgent;
+    address public WillToken;
     IFun public WillWe;
 
     bytes4 internal constant EIP1271_MAGICVALUE = 0x1626ba7e;
@@ -68,7 +67,6 @@ contract Execution is EIP712, Receiver {
     event QueueExecuted(uint256 indexed nodeId, bytes32 indexed queueHash);
     event SignatureRemoved(uint256 indexed nodeId, bytes32 indexed queueHash, address signer);
     event LatentActionRemoved(uint256 indexed nodeId, bytes32 indexed actionHash, uint256 index);
-    event FoundationAgentSet(address indexed agent);
 
     /// @notice signature by hash
     mapping(bytes32 hash => SignatureQueue SigQueue) getSigQueueByHash;
@@ -83,8 +81,8 @@ contract Execution is EIP712, Receiver {
     /// @notice stores agent signatures to prevent double signing  | ( uint256(hash) - uint256(_msgSender()  ) - signer can be simple or composed agent
     mapping(uint256 agentPlusNode => bool) hasEndpointOrInteraction;
 
-    constructor(address rootValueToken_) {
-        RootValueToken = rootValueToken_;
+    constructor(address WillToken_) {
+        WillToken = WillToken_;
         DOMAIN_SEPARATOR = keccak256(
             abi.encode(
                 EIP712_DOMAIN_TYPEHASH, keccak256(bytes("WillWe")), keccak256(bytes("1")), block.chainid, address(this)
@@ -94,15 +92,11 @@ contract Execution is EIP712, Receiver {
 
     function setWillWe(address implementation) external {
         if (address(WillWe) == address(0)) WillWe = IFun(implementation);
-        if (msg.sender == FoundationAgent) WillWe = IFun(implementation);
+        if (msg.sender == WillToken) WillWe = IFun(implementation);
         emit WillWeSet(implementation);
     }
 
-    function setFoundationAgent(uint256 baseNodeId) external {
-        if (FoundationAgent != address(0)) revert();
-        FoundationAgent = this.createEndpointForOwner(address(this), baseNodeId, address(this));
-        emit FoundationAgentSet(FoundationAgent);
-    }
+
 
     function startMovement(
         address origin,

@@ -75,16 +75,16 @@ interface IExecution {
         bytes memory data
     ) external returns (bytes32 movementHash);
 
-    function setWillWe(address newBB) external;
-    function setFoundationAgent(address fa_) external;
+    function setWillWe(address WillWeImplementationAddress) external;
+    function setFoundingAgent(address fa_) external;
 
     /// View
 
     function isQueueValid(bytes32 sigHash) external view returns (bool);
 
-    function FoundationAgent() external returns (address);
+    function FoundingAgent() external returns (address);
 
-    function RootValueToken() external view returns (address);
+    function WillToken() external view returns (address);
 
     function getSigQueue(bytes32 hash_) external view returns (SignatureQueue memory);
 

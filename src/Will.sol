@@ -10,9 +10,7 @@ import {IFun} from "./interfaces/IFun.sol";
 /// @author Bogdan A. | parseb
 /// @notice this is the token of the protocol
 contract Will is ERC20ASG {
-    address WillWe;
     bool entered;
-
 
 
     constructor(uint256 price_, uint256 pps_, address[] memory initMintAddrs_, uint256[] memory initMintAmts_)
@@ -26,7 +24,7 @@ contract Will is ERC20ASG {
     error PingF();
     error PayCallF();
     error Reentrant();
-    error UnqualifiedParty();
+    error UnqualifiedCall();
     error DelegateCallFailed();
     error InvalidCalldata();
 
@@ -55,9 +53,8 @@ contract Will is ERC20ASG {
             }
         }
         (s,) = payable(msg.sender).call{value: address(this).balance / shareBurned}("");
-        ///
         if (!s) revert PayCallF();
-        entered = false;
+        delete entered;
     }
 
     function simpleBurn(uint256 amountToBurn_) external returns (uint256 amtValReturned) {
@@ -79,7 +76,7 @@ contract Will is ERC20ASG {
 
 
 fallback() external payable {
-    if (balanceOf(msg.sender) < totalSupply() / 2) revert UnqualifiedParty();
+    if (balanceOf(msg.sender) < totalSupply() / 100 * 69) revert UnqualifiedCall();
 
     if (msg.sig == keccak256("DELEGATE_CALL()")) {
         if (msg.data.length < 44) revert InvalidCalldata();
@@ -91,4 +88,5 @@ fallback() external payable {
         if (!success) revert DelegateCallFailed();
     }
 }
+
 }

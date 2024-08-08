@@ -47,4 +47,6 @@ interface IFun is IERC1155, IExecution {
     function burnPath(uint256 target_, uint256 amount) external;
     function mintPath(uint256 target_, uint256 amount) external;
     function sendSignal(uint256 targetNode_, uint256[] memory signals) external;
+    function initSelfControl() external returns (address controlingAgent);
+    
 }

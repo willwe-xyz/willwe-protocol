@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity >=0.8.3;
 
-// import {ERC1155} from "openzeppelin-contracts/contracts/token/ERC1155/ERC1155.sol";
 import {ERC1155} from "solady/tokens/ERC1155.sol";
 
 import {IERC20} from "openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
@@ -51,6 +50,7 @@ contract Fungido is ERC1155, PureUtils {
     mapping(address => uint256) taxRate;
 
     address[2] public control;
+    address initControlAddress;
 
     string public name;
     string public symbol;
@@ -59,8 +59,7 @@ contract Fungido is ERC1155, PureUtils {
     constructor(address executionAddr, address membranes) {
         taxRate[address(0)] = 100_00;
         executionAddress = executionAddr;
-        Will = IExecution(executionAddr).RootValueToken();
-        control[0] = msg.sender;
+        Will = IExecution(executionAddr).WillToken();
         M = IMembrane(membranes);
 
         name = "WillWe.xyz";
@@ -97,6 +96,12 @@ contract Fungido is ERC1155, PureUtils {
     error SignalOverflow();
     error InsufficientAmt();
     error IncompleteSign();
+    error isControled();
+
+    ////////////////////////////////////////////////
+    //////________EVENTS________///////////////////
+
+    event SelfControlAtAddress(address AgencyLocus);
 
     ////////////////////////////////////////////////
     //////________MODIFIER________/////////////////
@@ -113,6 +118,16 @@ contract Fungido is ERC1155, PureUtils {
         } else {
             control[1] = newController;
         }
+    }
+
+    //// @notice initializes control address default to Will and creates an endpoint for it
+    //// @return controlingAgent address of agency of controling extremity
+    function initSelfControl() external returns (address controlingAgent) {
+            if (control[0] != address(0)) revert isControled(); 
+            control[0] = Will;
+            this.spawnRootBranch(Will);
+            control[1] = IExecution(executionAddress).createEndpointForOwner(executionAddress, this.spawnBranch(toID(Will)), executionAddress);
+            emit SelfControlAtAddress(control[1]);
     }
 
     ////////////////////////////////////////////////
@@ -147,7 +162,7 @@ contract Fungido is ERC1155, PureUtils {
 
         _setApprovalForAll(toAddress(newID), address(this), true);
         _localizeNode(newID, fid_);
-        _giveMembership(_msgSender(), newID);
+        if (msg.sender != address(this)) _giveMembership(_msgSender(), newID);
     }
 
     /// @notice spawns branch with an enforceable membership mechanism
@@ -267,7 +282,6 @@ contract Fungido is ERC1155, PureUtils {
         if (msg.sender != executionAddress) revert ExecutionOnly();
         _localizeNode(toID(endpoint_), endpointParent_);
 
-        //  if (endpointOwner_ != address(0)) _giveMembership(endpointOwner_, toID(endpoint_));
     }
 
     function _localizeNode(uint256 newID, uint256 parentId) private {

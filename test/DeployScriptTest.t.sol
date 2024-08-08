@@ -25,7 +25,7 @@ contract LocalG is Test, TokenPrep, WillWeDeploy {
         // vm.createSelectFork(vm.envString("BASE_SepoliaRPC")); //
         super.run();
         deployer = 0x920CbC9893bF12eD967116136653240823686D9c;
-        FoundingSafe = IPowerProxy(E.FoundationAgent());
+        FoundingSafe = IPowerProxy(FunFun.control(1));
     }
 
     function testContractsDeployed() public {
@@ -35,7 +35,7 @@ contract LocalG is Test, TokenPrep, WillWeDeploy {
         assertTrue(address(FoundingSafe).code.length > 0, "no code safe");
     }
 
-    function testFoundationAgent() public {
+    function testFoundingAgent() public {
         assertTrue(address(FoundingSafe).code.length > 1, "code len of Safe 0");
         assertTrue(FoundingSafe.owner() == address(E), "Exe not owner");
 

@@ -18,7 +18,7 @@ contract DeployBASE is Script, TokenPrep, AliasPicker {
     Execution E;
     Will F20;
 
-    //// @dev foundationAgent transit value.
+    //// @dev FoundingAgent transit value.
 
     function setUp() public virtual {
         console.log("###############################");
@@ -74,9 +74,9 @@ contract DeployBASE is Script, TokenPrep, AliasPicker {
 
         uint256 govNodeParent = FunFun.spawnRootBranch(address(F20));
         uint256 govNode = FunFun.spawnBranch(govNodeParent);
-        E.setFoundationAgent(govNode);
+        // E.setFoundingAgent(govNode);
 
-        address FA = E.FoundationAgent();
+        address FA = FunFun.initSelfControl();
         vm.label(FA, "foundationSafe");
 
         console.log("control --- ", (FunFun.control(0)), (FunFun.control(1)), deployer);
@@ -84,7 +84,7 @@ contract DeployBASE is Script, TokenPrep, AliasPicker {
         console.log("###############################");
         console.log(" ");
         console.log("Foundation Agent in Control : ", FA);
-        console.log("Is Foundation Anget contract: ", (address(E.FoundationAgent()).code.length > 1));
+        console.log("Is Foundation Anget contract: ", (address(FunFun.control(1)).code.length > 1));
         console.log("Deployer is member ", FunFun.isMember(deployer, govNode));
 
         if ((address(FA).code.length > 2)) {
@@ -94,8 +94,7 @@ contract DeployBASE is Script, TokenPrep, AliasPicker {
             console.log("foundation not safe");
         }
 
-        FunFun.setControl(FA);
-        FunFun.setControl(FA);
+
 
         console.log("###############################");
         console.log("Balances: deployer | Agent | f0");
