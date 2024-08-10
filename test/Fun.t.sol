@@ -10,7 +10,7 @@ import {TokenPrep} from "./mock/Tokens.sol";
 import {Will} from "../src/Will.sol";
 
 import {Execution} from "../src/Execution.sol";
-
+import {NodeState} from "../src/interfaces/IExecution.sol";
 import {Fun} from "../src/Fun.sol";
 import {IERC20} from "openzeppelin/token/ERC20/IERC20.sol";
 
@@ -234,19 +234,32 @@ contract FunTests is Test, TokenPrep, InitTest {
         vm.stopPrank();
     }
 
-    function testGetInteractions() public {
-        vm.skip(true);
-        // testInflates();
+function testGetInteractions() public {
+    testInflates();
 
-        // uint256[][2] memory UI1 = F.getUserInteractions(A1);
-        // uint256[][2] memory UI2 = F.getUserInteractions(A2);
+    NodeState[] memory NS = F.getInteractionDataOf(A1);
 
-        // console.log(UI1[0][0], UI1[0][1], UI1[0][UI1[0].length - 2]);
-        // console.log(UI1[1][0], UI1[1][1], UI1[1][UI1[1].length - 2]);
-
-        // assertTrue(UI1[0][0] > UI1[0][1], "timeline -- down bad");
-        // assertTrue((UI1[1][0] + UI1[1][1]) == 2, "not memberships");
+    assertTrue(NS.length > 0, "No NodeStates returned");
+    
+    assertTrue(NS[0].basicInfo.length > 0, "basicInfo array is empty");
+    
+    assertEq(NS[0].basicInfo.length, 7, "basicInfo array length is incorrect");
+    
+    assertTrue(bytes(NS[0].basicInfo[2]).length > 0, "balanceAnchor is empty");
+    
+    assertTrue(bytes(NS[0].basicInfo[6]).length > 0, "currentUserBalance is empty");
+    
+    
+    assertTrue(NS[0].childrenNodes.length >= 0, "childrenNodes array does not exist");
+    
+    assertTrue(NS[0].rootPath.length > 0, "rootPath array is empty");
+    
+    // Test 9: If signals are expected, check if they exist
+    if (NS[0].signals.length > 0) {
+        assertTrue(NS[0].signals[0].MembraneInflation.length == 2, "MembraneInflation array is incorrect");
+        assertTrue(NS[0].signals[0].lastRedistSignal.length > 0, "lastRedistSignal array is empty");
     }
+}
 
     function testFidLineage() public {
         uint256[] memory fids = F.getFidPath(B22);

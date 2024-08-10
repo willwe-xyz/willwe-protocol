@@ -499,76 +499,67 @@ contract Fungido is ERC1155, PureUtils {
     }
 
     function getInteractionDataOf(address user_)
-        external
-        view
-        returns (string[][2] memory activeBalancesResponse, NodeState[] memory NSs)
-    {
-        uint256[][2] memory activeBalances;
-        activeBalances[0] = childrenOf[uint160(user_)];
-        activeBalances[1] = new uint256[](activeBalances[0].length);
-        uint256 i;
-        uint256 n;
-        uint256 u = toID(user_);
+    external
+    view
+    returns (NodeState[] memory NSs)
+{
+    uint256[] memory userChildrenIds = childrenOf[uint160(user_)];
+    NSs = new NodeState[](userChildrenIds.length);
+    uint256 userId = toID(user_);
 
-        NSs = new NodeState[](activeBalances[0].length);
-        for (i; i < activeBalances[0].length; ++i) {
-            n = activeBalances[0][i];
-            activeBalances[1][i] = balanceOf(user_, n);
+    for (uint256 i = 0; i < userChildrenIds.length; i++) {
+        uint256 nodeId = userChildrenIds[i];
+        NodeState memory N = getNodeData(nodeId);
+        
+        // Add currentUserBalance to basicInfo
+        N.basicInfo[6] = balanceOf(user_, nodeId).toString();
 
-            NodeState memory N = getNodeData(n);
-            uint256 len = childrenOf[n].length;
-
-            UserSignal memory U;
-            UserSignal[] memory Uss = new UserSignal[](len);
-
-            childrenOf[n + u - 1];
-
-            U.MembraneInflation[0] = uintArrayToStringArray(childrenOf[n + u - 1]);
-            U.MembraneInflation[1] = uintArrayToStringArray(childrenOf[n + u - 2]);
-            if (len == 0) continue;
-            string[] memory sigs = new string[](len);
-            for (uint256 x; x < len; ++x) {
-                bytes32 targetedPref = keccak256((abi.encodePacked(u, n, childrenOf[n][x])));
-                sigs[x] = options[targetedPref][0].toString();
-                U.lastRedistSignal = sigs;
-                Uss[x] = U;
+        uint256 len = childrenOf[nodeId].length;
+        if (len > 0) {
+            N.signals = new UserSignal[](len);
+            for (uint256 x = 0; x < len; x++) {
+                N.signals[x].MembraneInflation = [
+                    uintArrayToStringArray(childrenOf[nodeId + userId - 1]),
+                    uintArrayToStringArray(childrenOf[nodeId + userId - 2])
+                ];
+                N.signals[x].lastRedistSignal = new string[](len);
+                for (uint256 y = 0; y < len; y++) {
+                    bytes32 targetedPref = keccak256(abi.encodePacked(userId, nodeId, childrenOf[nodeId][y]));
+                    N.signals[x].lastRedistSignal[y] = options[targetedPref][0].toString();
+                }
             }
-            N.signals = Uss;
-            NSs[i] = N;
         }
-
-        activeBalancesResponse[0] = uintArrayToStringArray(childrenOf[uint160(user_)]);
-        activeBalancesResponse[1] = uintArrayToStringArray(activeBalances[1]);
+        NSs[i] = N;
     }
+}
 
-    function getNodeData(uint256 n) public view returns (NodeState memory N) {
-        N.nodeId = n.toString();
-        N.inflation = inflSec[n][0].toString();
-        N.balanceAnchor = balanceOf(toAddress(n), parentOf[n]).toString();
-        N.balanceBudget = balanceOf(toAddress(n), n).toString();
-        N.value = (asRootValuation(n, balanceOf(toAddress(n), n))).toString();
-        N.membraneId = (inUseMembraneId[n][0]).toString();
-        N.membersOfNode = members[n];
-        N.childrenNodes = uintArrayToStringArray(childrenOf[n]);
-        N.rootPath = uintArrayToStringArray(getFidPath(n));
+function getNodeData(uint256 n) public view returns (NodeState memory N) {
+    N.basicInfo = new string[](7);
+    N.basicInfo[0] = n.toString();
+    N.basicInfo[1] = inflSec[n][0].toString();
+    N.basicInfo[2] = balanceOf(toAddress(n), parentOf[n]).toString();
+    N.basicInfo[3] = balanceOf(toAddress(n), n).toString();
+    N.basicInfo[4] = (asRootValuation(n, balanceOf(toAddress(n), n))).toString();
+    N.basicInfo[5] = (inUseMembraneId[n][0]).toString();
+    N.membersOfNode = members[n];
+    N.childrenNodes = uintArrayToStringArray(childrenOf[n]);
+    N.rootPath = uintArrayToStringArray(getFidPath(n));
+}
+
+function getNodes(uint256[] memory nodeIds) public view returns (NodeState[] memory nodes) {
+    nodes = new NodeState[](nodeIds.length);
+    for (uint256 i = 0; i < nodeIds.length; i++) {
+        nodes[i] = getNodeData(nodeIds[i]);
     }
+}
 
-    function getNodes(uint256[] memory nodeIds) public view returns (NodeState[] memory nodes) {
-        nodes = new NodeState[](nodeIds.length);
-        for (uint256 i = 0; i < nodeIds.length; i++) {
-            nodes[i] = getNodeData(nodeIds[i]);
-        }
+function getAllNodesForRoot(address rootAddress) external view returns (NodeState[] memory nodes) {
+    uint256 rootId = toID(rootAddress);
+    nodes = new NodeState[](members[rootId].length);
+    for (uint256 i = 0; i < members[rootId].length; i++) {
+        nodes[i] = getNodeData(toID(members[rootId][i]));
     }
-    
-
-    function getAllNodesForRoot(address rootAddress) external view returns (NodeState[] memory nodes) {
-        uint256 rootId = toID(rootAddress);
-        nodes = new NodeState[](members[rootId].length);
-        for (uint256 i; i < members[rootId].length; ++i) {
-            nodes[i] = getNodeData(toID(members[rootId][i]));
-        }
-    }
-
+}
     /**
      * @dev See {IERC1155MetadataURI-uri}.
      *
