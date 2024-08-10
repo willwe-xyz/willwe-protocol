@@ -559,6 +559,7 @@ contract Fungido is ERC1155, PureUtils {
             nodes[i] = getNodeData(nodeIds[i]);
         }
     }
+    
 
     function getAllNodesForRoot(address rootAddress) external view returns (NodeState[] memory nodes) {
         uint256 rootId = toID(rootAddress);

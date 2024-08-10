@@ -54,9 +54,8 @@ contract WillWeDeploy is Script {
         console.log(" ");
         console.log("###############################");
 
-        // uint256 govNodeParent = FunFun.spawnRootBranch(address(F20));
-        // uint256 govNode = FunFun.spawnBranch(govNodeParent);
         FunFun.initSelfControl();
+
         vm.label(FunFun.control(1), "foundationSafe");
         F20.transfer(FunFun.control(1), F20.balanceOf(deployer));
 
@@ -64,10 +63,8 @@ contract WillWeDeploy is Script {
         console.log(" ");
         console.log("Root Value in Control : ", address(FunFun.control(0)));
         console.log("Controling Extrmity: ", FunFun.control(1));
-        // console.log("Deployer is member ", FunFun.isMember(deployer, ));
 
         F20.transfer(FunFun.control(1), F20.balanceOf(address(deployer)));
-        // F20.setPointer(E.FoundingAgent());
 
         console.log("###############################");
         console.log("Balances: deployer | Agent ");

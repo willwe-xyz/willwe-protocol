@@ -37,10 +37,6 @@ interface IFun is IERC1155, IExecution {
     function Will() external view returns (address);
     function getUserInteractions(address user_) external view returns (uint256[][2] memory);
     function removeSignature(bytes32 sigHash_, uint256 index_) external;
-    function getInteractionDataOf(address user_)
-        external
-        view
-        returns (string[][2] memory activeBalances, NodeState[] memory);
 
     function inParentDenomination(uint256 amt_, uint256 id_) external view returns (uint256);
     function getFidPath(uint256 fid_) external view returns (uint256[] memory fids);
@@ -48,5 +44,13 @@ interface IFun is IERC1155, IExecution {
     function mintPath(uint256 target_, uint256 amount) external;
     function sendSignal(uint256 targetNode_, uint256[] memory signals) external;
     function initSelfControl() external returns (address controlingAgent);
-    
+
+    //// Data
+    function getInteractionDataOf(address user_)
+        external
+        view
+        returns (string[][2] memory activeBalances, NodeState[] memory);
+    function getNodeData(uint256 n) external view returns (NodeState memory N);
+    function getNodes(uint256[] memory nodeIds) external view returns (NodeState[] memory nodes);
+    function getAllNodesForRoot(address rootAddress) external view returns (NodeState[] memory nodes);
 }
