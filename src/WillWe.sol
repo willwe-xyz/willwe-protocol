@@ -25,9 +25,6 @@ import {Fun} from "./Fun.sol";
 contract WillWe is Fun {
     constructor(address Execution, address Membrane) Fun(Execution, Membrane) {}
 
-    // Remove any redundant functions or variables
-    
-    // Add events for all user actions
     event BranchSpawned(uint256 indexed parentId, uint256 indexed newBranchId, address indexed creator);
     event MembershipMinted(uint256 indexed branchId, address indexed member);
     event TokensMinted(uint256 indexed branchId, address indexed minter, uint256 amount);
@@ -35,7 +32,6 @@ contract WillWe is Fun {
     event InflationMinted(uint256 indexed branchId, uint256 amount);
     event SignalSent(uint256 indexed branchId, address indexed sender, uint256[] signals);
 
-    // Override functions to emit events
     function spawnBranch(uint256 fid_) public virtual override returns (uint256 newID) {
         newID = super.spawnBranch(fid_);
         emit BranchSpawned(fid_, newID, msg.sender);
@@ -54,18 +50,15 @@ contract WillWe is Fun {
     function burn(uint256 fid_, uint256 amount_) public virtual override returns (uint256 topVal) {
         topVal = super.burn(fid_, amount_);
         emit TokensBurned(fid_, msg.sender, amount_);
-        return topVal;
     }
 
     function mintInflation(uint256 node) public virtual override returns (uint256 amount) {
         amount = super.mintInflation(node);
         emit InflationMinted(node, amount);
-        return amount;
     }
 
     function sendSignal(uint256 targetNode_, uint256[] memory signals) public override {
         super.sendSignal(targetNode_, signals);
         emit SignalSent(targetNode_, msg.sender, signals);
     }
-    }
-
+}

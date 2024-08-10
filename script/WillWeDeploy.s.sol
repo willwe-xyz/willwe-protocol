@@ -69,8 +69,7 @@ contract WillWeDeploy is Script {
         console.log("###############################");
         console.log("Balances: deployer | Agent ");
         console.log(F20.balanceOf(address(deployer)), F20.balanceOf(FunFun.control(1)));
-        console.log("Will Price in ETH:", F20.currentPrice() );
-
+        console.log("Will Price in ETH:", F20.currentPrice());
 
         console.log(" ");
         console.log("###############################");
@@ -85,3 +84,12 @@ contract WillWeDeploy is Script {
         vm.stopBroadcast();
     }
 }
+
+// Base Sepolia
+//   ###############################
+//   Foundation Agent Safe at:  0xe3875F069bEA20cAC8e42f255cFDf1bCA4c541c8
+//   Will:  0x590fdD5Fbe567Fe1BF4941411bD6595d4A60E376
+//   Membrane:  0x2Ce56E963cDD9665519153Fb3B28Ab9cC764D96b
+//   Execution:  0xf8b7C3571e4db075ccDE35383F7c3f5B49BFf70C
+//   WillWe:  0x0F9cAaA579275A0bf329A12e510367B938C4C58d
+//   ###############################

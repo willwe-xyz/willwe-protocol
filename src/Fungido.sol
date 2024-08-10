@@ -123,11 +123,13 @@ contract Fungido is ERC1155, PureUtils {
     //// @notice initializes control address default to Will and creates an endpoint for it
     //// @return controlingAgent address of agency of controling extremity
     function initSelfControl() external returns (address controlingAgent) {
-            if (control[0] != address(0)) revert isControled(); 
-            control[0] = Will;
-            this.spawnRootBranch(Will);
-            control[1] = IExecution(executionAddress).createEndpointForOwner(executionAddress, this.spawnBranch(toID(Will)), executionAddress);
-            emit SelfControlAtAddress(control[1]);
+        if (control[0] != address(0)) revert isControled();
+        control[0] = Will;
+        this.spawnRootBranch(Will);
+        control[1] = IExecution(executionAddress).createEndpointForOwner(
+            executionAddress, this.spawnBranch(toID(Will)), executionAddress
+        );
+        emit SelfControlAtAddress(control[1]);
     }
 
     ////////////////////////////////////////////////
@@ -281,7 +283,6 @@ contract Fungido is ERC1155, PureUtils {
     function localizeEndpoint(address endpoint_, uint256 endpointParent_, address endpointOwner_) external {
         if (msg.sender != executionAddress) revert ExecutionOnly();
         _localizeNode(toID(endpoint_), endpointParent_);
-
     }
 
     function _localizeNode(uint256 newID, uint256 parentId) private {
@@ -498,68 +499,64 @@ contract Fungido is ERC1155, PureUtils {
         return totalSupplyOf[nodeId];
     }
 
-    function getInteractionDataOf(address user_)
-    external
-    view
-    returns (NodeState[] memory NSs)
-{
-    uint256[] memory userChildrenIds = childrenOf[uint160(user_)];
-    NSs = new NodeState[](userChildrenIds.length);
-    uint256 userId = toID(user_);
+    function getInteractionDataOf(address user_) external view returns (NodeState[] memory NSs) {
+        uint256[] memory userChildrenIds = childrenOf[uint160(user_)];
+        NSs = new NodeState[](userChildrenIds.length);
+        uint256 userId = toID(user_);
 
-    for (uint256 i = 0; i < userChildrenIds.length; i++) {
-        uint256 nodeId = userChildrenIds[i];
-        NodeState memory N = getNodeData(nodeId);
-        
-        // Add currentUserBalance to basicInfo
-        N.basicInfo[6] = balanceOf(user_, nodeId).toString();
+        for (uint256 i = 0; i < userChildrenIds.length; i++) {
+            uint256 nodeId = userChildrenIds[i];
+            NodeState memory N = getNodeData(nodeId);
 
-        uint256 len = childrenOf[nodeId].length;
-        if (len > 0) {
-            N.signals = new UserSignal[](len);
-            for (uint256 x = 0; x < len; x++) {
-                N.signals[x].MembraneInflation = [
-                    uintArrayToStringArray(childrenOf[nodeId + userId - 1]),
-                    uintArrayToStringArray(childrenOf[nodeId + userId - 2])
-                ];
-                N.signals[x].lastRedistSignal = new string[](len);
-                for (uint256 y = 0; y < len; y++) {
-                    bytes32 targetedPref = keccak256(abi.encodePacked(userId, nodeId, childrenOf[nodeId][y]));
-                    N.signals[x].lastRedistSignal[y] = options[targetedPref][0].toString();
+            // Add currentUserBalance to basicInfo
+            N.basicInfo[6] = balanceOf(user_, nodeId).toString();
+
+            uint256 len = childrenOf[nodeId].length;
+            if (len > 0) {
+                N.signals = new UserSignal[](len);
+                for (uint256 x = 0; x < len; x++) {
+                    N.signals[x].MembraneInflation = [
+                        uintArrayToStringArray(childrenOf[nodeId + userId - 1]),
+                        uintArrayToStringArray(childrenOf[nodeId + userId - 2])
+                    ];
+                    N.signals[x].lastRedistSignal = new string[](len);
+                    for (uint256 y = 0; y < len; y++) {
+                        bytes32 targetedPref = keccak256(abi.encodePacked(userId, nodeId, childrenOf[nodeId][y]));
+                        N.signals[x].lastRedistSignal[y] = options[targetedPref][0].toString();
+                    }
                 }
             }
+            NSs[i] = N;
         }
-        NSs[i] = N;
     }
-}
 
-function getNodeData(uint256 n) public view returns (NodeState memory N) {
-    N.basicInfo = new string[](7);
-    N.basicInfo[0] = n.toString();
-    N.basicInfo[1] = inflSec[n][0].toString();
-    N.basicInfo[2] = balanceOf(toAddress(n), parentOf[n]).toString();
-    N.basicInfo[3] = balanceOf(toAddress(n), n).toString();
-    N.basicInfo[4] = (asRootValuation(n, balanceOf(toAddress(n), n))).toString();
-    N.basicInfo[5] = (inUseMembraneId[n][0]).toString();
-    N.membersOfNode = members[n];
-    N.childrenNodes = uintArrayToStringArray(childrenOf[n]);
-    N.rootPath = uintArrayToStringArray(getFidPath(n));
-}
-
-function getNodes(uint256[] memory nodeIds) public view returns (NodeState[] memory nodes) {
-    nodes = new NodeState[](nodeIds.length);
-    for (uint256 i = 0; i < nodeIds.length; i++) {
-        nodes[i] = getNodeData(nodeIds[i]);
+    function getNodeData(uint256 n) public view returns (NodeState memory N) {
+        N.basicInfo = new string[](7);
+        N.basicInfo[0] = n.toString();
+        N.basicInfo[1] = inflSec[n][0].toString();
+        N.basicInfo[2] = balanceOf(toAddress(n), parentOf[n]).toString();
+        N.basicInfo[3] = balanceOf(toAddress(n), n).toString();
+        N.basicInfo[4] = (asRootValuation(n, balanceOf(toAddress(n), n))).toString();
+        N.basicInfo[5] = (inUseMembraneId[n][0]).toString();
+        N.membersOfNode = members[n];
+        N.childrenNodes = uintArrayToStringArray(childrenOf[n]);
+        N.rootPath = uintArrayToStringArray(getFidPath(n));
     }
-}
 
-function getAllNodesForRoot(address rootAddress) external view returns (NodeState[] memory nodes) {
-    uint256 rootId = toID(rootAddress);
-    nodes = new NodeState[](members[rootId].length);
-    for (uint256 i = 0; i < members[rootId].length; i++) {
-        nodes[i] = getNodeData(toID(members[rootId][i]));
+    function getNodes(uint256[] memory nodeIds) public view returns (NodeState[] memory nodes) {
+        nodes = new NodeState[](nodeIds.length);
+        for (uint256 i = 0; i < nodeIds.length; i++) {
+            nodes[i] = getNodeData(nodeIds[i]);
+        }
     }
-}
+
+    function getAllNodesForRoot(address rootAddress) external view returns (NodeState[] memory nodes) {
+        uint256 rootId = toID(rootAddress);
+        nodes = new NodeState[](members[rootId].length);
+        for (uint256 i = 0; i < members[rootId].length; i++) {
+            nodes[i] = getNodeData(toID(members[rootId][i]));
+        }
+    }
     /**
      * @dev See {IERC1155MetadataURI-uri}.
      *
@@ -570,6 +567,7 @@ function getAllNodesForRoot(address rootAddress) external view returns (NodeStat
      * Clients calling this function must replace the `\{id\}` substring with the
      * actual token type ID.
      */
+
     function uri(uint256 id_) public view virtual override returns (string memory) {
         return string(abi.encodePacked("https://willwe.xyz/metadata/", id_));
     }

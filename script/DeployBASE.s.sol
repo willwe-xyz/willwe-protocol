@@ -94,8 +94,6 @@ contract DeployBASE is Script, TokenPrep, AliasPicker {
             console.log("foundation not safe");
         }
 
-
-
         console.log("###############################");
         console.log("Balances: deployer | Agent | f0");
         console.log(F20.balanceOf(address(deployer)), F20.balanceOf(FA), F20.balanceOf(founders[0]));

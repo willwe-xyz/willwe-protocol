@@ -8,7 +8,7 @@ import "../src/Membranes.sol";
 import "../src/Will.sol";
 import "../test/mock/Tokens.sol";
 
-/// @notice starts anvil, deploys contracts, mock tokens and 
+/// @notice starts anvil, deploys contracts, mock tokens and
 contract DeployAndPopulate is Script, TokenPrep {
     address[] initAddresses;
     address deployer;
@@ -56,16 +56,11 @@ contract DeployAndPopulate is Script, TokenPrep {
         uint256 initialMintAmount = 1000 ether;
 
         uint256[] memory initMintAmts = new uint256[](5);
-        for (uint i = 0; i < 5; i++) {
+        for (uint256 i = 0; i < 5; i++) {
             initMintAmts[i] = initialMintAmount;
         }
 
-        rootValueToken = new Will(
-            initialPrice,
-            pricePerSecond,
-            initAddresses,
-            initMintAmts
-        );
+        rootValueToken = new Will(initialPrice, pricePerSecond, initAddresses, initMintAmts);
         vm.label(address(rootValueToken), "RootValueToken");
         console.log("Root Value Token (Will) deployed to:");
         console.log(address(rootValueToken));
@@ -87,51 +82,45 @@ contract DeployAndPopulate is Script, TokenPrep {
 
         execution.setWillWe(address(willwe));
 
+        vm.stopBroadcast();
+    }
 
+    function setupFruitTokens(uint256 deployerPrivateKey) internal {
+        vm.startBroadcast(deployerPrivateKey);
+
+        string[5] memory fruitNames = ["Apple", "Banana", "Cherry", "Date", "Elderberry"];
+        string[5] memory fruitSymbols = ["APPL", "BANA", "CHRY", "DATE", "ELDR"];
+
+        for (uint256 i = 0; i < 5; i++) {
+            address tokenAddress =
+                makeReturnX20RONWalias(string(abi.encodePacked(fruitNames[i], " Token")), fruitSymbols[i]);
+            vm.label(tokenAddress, string(abi.encodePacked(fruitNames[i], "Token")));
+
+            IERC20 fruitToken = IERC20(tokenAddress);
+
+            uint256 bal1 = fruitToken.balanceOf(deployer);
+            console.log("bal at spawn", bal1);
+            uint256 rootBranch = willwe.spawnRootBranch(tokenAddress);
+            uint256 subBranch1 = willwe.spawnBranch(rootBranch);
+            // uint256 subSubBranch2 = willwe.spawnBranch(subBranch1);
+            fruitToken.approve(address(willwe), type(uint256).max);
+
+            console.log(rootBranch);
+
+            willwe.mint(rootBranch, bal1 / 2);
+            // vm.sleep(2000);
+            // willwe.mint(  subBranch1, bal1 / 20 );
+            // willwe.mintPath(subSubBranch, bal1 / 3 );
+
+            // console.log(string(abi.encodePacked("Setup completed for ", fruitNames[i], " Token")));
+        }
 
         vm.stopBroadcast();
     }
 
-function setupFruitTokens(uint256 deployerPrivateKey) internal {
-    vm.startBroadcast(deployerPrivateKey);
-
-    string[5] memory fruitNames = ["Apple", "Banana", "Cherry", "Date", "Elderberry"];
-    string[5] memory fruitSymbols = ["APPL", "BANA", "CHRY", "DATE", "ELDR"];
-
-    for (uint i = 0; i < 5; i++) {
-        address tokenAddress = makeReturnX20RONWalias(
-            string(abi.encodePacked(fruitNames[i], " Token")),
-            fruitSymbols[i]
-        );
-        vm.label(tokenAddress, string(abi.encodePacked(fruitNames[i], "Token")));
-        
-        IERC20 fruitToken = IERC20(tokenAddress);
-
-        
-        uint256 bal1 = fruitToken.balanceOf(deployer);
-        console.log("bal at spawn",bal1);        
-        uint256 rootBranch =  willwe.spawnRootBranch(tokenAddress);
-        uint256 subBranch1 = willwe.spawnBranch(rootBranch);
-        // uint256 subSubBranch2 = willwe.spawnBranch(subBranch1);
-        fruitToken.approve(address(willwe), type(uint256).max);
-
-        console.log(rootBranch);
-
-        willwe.mint(rootBranch, bal1 / 2);
-        // vm.sleep(2000);
-        // willwe.mint(  subBranch1, bal1 / 20 );
-        // willwe.mintPath(subSubBranch, bal1 / 3 );
-
-
-        // console.log(string(abi.encodePacked("Setup completed for ", fruitNames[i], " Token")));
-    }
-
-    vm.stopBroadcast();
-}
-
     function logInitialAddresses() internal view {
         console.log("Initial Addresses:");
-        for (uint i = 0; i < initAddresses.length; i++) {
+        for (uint256 i = 0; i < initAddresses.length; i++) {
             console.log(string(abi.encodePacked("Address ", vm.toString(i + 1), ":")));
             console.log(initAddresses[i]);
             console.log("ETH Balance:");

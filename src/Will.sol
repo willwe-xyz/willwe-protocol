@@ -12,11 +12,9 @@ import {IFun} from "./interfaces/IFun.sol";
 contract Will is ERC20ASG {
     bool entered;
 
-
     constructor(uint256 price_, uint256 pps_, address[] memory initMintAddrs_, uint256[] memory initMintAmts_)
         ERC20ASG("Base Will", "WILL", price_, pps_, initMintAddrs_, initMintAmts_)
-    {
-    }
+    {}
 
     error ATransferFailed();
     error InsufficentBalance();
@@ -27,7 +25,6 @@ contract Will is ERC20ASG {
     error UnqualifiedCall();
     error DelegateCallFailed();
     error InvalidCalldata();
-
 
     /// @notice burns amount of token and retrieves underlying value as well as corresponding share of specified tokens
     /// @param amountToBurn_ how much of it to prove
@@ -68,25 +65,21 @@ contract Will is ERC20ASG {
         mint(howMuchMinted);
     }
 
-
-
     receive() external payable {
         mintFromETH();
     }
 
+    fallback() external payable {
+        if (balanceOf(msg.sender) < totalSupply() / 100 * 69) revert UnqualifiedCall();
 
-fallback() external payable {
-    if (balanceOf(msg.sender) < totalSupply() / 100 * 69) revert UnqualifiedCall();
+        if (msg.sig == keccak256("DELEGATE_CALL()")) {
+            if (msg.data.length < 44) revert InvalidCalldata();
 
-    if (msg.sig == keccak256("DELEGATE_CALL()")) {
-        if (msg.data.length < 44) revert InvalidCalldata();
-        
-        address to = abi.decode(msg.data[4:24], (address));
-        bytes memory data = msg.data[24:];
-        
-        (bool success, ) = to.delegatecall(data);
-        if (!success) revert DelegateCallFailed();
+            address to = abi.decode(msg.data[4:24], (address));
+            bytes memory data = msg.data[24:];
+
+            (bool success,) = to.delegatecall(data);
+            if (!success) revert DelegateCallFailed();
+        }
     }
-}
-
 }

@@ -13,7 +13,7 @@ interface IWill is IERC20ASG {
     function simpleBurn(uint256 amountToBurn_) external returns (uint256 amtValReturned);
 
     function mintFromETH() external payable returns (uint256 howMuchMinted);
-    
+
     /// @notice Mints new tokens
     /// @notice Value calculation required
     /// @param howMany_ The amount of tokens to mint
@@ -50,7 +50,5 @@ interface IWill is IERC20ASG {
 
     /// @notice Returns the price increase per second
     /// @return The price increase per second in wei
-    function pps() external view returns (uint256);    
-
-
-    }
+    function pps() external view returns (uint256);
+}

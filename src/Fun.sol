@@ -10,7 +10,7 @@ import {IExecution, SignatureQueue, Call} from "./interfaces/IExecution.sol";
 ///////////////////////////////////////////////
 
 contract Fun is Fungido {
-constructor(address ExeAddr, address Membranes_) Fungido(ExeAddr, Membranes_) {
+    constructor(address ExeAddr, address Membranes_) Fungido(ExeAddr, Membranes_) {
         executionAddress = ExeAddr;
         IExecution(ExeAddr).setWillWe(address(this));
     }
@@ -22,13 +22,9 @@ constructor(address ExeAddr, address Membranes_) Fungido(ExeAddr, Membranes_) {
     error MembraneNotFound();
     error RootNodeOrNone();
 
-
     event NewMovement(uint256 indexed nodeId, bytes32 movementHash, bytes32 descriptionHash);
 
-
-
-
- function sendSignal(uint256 targetNode_, uint256[] memory signals) public virtual {
+    function sendSignal(uint256 targetNode_, uint256[] memory signals) public virtual {
         if (parentOf[targetNode_] == targetNode_ || !isMember(msg.sender, targetNode_)) revert();
         if (balanceOf(msg.sender, targetNode_) < totalSupplyOf[targetNode_] / 100_00) revert();
 
@@ -136,10 +132,12 @@ constructor(address ExeAddr, address Membranes_) Fungido(ExeAddr, Membranes_) {
         uint256 balanceOfSender
     ) private {
         bytes32 childParentEligibilityPerSec = keccak256(abi.encodePacked(childId, parentId));
-        options[childParentEligibilityPerSec][0] = options[childParentEligibilityPerSec][0] > options[userTargetedPreference][1]
+        options[childParentEligibilityPerSec][0] = options[childParentEligibilityPerSec][0]
+            > options[userTargetedPreference][1]
             ? options[childParentEligibilityPerSec][0] - options[userTargetedPreference][1]
             : 0;
-        options[userTargetedPreference][1] = (balanceOfSender * 1 ether / totalSupplyOf[parentId]) * (options[userTargetedPreference][0] * inflSec[parentId][0] / 100_00) / 1 ether;
+        options[userTargetedPreference][1] = (balanceOfSender * 1 ether / totalSupplyOf[parentId])
+            * (options[userTargetedPreference][0] * inflSec[parentId][0] / 100_00) / 1 ether;
         options[childParentEligibilityPerSec][0] += options[userTargetedPreference][1];
         options[childParentEligibilityPerSec][1] = block.timestamp;
     }

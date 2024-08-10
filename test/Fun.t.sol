@@ -234,32 +234,31 @@ contract FunTests is Test, TokenPrep, InitTest {
         vm.stopPrank();
     }
 
-function testGetInteractions() public {
-    testInflates();
+    function testGetInteractions() public {
+        testInflates();
 
-    NodeState[] memory NS = F.getInteractionDataOf(A1);
+        NodeState[] memory NS = F.getInteractionDataOf(A1);
 
-    assertTrue(NS.length > 0, "No NodeStates returned");
-    
-    assertTrue(NS[0].basicInfo.length > 0, "basicInfo array is empty");
-    
-    assertEq(NS[0].basicInfo.length, 7, "basicInfo array length is incorrect");
-    
-    assertTrue(bytes(NS[0].basicInfo[2]).length > 0, "balanceAnchor is empty");
-    
-    assertTrue(bytes(NS[0].basicInfo[6]).length > 0, "currentUserBalance is empty");
-    
-    
-    assertTrue(NS[0].childrenNodes.length >= 0, "childrenNodes array does not exist");
-    
-    assertTrue(NS[0].rootPath.length > 0, "rootPath array is empty");
-    
-    // Test 9: If signals are expected, check if they exist
-    if (NS[0].signals.length > 0) {
-        assertTrue(NS[0].signals[0].MembraneInflation.length == 2, "MembraneInflation array is incorrect");
-        assertTrue(NS[0].signals[0].lastRedistSignal.length > 0, "lastRedistSignal array is empty");
+        assertTrue(NS.length > 0, "No NodeStates returned");
+
+        assertTrue(NS[0].basicInfo.length > 0, "basicInfo array is empty");
+
+        assertEq(NS[0].basicInfo.length, 7, "basicInfo array length is incorrect");
+
+        assertTrue(bytes(NS[0].basicInfo[2]).length > 0, "balanceAnchor is empty");
+
+        assertTrue(bytes(NS[0].basicInfo[6]).length > 0, "currentUserBalance is empty");
+
+        assertTrue(NS[0].childrenNodes.length >= 0, "childrenNodes array does not exist");
+
+        assertTrue(NS[0].rootPath.length > 0, "rootPath array is empty");
+
+        // Test 9: If signals are expected, check if they exist
+        if (NS[0].signals.length > 0) {
+            assertTrue(NS[0].signals[0].MembraneInflation.length == 2, "MembraneInflation array is incorrect");
+            assertTrue(NS[0].signals[0].lastRedistSignal.length > 0, "lastRedistSignal array is empty");
+        }
     }
-}
 
     function testFidLineage() public {
         uint256[] memory fids = F.getFidPath(B22);

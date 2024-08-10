@@ -96,8 +96,6 @@ contract Execution is EIP712, Receiver {
         emit WillWeSet(implementation);
     }
 
-
-
     function startMovement(
         address origin,
         uint256 typeOfMovement,
@@ -241,7 +239,7 @@ contract Execution is EIP712, Receiver {
         delete latentActions[SQ.Action.viaNode][index];
         if (uint256(latentActions[SQ.Action.viaNode][0]) > index) latentActions[SQ.Action.viaNode][0] = bytes32(index);
         getSigQueueByHash[actionHash] = SQ;
-        
+
         emit LatentActionRemoved(SQ.Action.viaNode, actionHash, index);
     }
 
@@ -255,7 +253,7 @@ contract Execution is EIP712, Receiver {
         hasEndpointOrInteraction[nodeId + uint160(bytes20(owner))] = true;
 
         endpoint = createNodeEndpoint(origin, nodeId);
-        
+
         emit EndpointCreatedForAgent(nodeId, endpoint, owner);
     }
 
@@ -295,7 +293,7 @@ contract Execution is EIP712, Receiver {
         if (SQM.state == SQState.Stale) return false;
         if (SQM.state != SQState.Initialized) return false;
         if (SQM.Signers.length == 0) return false;
-if (SQM.Signers.length != SQM.Sigs.length) return false;
+        if (SQM.Signers.length != SQM.Sigs.length) return false;
 
         uint256 i;
         uint256 power;
