@@ -160,7 +160,9 @@ contract Fungido is ERC1155, PureUtils {
             ++entityCount;
         }
 
-        newID = (fid_ / block.chainid - block.timestamp - childrenOf[fid_].length) - entityCount;
+        newID = (fid_ - block.chainid - block.timestamp - childrenOf[fid_].length) - entityCount;
+        
+
 
         _setApprovalForAll(toAddress(newID), address(this), true);
         _localizeNode(newID, fid_);
@@ -327,7 +329,7 @@ contract Fungido is ERC1155, PureUtils {
     /// @param amt_ how many of to price
     /// @return inParentVal max price of inputs at current minted inflation
     function inParentDenomination(uint256 amt_, uint256 id_) public view returns (uint256 inParentVal) {
-        inParentVal = amt_ * balanceOf(toAddress(id_), parentOf[id_]) / totalSupplyOf[id_];
+        inParentVal = totalSupplyOf[id_] == 0 ? 0 : amt_ * balanceOf(toAddress(id_), parentOf[id_]) / totalSupplyOf[id_];
     }
 
     /// @notice retrieves token path id array from root to target id
@@ -508,7 +510,6 @@ contract Fungido is ERC1155, PureUtils {
             uint256 nodeId = userChildrenIds[i];
             NodeState memory N = getNodeData(nodeId);
 
-            // Add currentUserBalance to basicInfo
             N.basicInfo[6] = balanceOf(user_, nodeId).toString();
 
             uint256 len = childrenOf[nodeId].length;

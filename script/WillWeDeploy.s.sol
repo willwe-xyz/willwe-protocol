@@ -87,9 +87,44 @@ contract WillWeDeploy is Script {
 
 // Base Sepolia
 //   ###############################
-//   Foundation Agent Safe at:  0xe3875F069bEA20cAC8e42f255cFDf1bCA4c541c8
-//   Will:  0x590fdD5Fbe567Fe1BF4941411bD6595d4A60E376
-//   Membrane:  0x2Ce56E963cDD9665519153Fb3B28Ab9cC764D96b
-//   Execution:  0xf8b7C3571e4db075ccDE35383F7c3f5B49BFf70C
-//   WillWe:  0x0F9cAaA579275A0bf329A12e510367B938C4C58d
+//   Foundation Agent Safe at:  0xa9ad58dab684b27a6d9d2d24f8303a17732bca2f
+//   Will:  0x6ede1d85bbc8922e493f5507df3bcc3960599a97
+//   Membrane:  0x214fea19b4ef0c3d1440398ecd0a2523dcf14210
+//   Execution:  0x96b88f2b098ae65cfd93b226f1a9444ec4043ebe
+//   WillWe:  0xf32f9c6004cd998bc0319290b348a1dbffc4ef67
+//   ###############################
+
+
+
+// OP - Sepolia
+// == Logs ==
+//   ###############################
+                                                               
+//      Deploy script started for network :  11155420
+                                                               
+//   ###############################
+//   ##### Deployer :  0x259c1F1FaF930a23D009e85867A6b5206b2a6d44 | expected 0x259c1F1FaF930a23D009e85867A6b5206b2a6d44
+//   #________________________________
+//   ###############################
+   
+//   Fun deployed at :  0x264336ec33fab9CC7859b2C5b431f42020a20E75
+   
+//   ###############################
+//   ###############################
+   
+//   Root Value in Control :  0x9d814170537951fE8eD28A534CDE9F30Fd731A64
+//   Controling Extrmity:  0xDD9e56E94B6166f47D8F597AECeB38e72e274E92
+//   ###############################
+//   Balances: deployer | Agent 
+//   0 10000000
+//   Will Price in ETH: 1000000000
+   
+//   ###############################
+   
+//   ###############################
+//   Foundation Agent Safe at:  0xDD9e56E94B6166f47D8F597AECeB38e72e274E92
+//   Will:  0x9d814170537951fE8eD28A534CDE9F30Fd731A64
+//   Membrane:  0x36C70f035c39e4072822F8C33C4427ae59298451
+//   Execution:  0xEDf98928d9513051D75e72244e0b4DD254DB1462
+//   WillWe:  0x264336ec33fab9CC7859b2C5b431f42020a20E75
 //   ###############################
