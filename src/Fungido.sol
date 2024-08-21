@@ -97,6 +97,7 @@ contract Fungido is ERC1155, PureUtils {
     error InsufficientAmt();
     error IncompleteSign();
     error isControled();
+    error Disabled();
 
     ////////////////////////////////////////////////
     //////________EVENTS________///////////////////
@@ -160,7 +161,7 @@ contract Fungido is ERC1155, PureUtils {
             ++entityCount;
         }
 
-        newID = (fid_ - block.chainid - block.timestamp - childrenOf[fid_].length) - entityCount;
+        newID = fid_ - block.chainid - block.timestamp - entityCount - (block.difficulty % 1000);
         
 
 
@@ -571,5 +572,9 @@ contract Fungido is ERC1155, PureUtils {
 
     function uri(uint256 id_) public view virtual override returns (string memory) {
         return string(abi.encodePacked("https://willwe.xyz/metadata/", id_));
+    }
+
+    function setApprovalForAll(address operator, bool isApproved) public override {
+        revert Disabled();
     }
 }

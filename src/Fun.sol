@@ -156,6 +156,17 @@ contract Fun is Fungido {
         _safeTransfer(toAddress(parent), toAddress(nodeId_), parent, distributedAmt, abi.encodePacked("redistribution"));
     }
 
+    /// @notice redistributes eligible amounts to all nodes on targe path
+    /// @notice mints inflation as part of redistribution
+    /// @param nodeId_ target of node to actualize path to 
+    function redistributePath(uint256 nodeId_) external returns (uint256 distributedAmt) {
+        uint256[] memory path = getFidPath(nodeId_);
+        for (distributedAmt; distributedAmt < path.length; ++ distributedAmt) {
+            redistribute(path[distributedAmt]);
+        }
+        distributedAmt = redistribute(nodeId_);
+    }
+
     /////////// External
 
     //// @notice instantiates a new movement
