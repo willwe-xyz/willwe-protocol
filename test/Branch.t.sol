@@ -67,12 +67,10 @@ contract BranchTests is Test, TokenPrep, InitTest {
         assertTrue(F.getParentOf(c) == b, "unexpected parent");
         assertTrue(F.getParentOf(b) > 0, "unregistered b ");
         assertTrue(T20addr == address(uint160(F.getFidPath(c)[0])), "path [0] not root");
-                vm.prank(address(1));
-        T20.approve(address(F), type(uint256).max );
-                vm.prank(address(1));
+        vm.prank(address(1));
+        T20.approve(address(F), type(uint256).max);
+        vm.prank(address(1));
 
         F.mintPath(c, 100);
-
-
     }
 }

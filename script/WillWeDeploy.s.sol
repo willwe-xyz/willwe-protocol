@@ -94,33 +94,31 @@ contract WillWeDeploy is Script {
 //   WillWe:  0xf32f9c6004cd998bc0319290b348a1dbffc4ef67
 //   ###############################
 
-
-
 // OP - Sepolia
 // == Logs ==
 //   ###############################
-                                                               
+
 //      Deploy script started for network :  11155420
-                                                               
+
 //   ###############################
 //   ##### Deployer :  0x259c1F1FaF930a23D009e85867A6b5206b2a6d44 | expected 0x259c1F1FaF930a23D009e85867A6b5206b2a6d44
 //   #________________________________
 //   ###############################
-   
+
 //   Fun deployed at :  0x264336ec33fab9CC7859b2C5b431f42020a20E75
-   
+
 //   ###############################
 //   ###############################
-   
+
 //   Root Value in Control :  0x9d814170537951fE8eD28A534CDE9F30Fd731A64
 //   Controling Extrmity:  0xDD9e56E94B6166f47D8F597AECeB38e72e274E92
 //   ###############################
-//   Balances: deployer | Agent 
+//   Balances: deployer | Agent
 //   0 10000000
 //   Will Price in ETH: 1000000000
-   
+
 //   ###############################
-   
+
 //   ###############################
 //   Foundation Agent Safe at:  0xDD9e56E94B6166f47D8F597AECeB38e72e274E92
 //   Will:  0x9d814170537951fE8eD28A534CDE9F30Fd731A64

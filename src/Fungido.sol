@@ -162,8 +162,6 @@ contract Fungido is ERC1155, PureUtils {
         }
 
         newID = fid_ - block.chainid - block.timestamp - entityCount - (block.difficulty % 1000);
-        
-
 
         _setApprovalForAll(toAddress(newID), address(this), true);
         _localizeNode(newID, fid_);
@@ -269,9 +267,9 @@ contract Fungido is ERC1155, PureUtils {
     /// @notice increases ratio of reserve to context denomination
     /// @param node identifier of node context
     function mintInflation(uint256 node) public virtual returns (uint256 amount) {
-        if (parentOf[node] == node) revert StableRoot();
+        if (parentOf[node] == node) return 0;
         amount = (block.timestamp - inflSec[node][2]) * inflSec[node][0];
-        if (amount == 0) return amount;
+        if (amount == 0) return 0;
         inflSec[node][2] = block.timestamp;
 
         _mint(address(uint160(node)), node, amount, abi.encodePacked("inflation"));

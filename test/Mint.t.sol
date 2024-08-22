@@ -135,8 +135,8 @@ contract MintTest is Test, TokenPrep, InitTest {
 
         vm.warp(1000);
         assertTrue(F.totalSupply(B1) == 2 ether, "supply mint missm 1");
-        vm.expectRevert(); // StableRoot();
-        F.mintInflation(B1);
+        uint256 mintedAmount = F.mintInflation(B1);
+        assertTrue(mintedAmount == 0, "has minted some amount");
         assertTrue(F.totalSupply(B1) == 2 ether, "supply mint missm 2");
 
         uint256 balance1 = T20.balanceOf(A1);

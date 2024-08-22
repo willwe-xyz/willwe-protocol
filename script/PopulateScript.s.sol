@@ -91,7 +91,7 @@ contract WillWeDeployScript is Script {
         console.log("Deployer DCM balance before mintPath:", dogCoinMax.balanceOf(deployer));
         console.log("Deployer XV balance before mintPath:", xVentures.balanceOf(deployer));
 
-                // Log token addresses and names
+        // Log token addresses and names
         console.log("WETH Address:", address(weth));
         console.log("WETH Name:", weth.name());
         console.log("WETH Symbol:", weth.symbol());
@@ -117,7 +117,6 @@ contract WillWeDeployScript is Script {
         uint256 Node2b = willwe.spawnBranch(rootNode2);
         uint256 Node3b = willwe.spawnBranch(rootNode3);
         uint256 Node4b = willwe.spawnBranch(rootNode4);
-
 
         // uint256 Node1a = willwe.spawnBranch(Node1b);
         // uint256 Node2a = willwe.spawnBranch(Node2b);
@@ -172,8 +171,7 @@ contract WillWeDeployScript is Script {
     }
 }
 
-
-//   ======== 
+//   ========
 //   WETH Address: 0x48d85D132A40Fc7703c2801d125918d8E7811880
 //   WETH Name: Wrapped Ether
 //   WETH Symbol: WETH

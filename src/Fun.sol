@@ -21,12 +21,14 @@ contract Fun is Fungido {
     error NoSoup();
     error MembraneNotFound();
     error RootNodeOrNone();
-
+    error NoiseNotVoice();
+    error TargetIsRoot();
+    error PathTooShort();
     event NewMovement(uint256 indexed nodeId, bytes32 movementHash, bytes32 descriptionHash);
 
     function sendSignal(uint256 targetNode_, uint256[] memory signals) public virtual {
-        if (parentOf[targetNode_] == targetNode_ || !isMember(msg.sender, targetNode_)) revert();
-        if (balanceOf(msg.sender, targetNode_) < totalSupplyOf[targetNode_] / 100_00) revert();
+        if (parentOf[targetNode_] == targetNode_ || !isMember(msg.sender, targetNode_)) revert TargetIsRoot();
+        if (balanceOf(msg.sender, targetNode_) < totalSupplyOf[targetNode_] / 100_00) revert NoiseNotVoice();
 
         mintInflation(targetNode_);
 
@@ -142,10 +144,11 @@ contract Fun is Fungido {
         options[childParentEligibilityPerSec][1] = block.timestamp;
     }
 
-    //// @notice redistributes eligible acummulated inflationary flows
+    /// @notice redistributes eligible acummulated inflationary flows
     /// @param nodeId_ redistribution target group
     function redistribute(uint256 nodeId_) public returns (uint256 distributedAmt) {
         uint256 parent = parentOf[nodeId_];
+        if (parent == nodeId_) return 0;
         if (parent == 0) revert NoSoup();
         mintInflation(parentOf[nodeId_]);
 
@@ -158,10 +161,11 @@ contract Fun is Fungido {
 
     /// @notice redistributes eligible amounts to all nodes on targe path
     /// @notice mints inflation as part of redistribution
-    /// @param nodeId_ target of node to actualize path to 
+    /// @param nodeId_ target of node to actualize path to
     function redistributePath(uint256 nodeId_) external returns (uint256 distributedAmt) {
         uint256[] memory path = getFidPath(nodeId_);
-        for (distributedAmt; distributedAmt < path.length; ++ distributedAmt) {
+        distributedAmt = 1;
+        for (distributedAmt; distributedAmt < path.length; ++distributedAmt) {
             redistribute(path[distributedAmt]);
         }
         distributedAmt = redistribute(nodeId_);
