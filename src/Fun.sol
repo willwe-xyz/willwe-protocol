@@ -24,6 +24,7 @@ contract Fun is Fungido {
     error NoiseNotVoice();
     error TargetIsRoot();
     error PathTooShort();
+
     event NewMovement(uint256 indexed nodeId, bytes32 movementHash, bytes32 descriptionHash);
 
     function sendSignal(uint256 targetNode_, uint256[] memory signals) public virtual {

@@ -1,0 +1,107 @@
+No files changed, compilation skipped
+Traces:
+  [2908869] → new WillWeDeployScript@0x5b73C5498c1E3b4dbA84de0F1833c4a029d90519
+    ├─ [0] VM::envUint("WEWILL_USER1") [staticcall]
+    │   └─ ← [Return] <env var value>
+    ├─ [0] VM::envUint("WEWILL_USER2") [staticcall]
+    │   └─ ← [Return] <env var value>
+    └─ ← [Return] 14181 bytes of code
+
+  [9702] WillWeDeployScript::setUp()
+    ├─ [0] VM::envUint("WEWILL_02") [staticcall]
+    │   └─ ← [Return] <env var value>
+    ├─ [0] VM::addr(<pk>) [staticcall]
+    │   └─ ← [Return] Deployer 0_WEWILL_2: [0xEC87f34ad0855103AFAb9bA8Bf5cD3bc696958Bf]
+    ├─ [0] VM::label(Deployer 0_WEWILL_2: [0xEC87f34ad0855103AFAb9bA8Bf5cD3bc696958Bf], "Deployer 0_WEWILL_2")
+    │   └─ ← [Return] 
+    ├─ [0] VM::addr(<pk>) [staticcall]
+    │   └─ ← [Return] WEWILL_USER1: [0x292C00bB8d0525135d4E0562Ec3A4cE811ac6f01]
+    ├─ [0] VM::label(WEWILL_USER1: [0x292C00bB8d0525135d4E0562Ec3A4cE811ac6f01], "WEWILL_USER1")
+    │   └─ ← [Return] 
+    ├─ [0] VM::addr(<pk>) [staticcall]
+    │   └─ ← [Return] WEWILL_USER2: [0x00A0d29Ce72De1465C29c68Cb5279B471069386B]
+    ├─ [0] VM::label(WEWILL_USER2: [0x00A0d29Ce72De1465C29c68Cb5279B471069386B], "WEWILL_USER2")
+    │   └─ ← [Return] 
+    └─ ← [Stop] 
+
+  [3126927] WillWeDeployScript::run()
+    ├─ [0] VM::envUint("WEWILL_02") [staticcall]
+    │   └─ ← [Return] <env var value>
+    ├─ [0] VM::addr(<pk>) [staticcall]
+    │   └─ ← [Return] Deployer 0_WEWILL_2: [0xEC87f34ad0855103AFAb9bA8Bf5cD3bc696958Bf]
+    ├─ [0] VM::addr(<pk>) [staticcall]
+    │   └─ ← [Return] WEWILL_USER1: [0x292C00bB8d0525135d4E0562Ec3A4cE811ac6f01]
+    ├─ [0] VM::addr(<pk>) [staticcall]
+    │   └─ ← [Return] WEWILL_USER2: [0x00A0d29Ce72De1465C29c68Cb5279B471069386B]
+    ├─ [0] VM::startBroadcast(<pk>)
+    │   └─ ← [Return] 
+    ├─ [649561] → new X20RONAlias@0xF2F5bdDd94e38B04cD76D19450dDE5E709544895
+    │   ├─ emit Transfer(from: 0x0000000000000000000000000000000000000000, to: Deployer 0_WEWILL_2: [0xEC87f34ad0855103AFAb9bA8Bf5cD3bc696958Bf], value: 1000000000000000000000000 [1e24])
+    │   ├─ emit Transfer(from: 0x0000000000000000000000000000000000000000, to: 0xE7b30A037F5598E4e73702ca66A59Af5CC650Dcd, value: 200000000000000000000000 [2e23])
+    │   └─ ← [Return] 2661 bytes of code
+    ├─ [649561] → new X20RONAlias@0x8F4b13E6306E31A1af87ccC9228bBE89c8AE54f2
+    │   ├─ emit Transfer(from: 0x0000000000000000000000000000000000000000, to: Deployer 0_WEWILL_2: [0xEC87f34ad0855103AFAb9bA8Bf5cD3bc696958Bf], value: 1000000000000000000000000 [1e24])
+    │   ├─ emit Transfer(from: 0x0000000000000000000000000000000000000000, to: 0xE7b30A037F5598E4e73702ca66A59Af5CC650Dcd, value: 200000000000000000000000 [2e23])
+    │   └─ ← [Return] 2661 bytes of code
+    ├─ [649561] → new X20RONAlias@0x9d706Ab5E229bb36fA59BC98b8047Ad251Db898e
+    │   ├─ emit Transfer(from: 0x0000000000000000000000000000000000000000, to: Deployer 0_WEWILL_2: [0xEC87f34ad0855103AFAb9bA8Bf5cD3bc696958Bf], value: 1000000000000000000000000 [1e24])
+    │   ├─ emit Transfer(from: 0x0000000000000000000000000000000000000000, to: 0xE7b30A037F5598E4e73702ca66A59Af5CC650Dcd, value: 200000000000000000000000 [2e23])
+    │   └─ ← [Return] 2661 bytes of code
+    ├─ [649561] → new X20RONAlias@0xAfb355d9D6e16C6F4bE2435baa1195f4889c9ED7
+    │   ├─ emit Transfer(from: 0x0000000000000000000000000000000000000000, to: Deployer 0_WEWILL_2: [0xEC87f34ad0855103AFAb9bA8Bf5cD3bc696958Bf], value: 1000000000000000000000000 [1e24])
+    │   ├─ emit Transfer(from: 0x0000000000000000000000000000000000000000, to: 0xE7b30A037F5598E4e73702ca66A59Af5CC650Dcd, value: 200000000000000000000000 [2e23])
+    │   └─ ← [Return] 2661 bytes of code
+    ├─ [561] X20RONAlias::balanceOf(Deployer 0_WEWILL_2: [0xEC87f34ad0855103AFAb9bA8Bf5cD3bc696958Bf]) [staticcall]
+    │   └─ ← [Return] 1000000000000000000000000 [1e24]
+    ├─ [0] console::log("Deployer WETH balance:", 1000000000000000000000000 [1e24]) [staticcall]
+    │   └─ ← [Stop] 
+    ├─ [561] X20RONAlias::balanceOf(Deployer 0_WEWILL_2: [0xEC87f34ad0855103AFAb9bA8Bf5cD3bc696958Bf]) [staticcall]
+    │   └─ ← [Return] 1000000000000000000000000 [1e24]
+    ├─ [0] console::log("Deployer MKR balance:", 1000000000000000000000000 [1e24]) [staticcall]
+    │   └─ ← [Stop] 
+    ├─ [561] X20RONAlias::balanceOf(Deployer 0_WEWILL_2: [0xEC87f34ad0855103AFAb9bA8Bf5cD3bc696958Bf]) [staticcall]
+    │   └─ ← [Return] 1000000000000000000000000 [1e24]
+    ├─ [0] console::log("Deployer DCM balance:", 1000000000000000000000000 [1e24]) [staticcall]
+    │   └─ ← [Stop] 
+    ├─ [561] X20RONAlias::balanceOf(Deployer 0_WEWILL_2: [0xEC87f34ad0855103AFAb9bA8Bf5cD3bc696958Bf]) [staticcall]
+    │   └─ ← [Return] 1000000000000000000000000 [1e24]
+    ├─ [0] console::log("Deployer XV balance:", 1000000000000000000000000 [1e24]) [staticcall]
+    │   └─ ← [Stop] 
+    ├─ [24934] X20RONAlias::transfer(WEWILL_USER1: [0x292C00bB8d0525135d4E0562Ec3A4cE811ac6f01], 100000000000000000000000 [1e23])
+    │   ├─ emit Transfer(from: Deployer 0_WEWILL_2: [0xEC87f34ad0855103AFAb9bA8Bf5cD3bc696958Bf], to: WEWILL_USER1: [0x292C00bB8d0525135d4E0562Ec3A4cE811ac6f01], value: 100000000000000000000000 [1e23])
+    │   └─ ← [Return] true
+    ├─ [24934] X20RONAlias::transfer(WEWILL_USER1: [0x292C00bB8d0525135d4E0562Ec3A4cE811ac6f01], 100000000000000000000000 [1e23])
+    │   ├─ emit Transfer(from: Deployer 0_WEWILL_2: [0xEC87f34ad0855103AFAb9bA8Bf5cD3bc696958Bf], to: WEWILL_USER1: [0x292C00bB8d0525135d4E0562Ec3A4cE811ac6f01], value: 100000000000000000000000 [1e23])
+    │   └─ ← [Return] true
+    ├─ [24934] X20RONAlias::transfer(WEWILL_USER1: [0x292C00bB8d0525135d4E0562Ec3A4cE811ac6f01], 100000000000000000000000 [1e23])
+    │   ├─ emit Transfer(from: Deployer 0_WEWILL_2: [0xEC87f34ad0855103AFAb9bA8Bf5cD3bc696958Bf], to: WEWILL_USER1: [0x292C00bB8d0525135d4E0562Ec3A4cE811ac6f01], value: 100000000000000000000000 [1e23])
+    │   └─ ← [Return] true
+    ├─ [24934] X20RONAlias::transfer(WEWILL_USER1: [0x292C00bB8d0525135d4E0562Ec3A4cE811ac6f01], 100000000000000000000000 [1e23])
+    │   ├─ emit Transfer(from: Deployer 0_WEWILL_2: [0xEC87f34ad0855103AFAb9bA8Bf5cD3bc696958Bf], to: WEWILL_USER1: [0x292C00bB8d0525135d4E0562Ec3A4cE811ac6f01], value: 100000000000000000000000 [1e23])
+    │   └─ ← [Return] true
+    ├─ [24934] X20RONAlias::transfer(WEWILL_USER2: [0x00A0d29Ce72De1465C29c68Cb5279B471069386B], 100000000000000000000000 [1e23])
+    │   ├─ emit Transfer(from: Deployer 0_WEWILL_2: [0xEC87f34ad0855103AFAb9bA8Bf5cD3bc696958Bf], to: WEWILL_USER2: [0x00A0d29Ce72De1465C29c68Cb5279B471069386B], value: 100000000000000000000000 [1e23])
+    │   └─ ← [Return] true
+    ├─ [24934] X20RONAlias::transfer(WEWILL_USER2: [0x00A0d29Ce72De1465C29c68Cb5279B471069386B], 100000000000000000000000 [1e23])
+    │   ├─ emit Transfer(from: Deployer 0_WEWILL_2: [0xEC87f34ad0855103AFAb9bA8Bf5cD3bc696958Bf], to: WEWILL_USER2: [0x00A0d29Ce72De1465C29c68Cb5279B471069386B], value: 100000000000000000000000 [1e23])
+    │   └─ ← [Return] true
+    ├─ [24934] X20RONAlias::transfer(WEWILL_USER2: [0x00A0d29Ce72De1465C29c68Cb5279B471069386B], 100000000000000000000000 [1e23])
+    │   ├─ emit Transfer(from: Deployer 0_WEWILL_2: [0xEC87f34ad0855103AFAb9bA8Bf5cD3bc696958Bf], to: WEWILL_USER2: [0x00A0d29Ce72De1465C29c68Cb5279B471069386B], value: 100000000000000000000000 [1e23])
+    │   └─ ← [Return] true
+    ├─ [24934] X20RONAlias::transfer(WEWILL_USER2: [0x00A0d29Ce72De1465C29c68Cb5279B471069386B], 100000000000000000000000 [1e23])
+    │   ├─ emit Transfer(from: Deployer 0_WEWILL_2: [0xEC87f34ad0855103AFAb9bA8Bf5cD3bc696958Bf], to: WEWILL_USER2: [0x00A0d29Ce72De1465C29c68Cb5279B471069386B], value: 100000000000000000000000 [1e23])
+    │   └─ ← [Return] true
+    ├─ [5715] 0x3D52a3A5D12505B148a46B5D69887320Fc756F96::setWillWe(0xDf17125350200A99E5c06E5E2b053fc61Be7E6ae)
+    │   ├─ emit WillWeSet(implementation: 0xDf17125350200A99E5c06E5E2b053fc61Be7E6ae)
+    │   └─ ← [Stop] 
+    ├─ [4685] 0xDf17125350200A99E5c06E5E2b053fc61Be7E6ae::spawnRootBranch(X20RONAlias: [0xF2F5bdDd94e38B04cD76D19450dDE5E709544895])
+    │   └─ ← [Revert] UnqualifiedCall()
+    └─ ← [Revert] UnqualifiedCall()
+
+
+
+== Logs ==
+  Deployer WETH balance: 1000000000000000000000000
+  Deployer MKR balance: 1000000000000000000000000
+  Deployer DCM balance: 1000000000000000000000000
+  Deployer XV balance: 1000000000000000000000000

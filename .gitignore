@@ -24,3 +24,5 @@ broadcast/*/31337/
 ./frontend/.DS_Store
 
 ignoredir
+
+BASE_SEPOLIA_logs.txt

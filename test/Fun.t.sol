@@ -34,7 +34,7 @@ contract FunTests is Test, TokenPrep, InitTest {
         vm.prank(address(1234567));
 
         T1 = IERC20(makeReturnERC20());
-                vm.prank(address(1234567));
+        vm.prank(address(1234567));
 
         T2 = IERC20(makeReturnERC20());
 
@@ -237,7 +237,6 @@ contract FunTests is Test, TokenPrep, InitTest {
         vm.stopPrank();
     }
 
-
     function testGetInteractions() public {
         testInflates();
 
@@ -294,61 +293,56 @@ contract FunTests is Test, TokenPrep, InitTest {
         assertTrue(b2_1 + 1 ether >= b2_2, "diff not constant2");
     }
 
+    function testRedistributePath() public {
+        // Run the existing inflation test to set up the initial state
+        testRedistriInflation();
 
-function testRedistributePath() public {
-    // Run the existing inflation test to set up the initial state
-    testRedistriInflation();
+        vm.warp(block.timestamp + 1000);
 
-    vm.warp(block.timestamp + 1000);
+        // Get the path from root to B12
+        uint256[] memory path = new uint256[](3);
+        path[0] = rootBranchID;
+        path[1] = B1;
+        path[2] = B12;
 
-    // Get the path from root to B12
-    uint256[] memory path = new uint256[](3);
-    path[0] = rootBranchID;
-    path[1] = B1;
-    path[2] = B12;
+        // Record balances before redistribution
+        uint256[] memory balancesBefore = new uint256[](3);
+        for (uint256 i = 0; i < 3; i++) {
+            balancesBefore[i] = F.totalSupply(path[i]);
+            console.log("Balance before redistribution for node", path[i], ":", balancesBefore[i]);
+        }
 
-    // Record balances before redistribution
-    uint256[] memory balancesBefore = new uint256[](3);
-    for (uint256 i = 0; i < 3; i++) {
-        balancesBefore[i] = F.totalSupply(path[i]);
-        console.log("Balance before redistribution for node", path[i], ":", balancesBefore[i]);
+        F.getFidPath(B12);
+        // Perform redistribution along the path
+        vm.prank(A1);
+        uint256 distributedAmt = F.redistributePath(B12);
+
+        // Check redistribution results
+        bool inflationMinted;
+        for (uint256 i = 0; i < 3; i++) {
+            uint256 balanceAfter = F.totalSupply(path[i]);
+            console.log("Balance after redistribution for node", path[i], ":", balanceAfter);
+            if (balanceAfter > balancesBefore[i]) inflationMinted = true;
+
+            assertTrue(balanceAfter >= balancesBefore[i], "Total supply should not decrease after redistribution");
+        }
+
+        assertTrue(inflationMinted, "No inflation was minted along the path");
+        assertTrue(distributedAmt > 0, "Distributed amount should be greater than zero");
+
+        // Verify the path
+        assertTrue(F.getParentOf(B12) == B1, "B1 should be parent of B12");
+        assertTrue(F.getParentOf(B1) == rootBranchID, "rootBranchID should be parent of B1");
+
+        // Check balances of B11 and B12 after path redistribution
+        uint256 b11FinalBalance = F.balanceOf(address(uint160(B11)), B1);
+        uint256 b12FinalBalance = F.balanceOf(address(uint160(B12)), B1);
+        console.log("Final balance of B11:", b11FinalBalance);
+        console.log("Final balance of B12:", b12FinalBalance);
+
+        // Verify that the redistribution along the path didn't disrupt the expected balance relationship
+        assertTrue(
+            b11FinalBalance > b12FinalBalance, "B11 balance should still be greater than B12 after path redistribution"
+        );
     }
-
-    F.getFidPath(B12);
-    // Perform redistribution along the path
-    vm.prank(A1);
-    uint256 distributedAmt = F.redistributePath(B12);
-
-    // Check redistribution results
-    bool inflationMinted;
-    for (uint256 i = 0; i < 3; i++) {
-        uint256 balanceAfter = F.totalSupply(path[i]);
-        console.log("Balance after redistribution for node", path[i], ":", balanceAfter);
-        if (balanceAfter > balancesBefore[i]) inflationMinted = true;
-        
-        assertTrue(balanceAfter >= balancesBefore[i], "Total supply should not decrease after redistribution");
-    }
-
-    assertTrue(inflationMinted, "No inflation was minted along the path");
-    assertTrue(distributedAmt > 0, "Distributed amount should be greater than zero");
-
-    // Verify the path
-    assertTrue(F.getParentOf(B12) == B1, "B1 should be parent of B12");
-    assertTrue(F.getParentOf(B1) == rootBranchID, "rootBranchID should be parent of B1");
-
-    // Check balances of B11 and B12 after path redistribution
-    uint256 b11FinalBalance = F.balanceOf(address(uint160(B11)), B1);
-    uint256 b12FinalBalance = F.balanceOf(address(uint160(B12)), B1);
-    console.log("Final balance of B11:", b11FinalBalance);
-    console.log("Final balance of B12:", b12FinalBalance);
-
-    // Verify that the redistribution along the path didn't disrupt the expected balance relationship
-    assertTrue(
-        b11FinalBalance > b12FinalBalance,
-        "B11 balance should still be greater than B12 after path redistribution"
-    );
-}
-
-
-
 }

@@ -19,19 +19,19 @@ contract WillWeDeployScript is Script {
     X20RONAlias public xVentures;
 
     // Specified contract addresses (checksummed and payable)
-    address payable constant WILL_ADDRESS = payable(0x9d814170537951fE8eD28A534CDE9F30Fd731A64);
-    address payable constant EXECUTION_ADDRESS = payable(0x96B88F2B098AE65CFD93B226F1a9444EC4043eBe);
-    address payable constant MEMBRANES_ADDRESS = payable(0x214FEA19B4ef0C3d1440398ECd0A2523dCf14210);
-    address payable constant WILLWE_ADDRESS = payable(0xf32F9c6004Cd998Bc0319290b348A1DbFFc4Ef67);
+    address payable constant WILL_ADDRESS = payable(0xDf17125350200A99E5c06E5E2b053fc61Be7E6ae);
+    address payable constant EXECUTION_ADDRESS = payable(0x3D52a3A5D12505B148a46B5D69887320Fc756F96);
+    address payable constant MEMBRANES_ADDRESS = payable(0xaBbd15F9eD0cab9D174b5e9878E9f104a993B41f);
+    address payable constant WILLWE_ADDRESS = payable(0x8f45bEe4c58C7Bb74CDa9fBD40aD86429Dba3E41);
 
     // Private keys for multiple accounts
-    uint256 constant ACCOUNT1_PRIVATE_KEY = 0x2345678901234567890123456789012345678901234567890123456789012345;
-    uint256 constant ACCOUNT2_PRIVATE_KEY = 0x3456789012345678901234567890123456789012345678901234567890123456;
+    uint256 ACCOUNT1_PRIVATE_KEY = vm.envUint("WEWILL_USER1");
+    uint256 ACCOUNT2_PRIVATE_KEY = vm.envUint("WEWILL_USER2");
 
     function setUp() public {
         vm.label(vm.addr(vm.envUint("WEWILL_02")), "Deployer 0_WEWILL_2");
-        vm.label(vm.addr(ACCOUNT1_PRIVATE_KEY), "Account1");
-        vm.label(vm.addr(ACCOUNT2_PRIVATE_KEY), "Account2");
+        vm.label(vm.addr(ACCOUNT1_PRIVATE_KEY), "WEWILL_USER1");
+        vm.label(vm.addr(ACCOUNT2_PRIVATE_KEY), "WEWILL_USER2");
     }
 
     function run() public {
@@ -184,3 +184,30 @@ contract WillWeDeployScript is Script {
 //   XV Address: 0x56Be55a2A5ED3e775aecD099a4a98FfA6f25a283
 //   XV Name: XVentures
 //   XV Symbol: XV
+
+//   ###############################
+//   ##### Deployer :  0x259c1F1FaF930a23D009e85867A6b5206b2a6d44 | expected 0x259c1F1FaF930a23D009e85867A6b5206b2a6d44
+//   #________________________________
+//   ###############################
+
+//   Fun deployed at :  0x8f45bEe4c58C7Bb74CDa9fBD40aD86429Dba3E41
+
+//   ###############################
+//   ###############################
+
+//   Root Value in Control :  0xDf17125350200A99E5c06E5E2b053fc61Be7E6ae
+//   Controling Extrmity:  0xc01F390530ca36Ec1871F9E4D74b0B2aaf852A44
+//   ###############################
+//   Balances: deployer | Agent
+//   0 10000000
+//   Will Price in ETH: 1000000000
+
+//   ###############################
+
+//   ###############################
+//   Foundation Agent Safe at:  0xc01F390530ca36Ec1871F9E4D74b0B2aaf852A44
+//   Will:  0xDf17125350200A99E5c06E5E2b053fc61Be7E6ae
+//   Membrane:  0xaBbd15F9eD0cab9D174b5e9878E9f104a993B41f
+//   Execution:  0x3D52a3A5D12505B148a46B5D69887320Fc756F96
+//   WillWe:  0x8f45bEe4c58C7Bb74CDa9fBD40aD86429Dba3E41
+//   ###############################
