@@ -4,9 +4,9 @@ node_modules
 out
 source
 bin/
-lib/
 lib64
-include 
+lib/python3.12/
+include
 
 # files
 *.env
