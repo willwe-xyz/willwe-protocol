@@ -2,7 +2,11 @@
 cache
 node_modules
 out
-
+source
+bin/
+lib/
+lib64
+include 
 
 # files
 *.env
@@ -11,6 +15,7 @@ out
 .pnp.*
 lcov.info
 yarn.lock
+pyvenv.cfg
 
 # broadcasts
 !broadcast

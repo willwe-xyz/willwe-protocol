@@ -46,11 +46,7 @@ interface IFun is IERC1155, IExecution {
     function initSelfControl() external returns (address controlingAgent);
 
     //// Data
-    function getInteractionDataOf(address user_)
-        external
-        view
-        returns (string[][2] memory activeBalances, NodeState[] memory);
     function getNodeData(uint256 n) external view returns (NodeState memory N);
     function getNodes(uint256[] memory nodeIds) external view returns (NodeState[] memory nodes);
-    function getAllNodesForRoot(address rootAddress) external view returns (NodeState[] memory nodes);
+    function getAllNodesForRoot(address rootAddress, address userIfAny) external view returns (NodeState[] memory nodes);
 }

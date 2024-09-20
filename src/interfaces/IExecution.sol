@@ -44,7 +44,7 @@ struct UserSignal {
 }
 
 struct NodeState {
-    string[] basicInfo; // [nodeId, inflation, balanceAnchor, balanceBudget, value, membraneId, currentUserBalance]
+    string[9] basicInfo; // [nodeId, inflation, balanceAnchor, balanceBudget, value, membraneId, balanceOfUser, childParentEligibilityPerSec, lastParentRedistribution ]
     address[] membersOfNode;
     string[] childrenNodes;
     string[] rootPath;

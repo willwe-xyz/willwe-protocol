@@ -171,19 +171,7 @@ contract WillWeDeployScript is Script {
     }
 }
 
-//   ========
-//   WETH Address: 0x48d85D132A40Fc7703c2801d125918d8E7811880
-//   WETH Name: Wrapped Ether
-//   WETH Symbol: WETH
-//   MKR Address: 0xB43fa5F6D3107BCa2FcC6F38e6A073f514432cC8
-//   MKR Name: Maker
-//   MKR Symbol: MKR
-//   DCM Address: 0x695A5F44C621Ba7a8e92B9f7bB27e7DDF25DDe0F
-//   DCM Name: DogCoinMax
-//   DCM Symbol: DCM
-//   XV Address: 0x56Be55a2A5ED3e775aecD099a4a98FfA6f25a283
-//   XV Name: XVentures
-//   XV Symbol: XV
+//  0xAfb355d9D6e16C6F4bE2435baa1195f4889c9ED7 0x9d706Ab5E229bb36fA59BC98b8047Ad251Db898e 0x8F4b13E6306E31A1af87ccC9228bBE89c8AE54f2 0xF2F5bdDd94e38B04cD76D19450dDE5E709544895
 
 //   ###############################
 //   ##### Deployer :  0x259c1F1FaF930a23D009e85867A6b5206b2a6d44 | expected 0x259c1F1FaF930a23D009e85867A6b5206b2a6d44

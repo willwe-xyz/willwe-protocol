@@ -30,7 +30,7 @@ contract FunTests is Test, TokenPrep, InitTest {
 
     function setUp() public virtual override {
         super.setUp();
-        skip(2345);
+        vm.warp(block.timestamp + 2345);
         vm.prank(address(1234567));
 
         T1 = IERC20(makeReturnERC20());
@@ -54,11 +54,24 @@ contract FunTests is Test, TokenPrep, InitTest {
         rootBranchID = F.spawnRootBranch(address(T1));
 
         B1 = F.spawnBranch(rootBranchID);
+        vm.label(address(uint160(B1)), "B1");
+
         B11 = F.spawnBranch(B1);
+        vm.label(address(uint160(B11)), "B11");
         B12 = F.spawnBranch(B1);
+        vm.label(address(uint160(B12)), "B12");
 
         B2 = F.spawnBranch(rootBranchID);
+        vm.label(address(uint160(B2)), "B2");
         B22 = F.spawnBranch(B2);
+        vm.label(address(uint160(B22)), "B22");
+        B12 = F.spawnBranch(B1);
+        vm.label(address(uint160(B12)), "B12");
+
+        B2 = F.spawnBranch(rootBranchID);
+        vm.label(address(uint160(B2)), "B2");
+        B22 = F.spawnBranch(B2);
+        vm.label(address(uint160(B22)), "B22");
 
         console.log("T1 ERC20 (u160) value setup --- ", uint160(address(T1)));
 
@@ -70,7 +83,7 @@ contract FunTests is Test, TokenPrep, InitTest {
         console.log("B12 value setup --- ", B12);
         console.log("B22 value setup --- ", B22);
 
-        skip(2345);
+        vm.warp(block.timestamp + 120333);
 
         vm.stopPrank();
     }
@@ -100,28 +113,31 @@ contract FunTests is Test, TokenPrep, InitTest {
         uint256[] memory signal = new uint256[](2);
 
         vm.prank(address(uint160(uint256(keccak256(abi.encode("not member"))))));
-        vm.expectRevert();
-        F.sendSignal(B1, signal);
+                vm.warp(block.timestamp + 1);
+        vm.expectRevert(Fun.TargetIsRoot.selector);
+        F.sendSignal(B1, signal); 
 
         vm.startPrank(A1);
 
-        signal = new uint256[](4);
+        signal = new uint256[](F.getChildrenOf(B1).length + 2);
         signal[0] = 23452334546645652345;
+                vm.warp(block.timestamp + 1);
         vm.expectRevert(Fun.MembraneNotFound.selector);
         F.sendSignal(B1, signal);
 
         signal[0] = membraneID;
 
         uint256 snap = vm.snapshot();
-        skip(2345);
+        vm.warp(block.timestamp + 120333);
 
         F.sendSignal(B1, signal);
-        skip(2345);
+        vm.warp(block.timestamp + 120333);
 
         assertEq(F.getMembraneOf(B1), membraneID, "expected mid");
 
         vm.revertTo(snap);
         signal[1] = 232;
+                vm.warp(block.timestamp + 1);
         F.sendSignal(B1, signal);
         assertTrue(F.inflationOf(B1) == signal[1] * 1 gwei);
 
@@ -131,7 +147,7 @@ contract FunTests is Test, TokenPrep, InitTest {
     }
 
     function testInflates() public {
-        skip(block.timestamp + 100);
+        vm.warp(block.timestamp + 120333);
 
         vm.prank(address(1));
         T1.transfer(A1, 100 ether);
@@ -151,7 +167,7 @@ contract FunTests is Test, TokenPrep, InitTest {
         console.log("default inflation rate B1 - ", defaultRateB);
         uint256 totalSupB1 = F.totalSupply(B1);
         F.mintInflation(B1);
-        skip(block.timestamp + 120333);
+        vm.warp(block.timestamp + 120333);
         F.mintInflation(B1);
         uint256 totalSuppostB1 = F.totalSupply(B1);
         console.log("supply B1 before - after inflation : - ", totalSupB1, totalSuppostB1);
@@ -181,12 +197,12 @@ contract FunTests is Test, TokenPrep, InitTest {
         signals[1] = 3245;
         signals[2] = 90_00;
         signals[3] = 10_00;
-        skip(2345);
+        vm.warp(block.timestamp + 120333);
 
         uint256 initBalanceB11 = F.balanceOf(address(uint160(B11)), B1);
         uint256 initBalanceB12 = F.balanceOf(address(uint160(B12)), B1);
         console.log("initiat balances of B11 - B12", initBalanceB11, initBalanceB12);
-        skip(234225);
+        vm.warp(block.timestamp + 234225);
 
         F.sendSignal(B1, signals);
         address[] memory tokens = new address[](1);
@@ -195,11 +211,18 @@ contract FunTests is Test, TokenPrep, InitTest {
         balances[0] = 1 ether;
         uint256 newmembraneID = M.createMembrane(tokens, balances, "meta");
 
-        skip(234225);
+        vm.warp(block.timestamp + 234225);
         signals[0] = newmembraneID;
         signals[2] = 88_00;
-        signals[3] = 12_00;
+        signals[3] = 0;
+        signals[4] = 12_00;
+
         F.sendSignal(B1, signals);
+        
+        console.log(B11, B12);
+        console.log(childrenOf[0], childrenOf[1], childrenOf[2]);
+        assertTrue(childrenOf[0]  == B11, "index assumption false 1");
+        assertTrue(childrenOf[2]  == B12, "index assumption false 2");
 
         uint256 postBalanceB11 = F.balanceOf(address(uint160(B11)), B1);
         uint256 postBalanceB12 = F.balanceOf(address(uint160(B12)), B1);
@@ -213,17 +236,27 @@ contract FunTests is Test, TokenPrep, InitTest {
             F.balanceOf(address(uint160(B11)), B1) > (F.balanceOf(address(uint160(B12)), B1) * 4),
             "expected percentage matter"
         );
-        skip(block.timestamp + 2234225);
+
+        
+        vm.warp(block.timestamp + 11536000);
         F.redistribute(B12);
 
         assertTrue(
-            F.balanceOf(address(uint160(B11)), B1) < (F.balanceOf(address(uint160(B12)), B1)),
+            F.balanceOf(address(uint160(B12)), B1) > (F.balanceOf(address(uint160(B11)), B1)),
             "not only smaller redistributed"
         );
+
+        vm.warp(block.timestamp + (223422 * 6)); 
+        F.redistribute(B11); 
+
+        /////////// @dev order of operations matter. this is a bug.
+
 
         uint256 b11last = F.balanceOf(address(uint160(B11)), B1);
         uint256 b12last = F.balanceOf(address(uint160(B12)), B1);
         console.log("b11last - b12last, 000", b11last, b12last);
+
+        assertFalse(F.getParentOf(B11) == F.getParentOf(F.getParentOf(B11)), "");
         F.redistribute(B11);
         b11last = F.balanceOf(address(uint160(B11)), B1);
         b12last = F.balanceOf(address(uint160(B12)), B1);
@@ -235,32 +268,6 @@ contract FunTests is Test, TokenPrep, InitTest {
         );
 
         vm.stopPrank();
-    }
-
-    function testGetInteractions() public {
-        testInflates();
-
-        NodeState[] memory NS = F.getInteractionDataOf(A1);
-
-        assertTrue(NS.length > 0, "No NodeStates returned");
-
-        assertTrue(NS[0].basicInfo.length > 0, "basicInfo array is empty");
-
-        assertEq(NS[0].basicInfo.length, 7, "basicInfo array length is incorrect");
-
-        assertTrue(bytes(NS[0].basicInfo[2]).length > 0, "balanceAnchor is empty");
-
-        assertTrue(bytes(NS[0].basicInfo[6]).length > 0, "currentUserBalance is empty");
-
-        assertTrue(NS[0].childrenNodes.length >= 0, "childrenNodes array does not exist");
-
-        assertTrue(NS[0].rootPath.length > 0, "rootPath array is empty");
-
-        // Test 9: If signals are expected, check if they exist
-        if (NS[0].signals.length > 0) {
-            assertTrue(NS[0].signals[0].MembraneInflation.length == 2, "MembraneInflation array is incorrect");
-            assertTrue(NS[0].signals[0].lastRedistSignal.length > 0, "lastRedistSignal array is empty");
-        }
     }
 
     function testFidLineage() public {

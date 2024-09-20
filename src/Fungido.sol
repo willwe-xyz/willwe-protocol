@@ -11,7 +11,6 @@ import {NodeState} from "./interfaces/IExecution.sol";
 import {Strings} from "openzeppelin-contracts/contracts/utils/Strings.sol";
 import {PureUtils} from "./components/PureUtils.sol";
 import "./interfaces/IMembrane.sol";
-
 ///////////////////////////////////////////////
 //////////////////////////////////////////////
 /// @title Fungido
@@ -34,7 +33,7 @@ contract Fungido is ERC1155, PureUtils {
     /// @notice parent of instance chain | is root if parent is 0
     mapping(uint256 => uint256) parentOf;
 
-    /// @notice inflation per second | entityID -> [ inflationpersec | last modified] last minted
+    /// @notice inflation per second | entityID -> [ inflationpersec | last modified | last minted ]
     mapping(uint256 => uint256[3]) inflSec;
 
     /// @notice membrane being used by entity | entityID ->  [ membrane id | last Timestamp]
@@ -44,13 +43,14 @@ contract Fungido is ERC1155, PureUtils {
     mapping(uint256 => address[]) members;
 
     /// @notice stores a users option for change and node state [ wanted value, lastExpressedAt ]
-    mapping(bytes32 NodeXUserXValue => uint256[2] valueAtTime) options;
+    mapping(bytes32 NodeXUserXValue => uint256[3] valueAtTime) options;
 
     /// @notice tax rate on withdrawals as share in base root value token (default: 0.01%)
     mapping(address => uint256) taxRate;
 
     address[2] public control;
     address initControlAddress;
+    address impersonatingAddress;
 
     string public name;
     string public symbol;
@@ -234,6 +234,8 @@ contract Fungido is ERC1155, PureUtils {
         _burn(_msgSender(), fid_, amount_);
     }
 
+
+    
     function burnPath(uint256 target_, uint256 amount) external {
         if (parentOf[target_] == 0) revert BaseOrNonFungible();
 
@@ -426,7 +428,6 @@ contract Fungido is ERC1155, PureUtils {
                 ++i;
             }
         }
-        useBefore = true;
     }
 
     function _mint(address to, uint256 id, uint256 amount, bytes memory data) internal override {
@@ -439,9 +440,7 @@ contract Fungido is ERC1155, PureUtils {
 
         if (parentOf[id] > id && id > 10 ether) {
             mintInflation(id);
-
             super._burn(_msgSender(), id, amount);
-            useBefore = true;
             return;
         } else {
             super._burn(from, id, amount);
@@ -500,63 +499,9 @@ contract Fungido is ERC1155, PureUtils {
         return totalSupplyOf[nodeId];
     }
 
-    function getInteractionDataOf(address user_) external view returns (NodeState[] memory NSs) {
-        uint256[] memory userChildrenIds = childrenOf[uint160(user_)];
-        NSs = new NodeState[](userChildrenIds.length);
-        uint256 userId = toID(user_);
-
-        for (uint256 i = 0; i < userChildrenIds.length; i++) {
-            uint256 nodeId = userChildrenIds[i];
-            NodeState memory N = getNodeData(nodeId);
-
-            N.basicInfo[6] = balanceOf(user_, nodeId).toString();
-
-            uint256 len = childrenOf[nodeId].length;
-            if (len > 0) {
-                N.signals = new UserSignal[](len);
-                for (uint256 x = 0; x < len; x++) {
-                    N.signals[x].MembraneInflation = [
-                        uintArrayToStringArray(childrenOf[nodeId + userId - 1]),
-                        uintArrayToStringArray(childrenOf[nodeId + userId - 2])
-                    ];
-                    N.signals[x].lastRedistSignal = new string[](len);
-                    for (uint256 y = 0; y < len; y++) {
-                        bytes32 targetedPref = keccak256(abi.encodePacked(userId, nodeId, childrenOf[nodeId][y]));
-                        N.signals[x].lastRedistSignal[y] = options[targetedPref][0].toString();
-                    }
-                }
-            }
-            NSs[i] = N;
-        }
-    }
-
-    function getNodeData(uint256 n) public view returns (NodeState memory N) {
-        N.basicInfo = new string[](7);
-        N.basicInfo[0] = n.toString();
-        N.basicInfo[1] = inflSec[n][0].toString();
-        N.basicInfo[2] = balanceOf(toAddress(n), parentOf[n]).toString();
-        N.basicInfo[3] = balanceOf(toAddress(n), n).toString();
-        N.basicInfo[4] = (asRootValuation(n, balanceOf(toAddress(n), n))).toString();
-        N.basicInfo[5] = (inUseMembraneId[n][0]).toString();
-        N.membersOfNode = members[n];
-        N.childrenNodes = uintArrayToStringArray(childrenOf[n]);
-        N.rootPath = uintArrayToStringArray(getFidPath(n));
-    }
-
-    function getNodes(uint256[] memory nodeIds) public view returns (NodeState[] memory nodes) {
-        nodes = new NodeState[](nodeIds.length);
-        for (uint256 i = 0; i < nodeIds.length; i++) {
-            nodes[i] = getNodeData(nodeIds[i]);
-        }
-    }
-
-    function getAllNodesForRoot(address rootAddress) external view returns (NodeState[] memory nodes) {
-        uint256 rootId = toID(rootAddress);
-        nodes = new NodeState[](members[rootId].length);
-        for (uint256 i = 0; i < members[rootId].length; i++) {
-            nodes[i] = getNodeData(toID(members[rootId][i]));
-        }
-    }
+    ////////////////////////////////////////////////
+    //////____MISC____/////////////////////////////
+    
     /**
      * @dev See {IERC1155MetadataURI-uri}.
      *
@@ -575,4 +520,50 @@ contract Fungido is ERC1155, PureUtils {
     function setApprovalForAll(address operator, bool isApproved) public override {
         revert Disabled();
     }
+
+
+    ////////////////////////////////////////////////
+    //////____eth_call____/////////////////////////////
+
+    /// @notice returns a node's data given its identifier
+    /// @notice basicInfo: [nodeId, inflation, balanceAnchor, balanceBudget, value, membraneId, (balance of user), balanceOfUser, childParentEligibilityPerSec, lastParentRedistribution]
+    /// @param nodeId node identifier
+    /// @dev for eth_call
+    function getNodeData(uint256 nodeId) public view returns (NodeState memory NodeData) {
+        NodeData.basicInfo[0] = nodeId.toString();
+        NodeData.basicInfo[1] = inflSec[nodeId][0].toString();
+        NodeData.basicInfo[2] = balanceOf(toAddress(nodeId), parentOf[nodeId]).toString();
+        NodeData.basicInfo[3] = balanceOf(toAddress(nodeId), nodeId).toString();
+        NodeData.basicInfo[4] = (asRootValuation(nodeId, balanceOf(toAddress(nodeId), nodeId))).toString();
+        NodeData.basicInfo[5] = (inUseMembraneId[nodeId][0]).toString();
+        NodeData.basicInfo[7] = inflSec[nodeId][0].toString();
+        NodeData.basicInfo[8] = inflSec[nodeId][2].toString();
+        NodeData.membersOfNode = members[nodeId];
+        NodeData.childrenNodes = uintArrayToStringArray(childrenOf[nodeId]);
+        NodeData.rootPath = uintArrayToStringArray(getFidPath(nodeId));
+    }
+
+    function getNodes(uint256[] memory nodeIds) public view returns (NodeState[] memory nodes) {
+        nodes = new NodeState[](nodeIds.length);
+        for (uint256 i = 0; i < nodeIds.length; i++) {
+            nodes[i] = getNodeData(nodeIds[i]);
+        }
+    }
+
+    ///
+    function getAllNodesForRoot(address rootAddress, address userIfAny) external view returns (NodeState[] memory nodes) {
+        uint256 rootId = toID(rootAddress);
+        bool u = (userIfAny != address(0));
+        nodes = new NodeState[](members[rootId].length);
+        for (uint256 i = 0; i < members[rootId].length; i++) {
+            nodes[i] = getNodeData(toID(members[rootId][i]));
+            if (u) nodes[i].basicInfo[6] = (balanceOf(userIfAny, toID(members[rootId][i]))).toString();
+        }
+    }
+
+    function getChildParentEligibilityPerSec(uint256 childId_, uint256 parentId_) public view returns (uint256) {
+        bytes32 childParentEligibilityPerSec = keccak256(abi.encodePacked(childId_, parentId_));
+        return options[childParentEligibilityPerSec][0];
+    }
+
 }
