@@ -144,8 +144,8 @@ contract SignalInflationTests is InitTest, TokenPrep {
         vm.stopPrank();
     }
 
-    function testSignalExpirationAndRedistribution() public {
-                // Fund rootBranchID with external ERC20 balance
+    function testSignalAndRedistribution() public {
+        // Fund rootBranchID with external ERC20 balance
         fundParentNode(A1, rootBranchID, 100 ether);
         
         // Fund B1 from rootBranchID balance
@@ -159,15 +159,49 @@ contract SignalInflationTests is InitTest, TokenPrep {
         F.sendSignal(B1, signals);
 
         uint256 initialEligibility = F.getChildParentEligibilityPerSec(B11, B1);
+        uint256 initialBalance = F.balanceOf(address(uint160(B11)), B1);
 
-        vm.warp(block.timestamp + 7 days); // Expire signals
+        vm.warp(block.timestamp + 7 days);
         F.redistribute(B11);
+
         uint256 postExpirationEligibility = F.getChildParentEligibilityPerSec(B11, B1);
+        uint256 postRedistriBalance = F.balanceOf(address(uint160(B11)), B1);
+
         assertEq(initialEligibility, postExpirationEligibility, "Signal expiration did not work correctly");
-        
+        assertTrue(postRedistriBalance - initialBalance >= initialEligibility * 7 days, "incorrect redistributed amount");
+
+        assertTrue(initialBalance < postRedistriBalance, "Nothing redistributed");
+        console.log("initial post balance -- ", initialBalance,postRedistriBalance );
+
         console.log("Balance of A1 after signal expiration:", T1.balanceOf(A1));
         console.log("Final Balance of A1:", T1.balanceOf(A1));
         vm.stopPrank();
     }
 
+function testGetUserNodeSignals() public {
+    // Fund rootBranchID with external ERC20 balance
+    fundParentNode(A1, rootBranchID, 100 ether);
+
+    // Fund B1 from rootBranchID balance
+    fundParentNode(A1, B1, 100 ether);
+    vm.startPrank(A1);
+
+    uint256[] memory signals = new uint256[](4);
+    signals[2] = 6000; // 60% to B11
+    signals[3] = 4000; // 40% to B12
+    F.sendSignal(B1, signals);
+
+    uint256[2][] memory userNodeSignals = F.getUserNodeSignals(A1, B1);
+
+    // Check if the length of the returned array is correct
+    assertEq(userNodeSignals.length, 2);
+
+    // Check if the signals and timestamps are correct
+    assertEq(userNodeSignals[0][0], 6000);
+    assertEq(userNodeSignals[1][0], 4000);
+    assertEq(userNodeSignals[0][1], block.timestamp);
+    assertEq(userNodeSignals[1][1], block.timestamp);
+
+    vm.stopPrank();
+}
 }

@@ -3,6 +3,8 @@ pragma solidity >=0.8.3;
 
 import {Fungido} from "./Fungido.sol";
 import {IExecution, SignatureQueue, Call} from "./interfaces/IExecution.sol";
+
+
 /////////////////////////////////////////
 /// @title Fun
 /// @author parseb
@@ -25,6 +27,8 @@ contract Fun is Fungido {
     error PathTooShort();
     error ResignalMismatch();
     error NoTimeDelta();
+    error CannotSkip();
+    
 
     event NewMovement(uint256 indexed nodeId, bytes32 movementHash, bytes32 descriptionHash);
 
@@ -132,9 +136,12 @@ function _handleRegularSignals(
     uint256[] memory children = childrenOf[targetNode_];
     if (children.length != (signalsLength - 2)) revert BadLen();
 
-    bytes32 userTargetedPreference = keccak256(abi.encodePacked(user, targetNode_, children[index - 2]));
+    bytes32 userTargetedPreference = keccak256(abi.encodePacked(address(uint160(user)), targetNode_, children[index - 2]));
     if (signal > 100_00 && options[userTargetedPreference][0] == 0) return;
+    if (signal > 100_00 && options[userTargetedPreference][0] > 0) revert CannotSkip();
     if (impersonatingAddress != address(0) && options[userTargetedPreference][0] != signal) revert ResignalMismatch();
+
+
     if (options[userTargetedPreference][0] != signal) {
         options[userTargetedPreference] = [signal, block.timestamp, 0];
         redistribute(children[index - 2]);

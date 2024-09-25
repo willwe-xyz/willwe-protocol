@@ -11,6 +11,8 @@ import {NodeState} from "./interfaces/IExecution.sol";
 import {Strings} from "openzeppelin-contracts/contracts/utils/Strings.sol";
 import {PureUtils} from "./components/PureUtils.sol";
 import "./interfaces/IMembrane.sol";
+
+
 ///////////////////////////////////////////////
 //////////////////////////////////////////////
 /// @title Fungido
@@ -161,7 +163,7 @@ contract Fungido is ERC1155, PureUtils {
             ++entityCount;
         }
 
-        newID = fid_ - block.chainid - block.timestamp - entityCount - (block.difficulty % 1000);
+        newID = fid_ - block.chainid - entityCount - (block.prevrandao % 1000);
 
         _setApprovalForAll(toAddress(newID), address(this), true);
         _localizeNode(newID, fid_);
@@ -565,5 +567,27 @@ contract Fungido is ERC1155, PureUtils {
         bytes32 childParentEligibilityPerSec = keccak256(abi.encodePacked(childId_, parentId_));
         return options[childParentEligibilityPerSec][0];
     }
+
+
+/// @notice Returns the array containing signal info for each child node in given originator and parent context
+/// @param signalOrigin address of originator
+/// @param parentNodeId node id for which originator has expressed
+function getUserNodeSignals(address signalOrigin, uint256 parentNodeId) public view returns (uint256[2][] memory UserNodeSignals) {
+    uint256[] memory childNodes = childrenOf[parentNodeId];
+    UserNodeSignals = new uint256[2][](childNodes.length);
+
+    for (uint256 i = 0; i < childNodes.length; i++) {
+        // Include the signalOrigin (user's address) in the signalKey
+        bytes32 userTargetedPreference = keccak256(abi.encodePacked(signalOrigin, parentNodeId, childNodes[i]));
+        
+        // Store the signal value and the timestamp (assuming options[userKey] structure)
+        UserNodeSignals[i][0] = options[userTargetedPreference][0];  // Signal value
+        UserNodeSignals[i][1] = options[userTargetedPreference][1];  // Last updated timestamp
+    }
+
+    return UserNodeSignals;
+}
+
+
 
 }
