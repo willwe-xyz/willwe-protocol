@@ -12,6 +12,7 @@ import {Strings} from "openzeppelin-contracts/contracts/utils/Strings.sol";
 import {PureUtils} from "./components/PureUtils.sol";
 import "./interfaces/IMembrane.sol";
 
+import "forge-std/console.sol";
 
 ///////////////////////////////////////////////
 //////////////////////////////////////////////
@@ -545,6 +546,13 @@ contract Fungido is ERC1155, PureUtils {
         NodeData.rootPath = uintArrayToStringArray(getFidPath(nodeId));
     }
 
+
+
+
+
+
+
+
     function getNodes(uint256[] memory nodeIds) public view returns (NodeState[] memory nodes) {
         nodes = new NodeState[](nodeIds.length);
         for (uint256 i = 0; i < nodeIds.length; i++) {
@@ -563,6 +571,7 @@ contract Fungido is ERC1155, PureUtils {
         }
     }
 
+    
     function getChildParentEligibilityPerSec(uint256 childId_, uint256 parentId_) public view returns (uint256) {
         bytes32 childParentEligibilityPerSec = keccak256(abi.encodePacked(childId_, parentId_));
         return options[childParentEligibilityPerSec][0];
@@ -587,6 +596,26 @@ function getUserNodeSignals(address signalOrigin, uint256 parentNodeId) public v
 
     return UserNodeSignals;
 }
+
+function getNodeDataWithUserSignals(uint256 nodeId, address user) public view returns (NodeState memory nodeData) {
+    nodeData = getNodeData(nodeId);
+    nodeData.basicInfo[6] = balanceOf(user, nodeId).toString();
+    nodeData.signals = new UserSignal[](1);
+    nodeData.signals[0].MembraneInflation = new string[2][](childrenOf[nodeId].length);
+    nodeData.signals[0].lastRedistSignal = new string[](childrenOf[nodeId].length);
+
+    for (uint256 i = 0; i < childrenOf[nodeId].length; i++) {
+        // Add inflation to the MembraneInflation array
+        nodeData.signals[0].MembraneInflation[i][1] = inflSec[nodeId][0].toString(); // Inflation
+
+        // Retrieve signaled value from the options mapping
+        bytes32 userKey = keccak256(abi.encodePacked(user, nodeId, childrenOf[nodeId][i] ));
+        nodeData.signals[0].lastRedistSignal[i] = options[userKey][0].toString();
+
+
+    }
+}
+
 
 
 

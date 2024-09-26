@@ -4,12 +4,14 @@ pragma solidity 0.8.19;
 import "forge-std/Test.sol";
 import {WillWe} from "../src/WillWe.sol";
 import {Execution} from "../src/Execution.sol";
+import {NodeState} from "../src/interfaces/IExecution.sol";
 import {Fun} from "../src/Fun.sol";
 import {TokenPrep} from "./mock/Tokens.sol";
 import {IERC20} from "openzeppelin-contracts/token/ERC20/IERC20.sol";
 import {InitTest} from "./Init.t.sol";
 import "forge-std/console.sol";
 import {Fungido} from "../src/Fungido.sol";
+import {Strings} from "openzeppelin-contracts/contracts/utils/Strings.sol";
 
 contract SignalInflationTests is InitTest, TokenPrep {
     IERC20 T1;
@@ -20,6 +22,8 @@ contract SignalInflationTests is InitTest, TokenPrep {
     uint256 B12;
     uint256 B21;
     uint256 B22;
+
+    using Strings for uint256;
 
     function setUp() public virtual override {
         super.setUp();
@@ -204,4 +208,42 @@ function testGetUserNodeSignals() public {
 
     vm.stopPrank();
 }
+
+function testGetNodeDataWithUserSignals() public {
+    // Fund rootBranchID with external ERC20 balance
+    fundParentNode(A1, rootBranchID, 100 ether);
+
+    // Fund B1 from rootBranchID balance
+    fundParentNode(A1, B1, 100 ether);
+    vm.startPrank(A1);
+
+    uint256[] memory signals = new uint256[](4);
+    signals[2] = 6000; // 60% to B11
+    signals[3] = 4000; // 40% to B12
+    F.sendSignal(B1, signals);
+
+    NodeState memory nodeData = F.getNodeDataWithUserSignals(B1, A1);
+
+    // Check if the basic info is correct
+    assertEq(nodeData.basicInfo[0], uint256(uint160(B1)).toString());
+    assertEq(nodeData.basicInfo[1], F.inflationOf(B1).toString());
+    assertEq(nodeData.basicInfo[2], F.balanceOf(address(uint160(B1)), rootBranchID).toString());
+    assertEq(nodeData.basicInfo[3], F.balanceOf(address(uint160(B1)), B1).toString());
+    assertEq(nodeData.basicInfo[4], F.asRootValuation(B1, F.balanceOf(address(uint160(B1)), B1)).toString());
+    assertEq(nodeData.basicInfo[5], F.getMembraneOf(B1).toString());
+    assertEq(nodeData.basicInfo[6], F.balanceOf(A1, B1).toString());
+
+    // Check if the signals are correct
+    assertEq(nodeData.signals.length, 1);
+    assertEq(nodeData.signals[0].lastRedistSignal.length, 2);
+    assertEq(nodeData.signals[0].lastRedistSignal[0], "6000");
+    assertEq(nodeData.signals[0].lastRedistSignal[1], "4000");
+    assertEq(nodeData.signals[0].MembraneInflation.length, 2);
+    assertEq(nodeData.signals[0].MembraneInflation[0][1], F.inflationOf(B1).toString());
+    assertEq(nodeData.signals[0].MembraneInflation[1][1], F.inflationOf(B1).toString());
+
+    vm.stopPrank();
+}
+
+
 }

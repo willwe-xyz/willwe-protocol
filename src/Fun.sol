@@ -31,6 +31,9 @@ contract Fun is Fungido {
     
 
     event NewMovement(uint256 indexed nodeId, bytes32 movementHash, bytes32 descriptionHash);
+    event InflationRateChanged(uint256 indexed nodeId, uint256 oldInflationRate, uint256 newInflationRate);
+    event MembraneChanged(uint256 indexed nodeId, uint256 previousMembrane, uint256 newMembrane);
+
 
     function resignal(uint256 targetNode_, uint256[] memory signals, address originator) public virtual {
         // Temporarily set msg.sender to the originator
@@ -60,11 +63,14 @@ function sendSignal(uint256 targetNode_, uint256[] memory signals) public virtua
 
     uint256 user = toID(_msgSender());
     uint256 balanceOfSender = balanceOf(_msgSender(), targetNode_);
+    
     uint256 sigSum;
 
     for (uint256 i; i < signals.length; ++i) {
+        bytes32 userKey = keccak256(abi.encodePacked(targetNode_, user, signals[i]));
+        if (impersonatingAddress != address(0) && options[userKey][0] != signals[i]) revert ResignalMismatch();
         if (i <= 1) {
-            _handleSpecialSignals(targetNode_, user, signals[i], i, balanceOfSender);
+            _handleSpecialSignals(targetNode_, user, signals[i], i, balanceOfSender,userKey);
         } else {
             _handleRegularSignals(targetNode_, user, signals[i], i, balanceOfSender, signals.length);
             sigSum += signals[i];
@@ -78,7 +84,8 @@ function sendSignal(uint256 targetNode_, uint256[] memory signals) public virtua
         uint256 user,
         uint256 signal,
         uint256 index,
-        uint256 balanceOfSender
+        uint256 balanceOfSender,
+        bytes32 userkey
     ) private {
         if (signal == 0) return;
         bytes32 userKey = keccak256(abi.encodePacked(targetNode_, user, signal));
@@ -95,6 +102,10 @@ function sendSignal(uint256 targetNode_, uint256[] memory signals) public virtua
     
         // Update the last signal timestamp using the existing userKey
         options[userKey][1] = block.timestamp;
+        
+        // Push last inflation and membrane signal for record
+        childrenOf[uint256(userKey)].push(signal);
+
     }
 
     function _handleMembraneSignal(
@@ -107,6 +118,8 @@ function sendSignal(uint256 targetNode_, uint256[] memory signals) public virtua
         if (signal < type(uint160).max || M.getMembraneById(signal).tokens.length == 0) revert MembraneNotFound();
         _updateSignalOption(targetNode_, userKey, nodeKey, signal, balanceOfSender);
         if (options[nodeKey][0] * 2 > totalSupplyOf[targetNode_]) {
+            mintInflation(targetNode_);
+            emit MembraneChanged(targetNode_, inUseMembraneId[targetNode_][0], signal);
             inUseMembraneId[targetNode_] = [signal, block.timestamp];
         }
     }
@@ -121,6 +134,7 @@ function sendSignal(uint256 targetNode_, uint256[] memory signals) public virtua
         _updateSignalOption(targetNode_, userKey, nodeKey, signal, balanceOfSender);
         if (options[nodeKey][0] * 2 > totalSupplyOf[targetNode_]) {
             mintInflation(targetNode_);
+            emit InflationRateChanged(targetNode_, inflSec[targetNode_][0], signal * 1 gwei);
             inflSec[targetNode_] = [signal * 1 gwei, block.timestamp, block.timestamp];
         }
     }
@@ -159,7 +173,7 @@ function _handleRegularSignals(
         if (options[userKey][1] > 0 && (inUseMembraneId[targetNode_][1] < options[userKey][1])) {
             options[nodeKey][0] -= options[userKey][0];
         }
-        if (impersonatingAddress != address(0) && options[userKey][0] != signal) revert ResignalMismatch();
+        // if (impersonatingAddress != address(0) && options[userKey][0] != signal) revert ResignalMismatch();
         options[userKey] = [signal, block.timestamp, 0];
         options[nodeKey][0] += balanceOfSender;
     }

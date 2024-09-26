@@ -39,7 +39,7 @@ struct SignatureQueue {
 }
 
 struct UserSignal {
-    string[][2] MembraneInflation;
+    string[2][] MembraneInflation;
     string[] lastRedistSignal;
 }
 
