@@ -135,7 +135,7 @@ contract MembraneTests is Test, InitTest {
         testEnforceM();
 
         vm.prank(A1);
-        IPowerProxy P = IPowerProxy(F.createEndpointForOwner(B1, A1));
+        IPowerProxy P = IPowerProxy(payable(F.createEndpointForOwner(B1, A1)));
 
         assertTrue(P.owner() == A1, "not expected owner");
         assertTrue(P.implementation() == address(0), "has Implementation");

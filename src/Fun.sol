@@ -256,7 +256,7 @@ function _updateChildParentEligibility(
     /// @param descriptionHash hash of descrptive metadata
     /// @param data calldata for execution call or executive payload
     function startMovement(
-        uint256 typeOfMovement,
+        uint8 typeOfMovement,
         uint256 node,
         uint256 expiresInDays,
         address executingAccount,

@@ -1,6 +1,7 @@
 pragma solidity ^0.8.19;
 
 import {Receiver} from "solady/accounts/Receiver.sol";
+import {IPowerProxy} from "../interfaces/IPowerProxy.sol";
 
 /**
  * @dev This abstract contract provides a fallback function that delegates all calls to another contract using the EVM
@@ -13,22 +14,29 @@ import {Receiver} from "solady/accounts/Receiver.sol";
  * The success and return data of the delegated call will be returned back to the caller of the proxy.
  */
 
-/// @author parseb.eth @ github.com/parseb
-/// ---------------------------------------
+
 /// @author Michael Elliot <mike@makerdao.com>
 /// @author Joshua Levine <joshua@makerdao.com>
 /// @author Nick Johnson <arachnid@notdot.net>
 /// @author OpenZeppelin OpenZeppelin.com
+/// ---------------------------------------
+/// @author parseb.eth @ github.com/parseb
 
 /// @notice A simple authenticated proxy. A mashup of (MakerDAO) MulticallV2 and simple (OpenZeppelin) proxy.
 contract PowerProxy is Receiver {
     address public owner;
     address public implementation;
 
+    /// @notice EIP 127 signature store
     mapping(bytes32 => bool) isSignedHash;
 
-    constructor(address proxyOwner_) {
+    /// @notice Stores execution authorisation type.
+    uint8 public immutable allowedAuthType;
+    
+    
+    constructor(address proxyOwner_, uint8 consensusType_) {
         owner = proxyOwner_;
+        allowedAuthType = consensusType_;
     }
 
     struct Call {
@@ -72,11 +80,7 @@ contract PowerProxy is Receiver {
         isSignedHash[hash_] = !isSignedHash[hash_];
     }
 
-    /**
-     * @notice Verifies that the signer is the owner of the signing contract.
-     */
     function isValidSignature(bytes32 hash_, bytes calldata _signature) external view returns (bytes4) {
-        // Validate signatures
         if (isSignedHash[hash_]) return 0x1626ba7e;
     }
 

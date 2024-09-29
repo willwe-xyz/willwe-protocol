@@ -7,10 +7,13 @@ import {Strings} from "openzeppelin-contracts/contracts/utils/Strings.sol";
 import {ECDSA} from "openzeppelin-contracts/contracts/utils/cryptography/ECDSA.sol";
 import {SignatureQueue, SQState, MovementType, Movement, Call} from "./interfaces/IExecution.sol";
 import {IFun} from "./interfaces/IFun.sol";
+import {IPowerProxy} from "./interfaces/IPowerProxy.sol";
 import {IERC1155Receiver} from "openzeppelin-contracts/contracts/token/ERC1155/IERC1155Receiver.sol";
 import {EIP712} from "./info/EIP712.sol";
 import {PowerProxy} from "./components/PowerProxy.sol";
 import {Receiver} from "solady/accounts/Receiver.sol";
+
+import "forge-std/console.sol";
 
 /// @title Execution
 /// @author parseb
@@ -42,7 +45,7 @@ contract Execution is EIP712, Receiver {
     error NotExeAccOwner();
     error AlreadyHasEndpoint();
     error NoMembersForNode();
-    error NoType();
+    error NoMovementType();
     error AlreadySigned();
     error LenErr();
     error AlreadyInit();
@@ -58,6 +61,7 @@ contract Execution is EIP712, Receiver {
     error EXEC_exeQFail();
     error EXEC_InProgress();
     error EXEC_ActionIndexMismatch();
+    error EXEC_BadOwnerOrAuthType();
 
     /// events
     event NewMovementCreated(bytes32 indexed movementHash, uint256 indexed nodeId);
@@ -98,26 +102,29 @@ contract Execution is EIP712, Receiver {
 
     function startMovement(
         address origin,
-        uint256 typeOfMovement,
+        uint8 typeOfMovement,
         uint256 nodeId,
         uint256 expiresInDays,
         address executingAccount,
         bytes32 descriptionHash,
         bytes memory data
     ) external virtual returns (bytes32 movementHash) {
-        if (msg.sender != address(WillWe)) revert OnlyFun();
+                console.log("got hereeeeeeee 0000");
 
-        if (typeOfMovement > 2) revert NoType();
+        if (msg.sender != address(WillWe)) revert OnlyFun();
+        console.log("got hereeeeeeee 1111");
+        if (typeOfMovement > 2 || typeOfMovement == 0) revert NoMovementType();
         if (!WillWe.isMember(origin, nodeId)) revert NotNodeMember();
 
         if (((typeOfMovement * nodeId * expiresInDays) == 0)) revert EmptyUnallowed();
         if (uint256(descriptionHash) == 0) revert EXEC_NoDescription();
-
+        
         if (executingAccount == address(0)) {
-            executingAccount = createNodeEndpoint(origin, nodeId);
+            executingAccount = createNodeEndpoint(origin, nodeId, typeOfMovement);
             engineOwner[executingAccount] = nodeId;
         } else {
             if (!(engineOwner[executingAccount] == nodeId)) revert NotExeAccOwner();
+            if (IPowerProxy(executingAccount).owner() != address(this) || IPowerProxy(executingAccount).allowedAuthType() != typeOfMovement) revert EXEC_BadOwnerOrAuthType();
         }
 
         Movement memory M;
@@ -252,24 +259,24 @@ contract Execution is EIP712, Receiver {
         if (hasEndpointOrInteraction[nodeId + uint160(bytes20(owner))]) revert AlreadyHasEndpoint();
         hasEndpointOrInteraction[nodeId + uint160(bytes20(owner))] = true;
 
-        endpoint = createNodeEndpoint(origin, nodeId);
+        endpoint = createNodeEndpoint(origin, nodeId, 3);
 
         emit EndpointCreatedForAgent(nodeId, endpoint, owner);
     }
 
-    function createNodeEndpoint(address originOrNode, uint256 endpointOwner_) internal returns (address endpoint) {
+    function createNodeEndpoint(address originOrNode, uint256 endpointOwner_, uint8 consensusType) internal returns (address endpoint) {
         if (msg.sig == this.createEndpointForOwner.selector) {
-            endpoint = createNodeEndpoint(originOrNode);
+            endpoint = spawnNodeEndpoint(originOrNode, 3);
             engineOwner[endpoint] = originOrNode == address(this) ? endpointOwner_ : uint160(originOrNode);
         } else {
-            endpoint = createNodeEndpoint(address(this));
+            endpoint = spawnNodeEndpoint(address(this), consensusType);
             engineOwner[endpoint] = endpointOwner_;
         }
         WillWe.localizeEndpoint(endpoint, endpointOwner_, originOrNode);
     }
 
-    function createNodeEndpoint(address proxyOwner_) private returns (address) {
-        return address(new PowerProxy(proxyOwner_));
+    function spawnNodeEndpoint(address proxyOwner_, uint8 authType) private returns (address) {
+        return address(new PowerProxy(proxyOwner_, authType));
     }
 
     function validateQueue(bytes32 sigHash) internal returns (SignatureQueue memory SQM) {

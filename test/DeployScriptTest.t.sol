@@ -25,7 +25,7 @@ contract LocalG is Test, TokenPrep, WillWeDeploy {
         // vm.createSelectFork(vm.envString("BASE_SepoliaRPC")); //
         super.run();
         deployer = 0x920CbC9893bF12eD967116136653240823686D9c;
-        FoundingSafe = IPowerProxy(FunFun.control(1));
+        FoundingSafe = IPowerProxy(payable(FunFun.control(1)));
     }
 
     function testContractsDeployed() public {

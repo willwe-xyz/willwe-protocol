@@ -62,7 +62,7 @@ interface IExecution {
 
     function startMovement(
         address origin,
-        uint256 typeOfMovement,
+        uint8 typeOfMovement,
         uint256 node_,
         uint256 expiresInDays,
         address executingAccount,

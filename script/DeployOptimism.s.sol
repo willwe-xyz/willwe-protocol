@@ -11,7 +11,7 @@ import {AliasPicker} from "./Alias.sol";
 import {Strings} from "openzeppelin-contracts/contracts/utils/Strings.sol";
 import {StringUtils} from "./StringSlicer.sol";
 
-contract DeployBASE is Script, TokenPrep, AliasPicker {
+contract DeployOptimism is Script, TokenPrep, AliasPicker {
     using StringUtils for string;
 
     WillWe FunFun;
@@ -115,31 +115,3 @@ contract DeployBASE is Script, TokenPrep, AliasPicker {
 
 }
 
-// == Logs ==
-//   ###############################
-
-//      Deploy script started for network :  8453
-
-//   ###############################
-//   ###############################
-
-//   Fun deployed at :  0x2316531d2358Bd040212246466a5784d01268Ff6
-
-//   ###############################
-//   control ---  0xE7b30A037F5598E4e73702ca66A59Af5CC650Dcd 0x0000000000000000000000000000000000000000 0xE7b30A037F5598E4e73702ca66A59Af5CC650Dcd
-//   ###############################
-
-//   Foundation Agent in Control :  0xa3B55A883a982A9bcC370d68D1B2D38877777D83
-//   Is Foundation Anget contract:  true
-//   Deployer is member  true
-//   ###############################
-//   Balances: deployer | Agent | f0
-//   0 10000000000000000000000000 0
-
-//   ###############################
-//   Foundation Agent Safe at:  0xa3B55A883a982A9bcC370d68D1B2D38877777D83
-//   RVI:  0x6CdDcBb43B7E37962E80e026b5C37391fb41c3AC
-//   Membrane:  0x65F1bAA3842B6B852724E57a2006882570b07Bdf
-//   Execution:  0xd3FF00A965cFa1fE6E8767EF0C46ED6AC548fF20
-//   WillWe:  0x2316531d2358Bd040212246466a5784d01268Ff6
-//   ###############################
