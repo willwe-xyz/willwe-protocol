@@ -1,3 +1,4 @@
 
 openzeppelin-contracts/token/=lib/openzeppelin-contracts/contracts/token/
 openzeppelin-contracts/contracts=lib/openzeppelin-contracts/contracts/
+@solady/=lib/solady/src/

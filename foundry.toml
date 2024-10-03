@@ -10,7 +10,7 @@ allow_ffi = true
 ast = true
 build_info = true
 extra_output = ["storageLayout"]
-solc_version = "0.8.19"
+solc_version = "0.8.25"
 
 fs_permissions = [
     { access = "read", path = "./"},

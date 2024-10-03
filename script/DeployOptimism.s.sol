@@ -30,15 +30,15 @@ contract DeployOptimism is Script, TokenPrep, AliasPicker {
     }
 
     function run() public {
-        // uint256 runPVK = uint256(vm.envUint("WEWILL_DE_PVK"));
-        // address deployer = vm.addr(runPVK);
+        uint256 runPVK = uint256(vm.envUint("WW_deployer2"));
+        address deployer = vm.addr(runPVK);
 
-        // ////////////////// MOCK token
-        // vm.label(deployer, "deployer");
-        // ////////////////// MOCK
+        ////////////////// MOCK token
+        vm.label(deployer, "deployer");
+        ////////////////// MOCK
 
-        // console.log("##### Deployer : ", deployer, "| expected", "0xB76eF2DdE3d0b8AE716272f1BB943610C77a4C93");
-        // console.log("#________________________________");
+        console.log("##### Deployer : ", deployer, "| expected", "0x73D94e40a4958E350418b790ab180107B9892a4c");
+        console.log("#________________________________");
 
         address deployer = 0xE7b30A037F5598E4e73702ca66A59Af5CC650Dcd;
         address protocol_guild = 0x32e3C7fD24e175701A35c224f2238d18439C7dBC;
@@ -51,13 +51,6 @@ contract DeployOptimism is Script, TokenPrep, AliasPicker {
         uint256 piper_sec = 21;
 
         vm.startBroadcast();
-        // string memory name =
-        //     AliasPicker.getAlias(uint8(block.timestamp % 100 > 99 ? block.timestamp % 10 : block.timestamp % 100 + 1));
-        // address randomToken = makeReturnX20RONWalias(
-        //     name, string.concat(StringUtils.substring(name, 0, 2), StringUtils.substring(name, 5, 6))
-        // );
-        // console.log("##### mockRON token ", randomToken);
-        //// [0] in gwei
         F20 = new Will(36, piper_sec, founders, amounts);
         vm.label(address(F20), "Will");
 

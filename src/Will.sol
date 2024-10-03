@@ -3,17 +3,17 @@ pragma solidity >=0.8.3;
 
 import {ERC20ASG} from "ERC20ASG/src/ERC20ASG.sol";
 import {IERC20} from "openzeppelin-contracts/token/ERC20/IERC20.sol";
-
+import {SuperchainERC20} from "./components/SuperchainERC20.sol";
 import {IFun} from "./interfaces/IFun.sol";
 
 /// @title Root Value Token
 /// @author Bogdan A. | parseb
 /// @notice this is the token of the protocol
-contract Will is ERC20ASG {
+contract Will is SuperchainERC20, ERC20ASG {
     bool entered;
 
     constructor(uint256 price_, uint256 pps_, address[] memory initMintAddrs_, uint256[] memory initMintAmts_)
-        ERC20ASG("Base Will", "WILL", price_, pps_, initMintAddrs_, initMintAmts_)
+        ERC20ASG("Willings", "WILL", price_, pps_, initMintAddrs_, initMintAmts_)
     {}
 
     error ATransferFailed();

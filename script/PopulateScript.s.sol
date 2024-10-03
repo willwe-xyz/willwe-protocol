@@ -37,14 +37,18 @@ contract WillWeDeployScript is Script {
     function run() public {
         uint256 deployerPrivateKey = vm.envUint("WEWILL_02");
         address deployer = vm.addr(deployerPrivateKey);
-        address account1 = vm.addr(ACCOUNT1_PRIVATE_KEY);
+        address account1 = vm.addr(ACCOUNT1_PRIVATE_KEY); 
         address account2 = vm.addr(ACCOUNT2_PRIVATE_KEY);
+
+        console.log("Deployer:", deployer);
+        console.log("WEWILL_USER1 - ", account1);
+        console.log("WEWILL_USER2 - ", account2);
 
         vm.startBroadcast(deployerPrivateKey);
 
         // Deploy mock tokens directly
         weth = new X20RONAlias("Wrapped Ether", "WETH");
-        mkr = new X20RONAlias("Maker", "MKR");
+        mkr = new X20RONAlias("Spark", "SPK");
         dogCoinMax = new X20RONAlias("DogCoinMax", "DCM");
         xVentures = new X20RONAlias("XVentures", "XV");
 
