@@ -157,7 +157,6 @@ contract Endpoints is Test, TokenPrep, InitTest {
         vm.expectRevert(Execution.NoMovementType.selector);
         F.startMovement(0, B2, 3, address(0), description, data);
 
-
         vm.expectRevert(Execution.EmptyUnallowed.selector);
         F.startMovement(1, B2, 0, address(0), description, data);
 

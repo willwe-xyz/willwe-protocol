@@ -78,24 +78,21 @@ contract SignalInflationTests is InitTest, TokenPrep {
 
     // Ensure proper funding of parent nodes
     function fundParentNode(address sender, uint256 parentID, uint256 amount) internal {
-
         // Mint context tokens into parent ID with sufficient external ERC20
         vm.prank(sender);
-        F.mint(parentID, amount); 
+        F.mint(parentID, amount);
     }
 
     function testSignalInflationRateChanges() public {
-                fundParentNode(A1, rootBranchID, 100 ether);
+        fundParentNode(A1, rootBranchID, 100 ether);
         console.log("Balance of A1 after funding rootBranchID:", T1.balanceOf(A1));
 
-                fundParentNode(A1, B1, 100 ether);
+        fundParentNode(A1, B1, 100 ether);
         console.log("Balance of A1 after funding B1 with 100 ether:", T1.balanceOf(A1));
         vm.startPrank(A1);
         // Fund rootBranchID with external ERC20 balance
 
-
         // Fund B1 from rootBranchID balance
-
 
         uint256[] memory signals = new uint256[](2);
         signals[1] = 5000; // Signal 0.05% inflation
@@ -111,7 +108,6 @@ contract SignalInflationTests is InitTest, TokenPrep {
         vm.stopPrank();
     }
 
-
     function testMaximumSignalPercentageEnforcement() public {
         // Fund rootBranchID with external ERC20 balance
         fundParentNode(A1, rootBranchID, 100 ether);
@@ -121,7 +117,6 @@ contract SignalInflationTests is InitTest, TokenPrep {
         fundParentNode(A1, B1, 100 ether);
         console.log("Balance of A1 after funding B1 with 100 ether:", T1.balanceOf(A1));
         vm.startPrank(A1);
-
 
         uint256[] memory signals = new uint256[](4);
         signals[2] = 6000; // 60% to B11
@@ -151,11 +146,10 @@ contract SignalInflationTests is InitTest, TokenPrep {
     function testSignalAndRedistribution() public {
         // Fund rootBranchID with external ERC20 balance
         fundParentNode(A1, rootBranchID, 100 ether);
-        
+
         // Fund B1 from rootBranchID balance
         fundParentNode(A1, B1, 100 ether);
         vm.startPrank(A1);
-
 
         uint256[] memory signals = new uint256[](4);
         signals[2] = 6000; // 60% to B11
@@ -172,78 +166,78 @@ contract SignalInflationTests is InitTest, TokenPrep {
         uint256 postRedistriBalance = F.balanceOf(address(uint160(B11)), B1);
 
         assertEq(initialEligibility, postExpirationEligibility, "Signal expiration did not work correctly");
-        assertTrue(postRedistriBalance - initialBalance >= initialEligibility * 7 days, "incorrect redistributed amount");
+        assertTrue(
+            postRedistriBalance - initialBalance >= initialEligibility * 7 days, "incorrect redistributed amount"
+        );
 
         assertTrue(initialBalance < postRedistriBalance, "Nothing redistributed");
-        console.log("initial post balance -- ", initialBalance,postRedistriBalance );
+        console.log("initial post balance -- ", initialBalance, postRedistriBalance);
 
         console.log("Balance of A1 after signal expiration:", T1.balanceOf(A1));
         console.log("Final Balance of A1:", T1.balanceOf(A1));
         vm.stopPrank();
     }
 
-function testGetUserNodeSignals() public {
-    // Fund rootBranchID with external ERC20 balance
-    fundParentNode(A1, rootBranchID, 100 ether);
+    function testGetUserNodeSignals() public {
+        // Fund rootBranchID with external ERC20 balance
+        fundParentNode(A1, rootBranchID, 100 ether);
 
-    // Fund B1 from rootBranchID balance
-    fundParentNode(A1, B1, 100 ether);
-    vm.startPrank(A1);
+        // Fund B1 from rootBranchID balance
+        fundParentNode(A1, B1, 100 ether);
+        vm.startPrank(A1);
 
-    uint256[] memory signals = new uint256[](4);
-    signals[2] = 6000; // 60% to B11
-    signals[3] = 4000; // 40% to B12
-    F.sendSignal(B1, signals);
+        uint256[] memory signals = new uint256[](4);
+        signals[2] = 6000; // 60% to B11
+        signals[3] = 4000; // 40% to B12
+        F.sendSignal(B1, signals);
 
-    uint256[2][] memory userNodeSignals = F.getUserNodeSignals(A1, B1);
+        uint256[2][] memory userNodeSignals = F.getUserNodeSignals(A1, B1);
 
-    // Check if the length of the returned array is correct
-    assertEq(userNodeSignals.length, 2);
+        // Check if the length of the returned array is correct
+        assertEq(userNodeSignals.length, 2);
 
-    // Check if the signals and timestamps are correct
-    assertEq(userNodeSignals[0][0], 6000);
-    assertEq(userNodeSignals[1][0], 4000);
-    assertEq(userNodeSignals[0][1], block.timestamp);
-    assertEq(userNodeSignals[1][1], block.timestamp);
+        // Check if the signals and timestamps are correct
+        assertEq(userNodeSignals[0][0], 6000);
+        assertEq(userNodeSignals[1][0], 4000);
+        assertEq(userNodeSignals[0][1], block.timestamp);
+        assertEq(userNodeSignals[1][1], block.timestamp);
 
-    vm.stopPrank();
-}
+        vm.stopPrank();
+    }
 
-function testGetNodeDataWithUserSignals() public {
-    // Fund rootBranchID with external ERC20 balance
-    fundParentNode(A1, rootBranchID, 100 ether);
+    function testGetNodeDataWithUserSignals() public {
+        // Fund rootBranchID with external ERC20 balance
+        fundParentNode(A1, rootBranchID, 100 ether);
 
-    // Fund B1 from rootBranchID balance
-    fundParentNode(A1, B1, 100 ether);
-    vm.startPrank(A1);
+        // Fund B1 from rootBranchID balance
+        fundParentNode(A1, B1, 100 ether);
+        vm.startPrank(A1);
 
-    uint256[] memory signals = new uint256[](4);
-    signals[2] = 6000; // 60% to B11
-    signals[3] = 4000; // 40% to B12
-    F.sendSignal(B1, signals);
+        uint256[] memory signals = new uint256[](4);
+        signals[2] = 6000; // 60% to B11
+        signals[3] = 4000; // 40% to B12
+        F.sendSignal(B1, signals);
 
-    NodeState memory nodeData = F.getNodeDataWithUserSignals(B1, A1);
+        NodeState memory nodeData = F.getNodeDataWithUserSignals(B1, A1);
 
-    // Check if the basic info is correct
-    assertEq(nodeData.basicInfo[0], uint256(uint160(B1)).toString());
-    assertEq(nodeData.basicInfo[1], F.inflationOf(B1).toString());
-    assertEq(nodeData.basicInfo[2], F.balanceOf(address(uint160(B1)), rootBranchID).toString());
-    assertEq(nodeData.basicInfo[3], F.balanceOf(address(uint160(B1)), B1).toString());
-    assertEq(nodeData.basicInfo[4], F.asRootValuation(B1, F.balanceOf(address(uint160(B1)), B1)).toString());
-    assertEq(nodeData.basicInfo[5], F.getMembraneOf(B1).toString());
-    assertEq(nodeData.basicInfo[6], F.balanceOf(A1, B1).toString());
+        // Check if the basic info is correct
+        assertEq(nodeData.basicInfo[0], uint256(uint160(B1)).toString());
+        assertEq(nodeData.basicInfo[1], F.inflationOf(B1).toString());
+        assertEq(nodeData.basicInfo[2], F.balanceOf(address(uint160(B1)), rootBranchID).toString());
+        assertEq(nodeData.basicInfo[3], F.balanceOf(address(uint160(B1)), B1).toString());
+        assertEq(nodeData.basicInfo[4], F.asRootValuation(B1, F.balanceOf(address(uint160(B1)), B1)).toString());
+        assertEq(nodeData.basicInfo[5], F.getMembraneOf(B1).toString());
+        assertEq(nodeData.basicInfo[6], F.balanceOf(A1, B1).toString());
 
-    // Check if the signals are correct
-    assertEq(nodeData.signals.length, 1);
-    assertEq(nodeData.signals[0].lastRedistSignal.length, 2);
-    assertEq(nodeData.signals[0].lastRedistSignal[0], "6000");
-    assertEq(nodeData.signals[0].lastRedistSignal[1], "4000");
-    assertEq(nodeData.signals[0].MembraneInflation.length, 2);
-    assertEq(nodeData.signals[0].MembraneInflation[0][1], F.inflationOf(B1).toString());
-    assertEq(nodeData.signals[0].MembraneInflation[1][1], F.inflationOf(B1).toString());
+        // Check if the signals are correct
+        assertEq(nodeData.signals.length, 1);
+        assertEq(nodeData.signals[0].lastRedistSignal.length, 2);
+        assertEq(nodeData.signals[0].lastRedistSignal[0], "6000");
+        assertEq(nodeData.signals[0].lastRedistSignal[1], "4000");
+        assertEq(nodeData.signals[0].MembraneInflation.length, 2);
+        assertEq(nodeData.signals[0].MembraneInflation[0][1], F.inflationOf(B1).toString());
+        assertEq(nodeData.signals[0].MembraneInflation[1][1], F.inflationOf(B1).toString());
 
-    vm.stopPrank();
-}
-
-
+        vm.stopPrank();
+    }
 }

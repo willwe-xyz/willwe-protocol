@@ -113,15 +113,15 @@ contract FunTests is Test, TokenPrep, InitTest {
         uint256[] memory signal = new uint256[](2);
 
         vm.prank(address(uint160(uint256(keccak256(abi.encode("not member"))))));
-                vm.warp(block.timestamp + 1);
+        vm.warp(block.timestamp + 1);
         vm.expectRevert(Fun.TargetIsRoot.selector);
-        F.sendSignal(B1, signal); 
+        F.sendSignal(B1, signal);
 
         vm.startPrank(A1);
 
         signal = new uint256[](F.getChildrenOf(B1).length + 2);
         signal[0] = 23452334546645652345;
-                vm.warp(block.timestamp + 1);
+        vm.warp(block.timestamp + 1);
         vm.expectRevert(Fun.MembraneNotFound.selector);
         F.sendSignal(B1, signal);
 
@@ -137,7 +137,7 @@ contract FunTests is Test, TokenPrep, InitTest {
 
         vm.revertTo(snap);
         signal[1] = 232;
-                vm.warp(block.timestamp + 1);
+        vm.warp(block.timestamp + 1);
         F.sendSignal(B1, signal);
         assertTrue(F.inflationOf(B1) == signal[1] * 1 gwei);
 
@@ -218,11 +218,11 @@ contract FunTests is Test, TokenPrep, InitTest {
         signals[4] = 12_00;
 
         F.sendSignal(B1, signals);
-        
+
         console.log(B11, B12);
         console.log(childrenOf[0], childrenOf[1], childrenOf[2]);
-        assertTrue(childrenOf[0]  == B11, "index assumption false 1");
-        assertTrue(childrenOf[2]  == B12, "index assumption false 2");
+        assertTrue(childrenOf[0] == B11, "index assumption false 1");
+        assertTrue(childrenOf[2] == B12, "index assumption false 2");
 
         uint256 postBalanceB11 = F.balanceOf(address(uint160(B11)), B1);
         uint256 postBalanceB12 = F.balanceOf(address(uint160(B12)), B1);
@@ -237,7 +237,6 @@ contract FunTests is Test, TokenPrep, InitTest {
             "expected percentage matter"
         );
 
-        
         vm.warp(block.timestamp + 11536000);
         F.redistribute(B12);
 
@@ -246,11 +245,10 @@ contract FunTests is Test, TokenPrep, InitTest {
             "not only smaller redistributed"
         );
 
-        vm.warp(block.timestamp + (223422 * 6)); 
-        F.redistribute(B11); 
+        vm.warp(block.timestamp + (223422 * 6));
+        F.redistribute(B11);
 
         /////////// @dev order of operations matter. this is a bug.
-
 
         uint256 b11last = F.balanceOf(address(uint160(B11)), B1);
         uint256 b12last = F.balanceOf(address(uint160(B12)), B1);

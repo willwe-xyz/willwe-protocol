@@ -3,8 +3,6 @@ pragma solidity >=0.8.3;
 
 import {Fungido} from "./Fungido.sol";
 import {IExecution, SignatureQueue, Call} from "./interfaces/IExecution.sol";
-
-
 /////////////////////////////////////////
 /// @title Fun
 /// @author parseb
@@ -28,20 +26,18 @@ contract Fun is Fungido {
     error ResignalMismatch();
     error NoTimeDelta();
     error CannotSkip();
-    
 
     event NewMovement(uint256 indexed nodeId, bytes32 movementHash, bytes32 descriptionHash);
     event InflationRateChanged(uint256 indexed nodeId, uint256 oldInflationRate, uint256 newInflationRate);
     event MembraneChanged(uint256 indexed nodeId, uint256 previousMembrane, uint256 newMembrane);
 
-
     function resignal(uint256 targetNode_, uint256[] memory signals, address originator) public virtual {
         // Temporarily set msg.sender to the originator
         impersonatingAddress = originator;
-    
+
         // Call sendSignal with the provided parameters
         sendSignal(targetNode_, signals);
-    
+
         // Restore the original msg.sender
         delete impersonatingAddress;
     }
@@ -53,31 +49,29 @@ contract Fun is Fungido {
         return msg.sender;
     }
 
+    function sendSignal(uint256 targetNode_, uint256[] memory signals) public virtual {
+        if (parentOf[targetNode_] == targetNode_ || !isMember(_msgSender(), targetNode_)) revert TargetIsRoot();
+        if (balanceOf(_msgSender(), targetNode_) < totalSupplyOf[targetNode_] / 100_00) revert NoiseNotVoice();
 
+        mintInflation(targetNode_);
 
-function sendSignal(uint256 targetNode_, uint256[] memory signals) public virtual {
-    if (parentOf[targetNode_] == targetNode_ || !isMember(_msgSender(), targetNode_)) revert TargetIsRoot();
-    if (balanceOf(_msgSender(), targetNode_) < totalSupplyOf[targetNode_] / 100_00) revert NoiseNotVoice();
+        uint256 user = toID(_msgSender());
+        uint256 balanceOfSender = balanceOf(_msgSender(), targetNode_);
 
-    mintInflation(targetNode_);
+        uint256 sigSum;
 
-    uint256 user = toID(_msgSender());
-    uint256 balanceOfSender = balanceOf(_msgSender(), targetNode_);
-    
-    uint256 sigSum;
-
-    for (uint256 i; i < signals.length; ++i) {
-        bytes32 userKey = keccak256(abi.encodePacked(targetNode_, user, signals[i]));
-        if (impersonatingAddress != address(0) && options[userKey][0] != signals[i]) revert ResignalMismatch();
-        if (i <= 1) {
-            _handleSpecialSignals(targetNode_, user, signals[i], i, balanceOfSender,userKey);
-        } else {
-            _handleRegularSignals(targetNode_, user, signals[i], i, balanceOfSender, signals.length);
-            sigSum += signals[i];
+        for (uint256 i; i < signals.length; ++i) {
+            bytes32 userKey = keccak256(abi.encodePacked(targetNode_, user, signals[i]));
+            if (impersonatingAddress != address(0) && options[userKey][0] != signals[i]) revert ResignalMismatch();
+            if (i <= 1) {
+                _handleSpecialSignals(targetNode_, user, signals[i], i, balanceOfSender, userKey);
+            } else {
+                _handleRegularSignals(targetNode_, user, signals[i], i, balanceOfSender, signals.length);
+                sigSum += signals[i];
+            }
         }
+        if (sigSum != 0 && sigSum != 100_00) revert IncompleteSign();
     }
-    if (sigSum != 0 && sigSum != 100_00) revert IncompleteSign();
-}
 
     function _handleSpecialSignals(
         uint256 targetNode_,
@@ -90,22 +84,21 @@ function sendSignal(uint256 targetNode_, uint256[] memory signals) public virtua
         if (signal == 0) return;
         bytes32 userKey = keccak256(abi.encodePacked(targetNode_, user, signal));
         bytes32 nodeKey = keccak256(abi.encodePacked(targetNode_, signal));
-    
+
         // Ensure the user is not signaling too frequently
         if (block.timestamp == options[userKey][1]) revert NoTimeDelta();
-    
+
         if (index == 0) {
             _handleMembraneSignal(targetNode_, userKey, nodeKey, signal, balanceOfSender);
         } else {
             _handleInflationSignal(targetNode_, userKey, nodeKey, signal, balanceOfSender);
         }
-    
+
         // Update the last signal timestamp using the existing userKey
         options[userKey][1] = block.timestamp;
-        
+
         // Push last inflation and membrane signal for record
         childrenOf[uint256(userKey)].push(signal);
-
     }
 
     function _handleMembraneSignal(
@@ -139,29 +132,31 @@ function sendSignal(uint256 targetNode_, uint256[] memory signals) public virtua
         }
     }
 
-function _handleRegularSignals(
-    uint256 targetNode_,
-    uint256 user,
-    uint256 signal,
-    uint256 index,
-    uint256 balanceOfSender,
-    uint256 signalsLength
-) private {
-    uint256[] memory children = childrenOf[targetNode_];
-    if (children.length != (signalsLength - 2)) revert BadLen();
+    function _handleRegularSignals(
+        uint256 targetNode_,
+        uint256 user,
+        uint256 signal,
+        uint256 index,
+        uint256 balanceOfSender,
+        uint256 signalsLength
+    ) private {
+        uint256[] memory children = childrenOf[targetNode_];
+        if (children.length != (signalsLength - 2)) revert BadLen();
 
-    bytes32 userTargetedPreference = keccak256(abi.encodePacked(address(uint160(user)), targetNode_, children[index - 2]));
-    if (signal > 100_00 && options[userTargetedPreference][0] == 0) return;
-    if (signal > 100_00 && options[userTargetedPreference][0] > 0) revert CannotSkip();
-    if (impersonatingAddress != address(0) && options[userTargetedPreference][0] != signal) revert ResignalMismatch();
+        bytes32 userTargetedPreference =
+            keccak256(abi.encodePacked(address(uint160(user)), targetNode_, children[index - 2]));
+        if (signal > 100_00 && options[userTargetedPreference][0] == 0) return;
+        if (signal > 100_00 && options[userTargetedPreference][0] > 0) revert CannotSkip();
+        if (impersonatingAddress != address(0) && options[userTargetedPreference][0] != signal) {
+            revert ResignalMismatch();
+        }
 
-
-    if (options[userTargetedPreference][0] != signal) {
-        options[userTargetedPreference] = [signal, block.timestamp, 0];
-        redistribute(children[index - 2]);
-        _updateChildParentEligibility(children[index - 2], targetNode_, userTargetedPreference, balanceOfSender);
+        if (options[userTargetedPreference][0] != signal) {
+            options[userTargetedPreference] = [signal, block.timestamp, 0];
+            redistribute(children[index - 2]);
+            _updateChildParentEligibility(children[index - 2], targetNode_, userTargetedPreference, balanceOfSender);
+        }
     }
-}
 
     function _updateSignalOption(
         uint256 targetNode_,
@@ -178,35 +173,35 @@ function _handleRegularSignals(
         options[nodeKey][0] += balanceOfSender;
     }
 
-function _updateChildParentEligibility(
-    uint256 childId,
-    uint256 parentId,
-    bytes32 userTargetedPreference,
-    uint256 balanceOfSender
-) private {
-    bytes32 childParentEligibilityPerSec = keccak256(abi.encodePacked(childId, parentId));
+    function _updateChildParentEligibility(
+        uint256 childId,
+        uint256 parentId,
+        bytes32 userTargetedPreference,
+        uint256 balanceOfSender
+    ) private {
+        bytes32 childParentEligibilityPerSec = keccak256(abi.encodePacked(childId, parentId));
 
-    uint256 newContribution = calculateUserTargetedPreferenceAmount(childId, parentId, options[userTargetedPreference][0], _msgSender());
+        uint256 newContribution =
+            calculateUserTargetedPreferenceAmount(childId, parentId, options[userTargetedPreference][0], _msgSender());
 
-    // Ensure the user is not signaling too frequently
-    if (! (block.timestamp >= options[userTargetedPreference][1])) revert NoTimeDelta();
-    // Subtract previous contribution
-    if (options[userTargetedPreference][2] > 0) {
-        options[childParentEligibilityPerSec][0] -= options[userTargetedPreference][2];
+        // Ensure the user is not signaling too frequently
+        if (!(block.timestamp >= options[userTargetedPreference][1])) revert NoTimeDelta();
+        // Subtract previous contribution
+        if (options[userTargetedPreference][2] > 0) {
+            options[childParentEligibilityPerSec][0] -= options[userTargetedPreference][2];
+        }
+
+        // Add the new contribution, capping it within limits
+        options[childParentEligibilityPerSec][0] += newContribution;
+        if (options[childParentEligibilityPerSec][0] > inflSec[parentId][0]) {
+            options[childParentEligibilityPerSec][0] = inflSec[parentId][0];
+        }
+
+        // Update the timestamp in both maps
+        options[childParentEligibilityPerSec][1] = block.timestamp;
+        options[userTargetedPreference][1] = block.timestamp;
+        options[userTargetedPreference][2] = newContribution;
     }
-
-    // Add the new contribution, capping it within limits
-    options[childParentEligibilityPerSec][0] += newContribution;
-    if (options[childParentEligibilityPerSec][0] > inflSec[parentId][0]) {
-        options[childParentEligibilityPerSec][0] = inflSec[parentId][0];
-    }
-
-    // Update the timestamp in both maps
-    options[childParentEligibilityPerSec][1] = block.timestamp;
-    options[userTargetedPreference][1] = block.timestamp;
-    options[userTargetedPreference][2] = newContribution;
-
-}
 
     /// @notice redistributes eligible acummulated inflationary flows
     /// @param nodeId_ redistribution target group
@@ -214,23 +209,25 @@ function _updateChildParentEligibility(
         uint256 parent = parentOf[nodeId_];
         if (parent == 0) revert NoSoup();
         if (parentOf[parent] == parent) return 0;
-    
+
         mintInflation(parent);
-    
+
         bytes32 childParentEligibility = keccak256((abi.encodePacked(nodeId_, parent)));
 
         uint256 availableBalance = balanceOf(toAddress(parent), parent);
         distributedAmt = options[childParentEligibility][0] * (block.timestamp - options[childParentEligibility][1]);
-    
+
         // Ensure distributed amount doesn't exceed available balance
         if (distributedAmt > availableBalance) {
             distributedAmt = availableBalance;
         }
-    
+
         options[childParentEligibility][1] = block.timestamp;
-    
+
         if (distributedAmt > 0) {
-            _safeTransfer(toAddress(parent), toAddress(nodeId_), parent, distributedAmt, abi.encodePacked("redistribution"));
+            _safeTransfer(
+                toAddress(parent), toAddress(nodeId_), parent, distributedAmt, abi.encodePacked("redistribution")
+            );
         }
     }
 
@@ -293,7 +290,6 @@ function _updateChildParentEligibility(
 
     /////////// View
 
-
     function getSigQueue(bytes32 hash_) public view returns (SignatureQueue memory) {
         return IExecution(executionAddress).getSigQueue(hash_);
     }
@@ -306,21 +302,20 @@ function _updateChildParentEligibility(
         return IExecution(executionAddress).isValidSignature(_hash, _signature);
     }
 
-function calculateUserTargetedPreferenceAmount(
-    uint256 childId,
-    uint256 parentId,
-    uint256 signal,
-    address user
-) public view returns (uint256) {
-    if (parentOf[childId] != parentId) revert UnregisteredFungible();
+    function calculateUserTargetedPreferenceAmount(uint256 childId, uint256 parentId, uint256 signal, address user)
+        public
+        view
+        returns (uint256)
+    {
+        if (parentOf[childId] != parentId) revert UnregisteredFungible();
 
-    uint256 totalSupplyParent = totalSupplyOf[parentId];
-    uint256 balanceOfSenderParent = balanceOf(user, parentId);
-    uint256 parentInflationRate = inflSec[parentId][0];
+        uint256 totalSupplyParent = totalSupplyOf[parentId];
+        uint256 balanceOfSenderParent = balanceOf(user, parentId);
+        uint256 parentInflationRate = inflSec[parentId][0];
 
-    // Calculate contribution while capping within parent's limits
-    uint256 newContribution = (balanceOfSenderParent * signal * parentInflationRate) / (totalSupplyParent * 100_00);
+        // Calculate contribution while capping within parent's limits
+        uint256 newContribution = (balanceOfSenderParent * signal * parentInflationRate) / (totalSupplyParent * 100_00);
 
-    return newContribution;
-}
+        return newContribution;
+    }
 }

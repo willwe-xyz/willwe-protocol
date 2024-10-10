@@ -23,8 +23,8 @@ contract ERC20ASG is ERC20, IERC20ASG {
     //// @notice constructor function instantiates immutable contract instance
     //// @param name_ wanted name of token
     //// @param symbol_ wanted symbol of token
-    //// @param price_ wanted starting price in gwei
-    //// @param pps_ wanted linear price increase in gwei per second
+    //// @param price_ wanted starting price in giga-wei
+    //// @param pps_ wanted linear price increase in wei per second
     constructor(
         string memory name_,
         string memory symbol_,
@@ -35,7 +35,7 @@ contract ERC20ASG is ERC20, IERC20ASG {
     ) ERC20(name_, symbol_) {
         price = price_ == 0 ? ((uint256(uint160(bytes20(address(this))) % 10)) + 1 gwei) : price_ * 1 gwei;
 
-        pps = pps_ == 0 ? 1 gwei : pps_ * 1 gwei;
+        pps = pps_ == 0 ? 1 gwei : pps_;
         initTime = block.timestamp;
 
         if (initMintAddrs_.length > 0 && initMintAmts_[0] > 0) {

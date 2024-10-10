@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.19;
+pragma solidity 0.8.25;
 
 import "forge-std/Script.sol";
 import "../src/WillWe.sol";
@@ -8,7 +8,7 @@ import "../src/Will.sol";
 import "../src/Membranes.sol";
 import "../test/mock/Tokens.sol";
 
-contract WillWeDeployScript is Script {
+contract PopulateScript is Script {
     WillWe public willwe;
     Execution public execution;
     Will public will;
@@ -19,10 +19,10 @@ contract WillWeDeployScript is Script {
     X20RONAlias public xVentures;
 
     // Specified contract addresses (checksummed and payable)
-    address payable constant WILL_ADDRESS = payable(0xDf17125350200A99E5c06E5E2b053fc61Be7E6ae);
-    address payable constant EXECUTION_ADDRESS = payable(0x3D52a3A5D12505B148a46B5D69887320Fc756F96);
-    address payable constant MEMBRANES_ADDRESS = payable(0xaBbd15F9eD0cab9D174b5e9878E9f104a993B41f);
-    address payable constant WILLWE_ADDRESS = payable(0x8f45bEe4c58C7Bb74CDa9fBD40aD86429Dba3E41);
+    address payable constant WILL_ADDRESS = payable(0xA0F47AE56845209DB2F22C32AF206Ce33f8447a0);
+    address payable constant EXECUTION_ADDRESS = payable(0xD5717A4BfC0C06540700E5F326d8c63B23D9216d);
+    address payable constant MEMBRANES_ADDRESS = payable(0xC2985039aeB2040Ac403484C8d792a5De53cDfB1);
+    address payable constant WILLWE_ADDRESS = payable(0xCDF01592c88eaA45Cf3EfFF824f7C7e0687263aD);
 
     // Private keys for multiple accounts
     uint256 ACCOUNT1_PRIVATE_KEY = vm.envUint("WEWILL_USER1");
@@ -35,9 +35,30 @@ contract WillWeDeployScript is Script {
     }
 
     function run() public {
+        address deployer = setupAccounts();
+
+        deployTokens(deployer);
+
+        initializeContracts();
+
+        configureInitialSettings(deployer);
+
+        (uint256 rootNode1, uint256 rootNode2, uint256 rootNode3, uint256 rootNode4) = createRootNodes(deployer);
+
+        approveTokensForDeposits(deployer);
+
+        // mintPathOperations(deployer, rootNode1, rootNode2, rootNode3, rootNode4);
+
+        // account1Operations(deployer);
+
+        // account2Operations(deployer);
+    }
+
+    function setupAccounts() internal returns (address deployer) {
+        console.log("#####3 setupAccounts ####");
         uint256 deployerPrivateKey = vm.envUint("WEWILL_02");
-        address deployer = vm.addr(deployerPrivateKey);
-        address account1 = vm.addr(ACCOUNT1_PRIVATE_KEY); 
+        deployer = vm.addr(deployerPrivateKey);
+        address account1 = vm.addr(ACCOUNT1_PRIVATE_KEY);
         address account2 = vm.addr(ACCOUNT2_PRIVATE_KEY);
 
         console.log("Deployer:", deployer);
@@ -46,7 +67,11 @@ contract WillWeDeployScript is Script {
 
         vm.startBroadcast(deployerPrivateKey);
 
-        // Deploy mock tokens directly
+        return deployer;
+    }
+
+    function deployTokens(address deployer) internal {
+        console.log("#####3 deployTokens ####");
         weth = new X20RONAlias("Wrapped Ether", "WETH");
         mkr = new X20RONAlias("Spark", "SPK");
         dogCoinMax = new X20RONAlias("DogCoinMax", "DCM");
@@ -57,33 +82,50 @@ contract WillWeDeployScript is Script {
         console.log("Deployer DCM balance:", dogCoinMax.balanceOf(deployer));
         console.log("Deployer XV balance:", xVentures.balanceOf(deployer));
 
+        transferTokensToAccounts(deployer);
+    }
+
+    function transferTokensToAccounts(address deployer) internal {
+        console.log("#####3 transferTokensToAccounts ####");
+
         uint256 transferAmount = 100_000 ether;
-        weth.transfer(account1, transferAmount);
-        mkr.transfer(account1, transferAmount);
-        dogCoinMax.transfer(account1, transferAmount);
-        xVentures.transfer(account1, transferAmount);
+        weth.transfer(vm.addr(ACCOUNT1_PRIVATE_KEY), transferAmount);
+        mkr.transfer(vm.addr(ACCOUNT1_PRIVATE_KEY), transferAmount);
+        dogCoinMax.transfer(vm.addr(ACCOUNT1_PRIVATE_KEY), transferAmount);
+        xVentures.transfer(vm.addr(ACCOUNT1_PRIVATE_KEY), transferAmount);
 
-        weth.transfer(account2, transferAmount);
-        mkr.transfer(account2, transferAmount);
-        dogCoinMax.transfer(account2, transferAmount);
-        xVentures.transfer(account2, transferAmount);
+        weth.transfer(vm.addr(ACCOUNT2_PRIVATE_KEY), transferAmount);
+        mkr.transfer(vm.addr(ACCOUNT2_PRIVATE_KEY), transferAmount);
+        dogCoinMax.transfer(vm.addr(ACCOUNT2_PRIVATE_KEY), transferAmount);
+        xVentures.transfer(vm.addr(ACCOUNT2_PRIVATE_KEY), transferAmount);
+    }
 
-        // Initialize contract instances
+    function initializeContracts() internal {
+        console.log("#####3 initializeContracts ####");
+
         will = Will(WILL_ADDRESS);
         execution = Execution(EXECUTION_ADDRESS);
         membranes = Membranes(MEMBRANES_ADDRESS);
         willwe = WillWe(WILLWE_ADDRESS);
+    }
 
-        // Set up initial configuration
+    function configureInitialSettings(address WILLWE_ADDRESS) internal {
         execution.setWillWe(WILLWE_ADDRESS);
+    }
 
-        // Create root nodes
-        uint256 rootNode1 = willwe.spawnRootBranch(address(weth));
-        uint256 rootNode2 = willwe.spawnRootBranch(address(mkr));
-        uint256 rootNode3 = willwe.spawnRootBranch(address(dogCoinMax));
-        uint256 rootNode4 = willwe.spawnRootBranch(address(xVentures));
+    function createRootNodes(address deployer)
+        internal
+        returns (uint256 rootNode1, uint256 rootNode2, uint256 rootNode3, uint256 rootNode4)
+    {
+        console.log("#####3 createRootNodes ####");
+        rootNode1 = willwe.spawnRootBranch(address(weth));
+        rootNode2 = willwe.spawnRootBranch(address(mkr));
+        rootNode3 = willwe.spawnRootBranch(address(dogCoinMax));
+        rootNode4 = willwe.spawnRootBranch(address(xVentures));
+    }
 
-        // Approve tokens for deposits
+    function approveTokensForDeposits(address deployer) internal {
+        console.log("#####3 approveTokensForDeposits ####");
         uint256 approveAmount = 500_000 ether;
         weth.approve(address(willwe), approveAmount);
         mkr.approve(address(willwe), approveAmount);
@@ -94,23 +136,16 @@ contract WillWeDeployScript is Script {
         console.log("Deployer MKR balance before mintPath:", mkr.balanceOf(deployer));
         console.log("Deployer DCM balance before mintPath:", dogCoinMax.balanceOf(deployer));
         console.log("Deployer XV balance before mintPath:", xVentures.balanceOf(deployer));
+    }
 
-        // Log token addresses and names
-        console.log("WETH Address:", address(weth));
-        console.log("WETH Name:", weth.name());
-        console.log("WETH Symbol:", weth.symbol());
-
-        console.log("MKR Address:", address(mkr));
-        console.log("MKR Name:", mkr.name());
-        console.log("MKR Symbol:", mkr.symbol());
-
-        console.log("DCM Address:", address(dogCoinMax));
-        console.log("DCM Name:", dogCoinMax.name());
-        console.log("DCM Symbol:", dogCoinMax.symbol());
-
-        console.log("XV Address:", address(xVentures));
-        console.log("XV Name:", xVentures.name());
-        console.log("XV Symbol:", xVentures.symbol());
+    function mintPathOperations(
+        address deployer,
+        uint256 rootNode1,
+        uint256 rootNode2,
+        uint256 rootNode3,
+        uint256 rootNode4
+    ) internal {
+        console.log("##### mintPathOperations ####");
 
         console.log("Deployer WETH balance:", weth.balanceOf(deployer));
         console.log("Deployer MKR balance:", mkr.balanceOf(deployer));
@@ -122,56 +157,22 @@ contract WillWeDeployScript is Script {
         uint256 Node3b = willwe.spawnBranch(rootNode3);
         uint256 Node4b = willwe.spawnBranch(rootNode4);
 
-        // uint256 Node1a = willwe.spawnBranch(Node1b);
-        // uint256 Node2a = willwe.spawnBranch(Node2b);
-        // uint256 Node3a = willwe.spawnBranch(Node3b);
-        // uint256 Node4a = willwe.spawnBranch(Node4b);
+        uint256 Node1a = willwe.spawnBranch(Node1b);
+        uint256 Node2a = willwe.spawnBranch(Node2b);
+        uint256 Node3a = willwe.spawnBranch(Node3b);
+        uint256 Node4a = willwe.spawnBranch(Node4b);
 
-        // MintPath operations for deployer
-        // willwe.mintPath(Node1a, 10_000 ether);
-        // willwe.mintPath(Node2a, 12_000 ether);
-        // willwe.mintPath(Node3b, 20_000 ether);
-        // willwe.mintPath(Node4b, 7_000 ether);
+        console.log("mint path 1a--- 10keth");
+        willwe.mintPath(Node1a, 10_000 ether);
+        console.log("mint path 2a--- 10keth");
+        willwe.mintPath(Node2a, 3_000 ether);
+
+        console.log("mint path 3b--- 10keth");
+        willwe.mintPath(Node3b, 1_000 ether);
+        console.log("mint path 4b--- 10keth");
+        willwe.mintPath(Node4b, 1_000 ether);
 
         vm.stopBroadcast();
-
-        // // Account 1 operations
-        // vm.startBroadcast(ACCOUNT1_PRIVATE_KEY);
-
-        // uint256 child1_1 = willwe.spawnBranch(rootNode1);
-        // uint256 child2_1 = willwe.spawnBranch(rootNode2);
-
-        // weth.approve(address(willwe), transferAmount);
-        // mkr.approve(address(willwe), transferAmount);
-        // dogCoinMax.approve(address(willwe), transferAmount);
-        // xVentures.approve(address(willwe), transferAmount);
-
-        // willwe.mintPath(child1_1, 25_000 ether);
-        // willwe.mintPath(child2_1, 25_000 ether);
-        // willwe.mintPath(rootNode3, 25_000 ether);
-
-        // vm.stopBroadcast();
-
-        // // Account 2 operations
-        // vm.startBroadcast(ACCOUNT2_PRIVATE_KEY);
-
-        // // Mint membership for Account2 in the parent nodes
-        // willwe.mintMembership(rootNode1);
-        // willwe.mintMembership(child1_1);
-
-        // uint256 child1_2 = willwe.spawnBranch(rootNode1);
-        // uint256 grandchild1_1_1 = willwe.spawnBranch(child1_1);
-
-        // weth.approve(address(willwe), transferAmount);
-        // mkr.approve(address(willwe), transferAmount);
-        // dogCoinMax.approve(address(willwe), transferAmount);
-        // xVentures.approve(address(willwe), transferAmount);
-
-        // willwe.mintPath(child1_2, 25_000 ether);
-        // willwe.mintPath(grandchild1_1_1, 12_500 ether);
-        // willwe.mintPath(rootNode4, 25_000 ether);
-
-        // vm.stopBroadcast();
     }
 }
 

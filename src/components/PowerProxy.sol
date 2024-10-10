@@ -14,7 +14,6 @@ import {IPowerProxy} from "../interfaces/IPowerProxy.sol";
  * The success and return data of the delegated call will be returned back to the caller of the proxy.
  */
 
-
 /// @author Michael Elliot <mike@makerdao.com>
 /// @author Joshua Levine <joshua@makerdao.com>
 /// @author Nick Johnson <arachnid@notdot.net>
@@ -32,8 +31,7 @@ contract PowerProxy is Receiver {
 
     /// @notice Stores execution authorisation type.
     uint8 public immutable allowedAuthType;
-    
-    
+
     constructor(address proxyOwner_, uint8 consensusType_) {
         owner = proxyOwner_;
         allowedAuthType = consensusType_;

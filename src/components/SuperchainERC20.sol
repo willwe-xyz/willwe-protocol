@@ -1,10 +1,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.25;
 
-import { ISuperchainERC20Extensions, ISuperchainERC20Errors } from "optimism/packages/contracts-bedrock/src/L2/interfaces/ISuperchainERC20.sol";
+import {
+    ISuperchainERC20Extensions,
+    ISuperchainERC20Errors
+} from "optimism/packages/contracts-bedrock/src/L2/interfaces/ISuperchainERC20.sol";
 // import { ERC20 } from "@solady/tokens/ERC20.sol";
-import { IL2ToL2CrossDomainMessenger } from "optimism/packages/contracts-bedrock/src/L2/interfaces/IL2ToL2CrossDomainMessenger.sol";
-import { Predeploys } from "optimism/packages/contracts-bedrock/src/libraries/Predeploys.sol";
+import {IL2ToL2CrossDomainMessenger} from
+    "optimism/packages/contracts-bedrock/src/L2/interfaces/IL2ToL2CrossDomainMessenger.sol";
+import {Predeploys} from "optimism/packages/contracts-bedrock/src/libraries/Predeploys.sol";
 import {ERC20} from "openzeppelin-contracts/token/ERC20/ERC20.sol";
 
 /// @title SuperchainERC20

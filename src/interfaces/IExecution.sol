@@ -71,7 +71,6 @@ interface IExecution {
     ) external returns (bytes32 movementHash);
 
     function setWillWe(address WillWeImplementationAddress) external;
-    function setFoundingAgent(address fa_) external;
 
     /// View
 

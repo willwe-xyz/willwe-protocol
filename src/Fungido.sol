@@ -150,7 +150,7 @@ contract Fungido is ERC1155, PureUtils {
         if (parentOf[fID] == fID) revert RootExists();
 
         _localizeNode(fID, fID);
-        members[fID].push(fungible20_);
+                ++entityCount;
     }
 
     /// @notice creates new context nested under a parent node id
@@ -160,11 +160,9 @@ contract Fungido is ERC1155, PureUtils {
         if (parentOf[fid_] == 0) revert UnregisteredFungible();
         if (!isMember(_msgSender(), fid_) && (parentOf[fid_] != fid_)) revert NotMember();
 
-        unchecked {
-            ++entityCount;
-        }
+        ++entityCount;
 
-        newID = fid_ - block.chainid - entityCount - (block.prevrandao % 1000);
+        newID = fid_ - block.chainid - entityCount - block.number - block.prevrandao % 100;
 
         _setApprovalForAll(toAddress(newID), address(this), true);
         _localizeNode(newID, fid_);
@@ -237,8 +235,6 @@ contract Fungido is ERC1155, PureUtils {
         _burn(_msgSender(), fid_, amount_);
     }
 
-
-    
     function burnPath(uint256 target_, uint256 amount) external {
         if (parentOf[target_] == 0) revert BaseOrNonFungible();
 
@@ -504,7 +500,7 @@ contract Fungido is ERC1155, PureUtils {
 
     ////////////////////////////////////////////////
     //////____MISC____/////////////////////////////
-    
+
     /**
      * @dev See {IERC1155MetadataURI-uri}.
      *
@@ -515,7 +511,6 @@ contract Fungido is ERC1155, PureUtils {
      * Clients calling this function must replace the `\{id\}` substring with the
      * actual token type ID.
      */
-
     function uri(uint256 id_) public view virtual override returns (string memory) {
         return string(abi.encodePacked("https://willwe.xyz/metadata/", id_));
     }
@@ -523,7 +518,6 @@ contract Fungido is ERC1155, PureUtils {
     function setApprovalForAll(address operator, bool isApproved) public override {
         revert Disabled();
     }
-
 
     ////////////////////////////////////////////////
     //////____eth_call____/////////////////////////////
@@ -546,13 +540,6 @@ contract Fungido is ERC1155, PureUtils {
         NodeData.rootPath = uintArrayToStringArray(getFidPath(nodeId));
     }
 
-
-
-
-
-
-
-
     function getNodes(uint256[] memory nodeIds) public view returns (NodeState[] memory nodes) {
         nodes = new NodeState[](nodeIds.length);
         for (uint256 i = 0; i < nodeIds.length; i++) {
@@ -561,7 +548,11 @@ contract Fungido is ERC1155, PureUtils {
     }
 
     ///
-    function getAllNodesForRoot(address rootAddress, address userIfAny) external view returns (NodeState[] memory nodes) {
+    function getAllNodesForRoot(address rootAddress, address userIfAny)
+        external
+        view
+        returns (NodeState[] memory nodes)
+    {
         uint256 rootId = toID(rootAddress);
         bool u = (userIfAny != address(0));
         nodes = new NodeState[](members[rootId].length);
@@ -571,52 +562,48 @@ contract Fungido is ERC1155, PureUtils {
         }
     }
 
-    
     function getChildParentEligibilityPerSec(uint256 childId_, uint256 parentId_) public view returns (uint256) {
         bytes32 childParentEligibilityPerSec = keccak256(abi.encodePacked(childId_, parentId_));
         return options[childParentEligibilityPerSec][0];
     }
 
+    /// @notice Returns the array containing signal info for each child node in given originator and parent context
+    /// @param signalOrigin address of originator
+    /// @param parentNodeId node id for which originator has expressed
+    function getUserNodeSignals(address signalOrigin, uint256 parentNodeId)
+        public
+        view
+        returns (uint256[2][] memory UserNodeSignals)
+    {
+        uint256[] memory childNodes = childrenOf[parentNodeId];
+        UserNodeSignals = new uint256[2][](childNodes.length);
 
-/// @notice Returns the array containing signal info for each child node in given originator and parent context
-/// @param signalOrigin address of originator
-/// @param parentNodeId node id for which originator has expressed
-function getUserNodeSignals(address signalOrigin, uint256 parentNodeId) public view returns (uint256[2][] memory UserNodeSignals) {
-    uint256[] memory childNodes = childrenOf[parentNodeId];
-    UserNodeSignals = new uint256[2][](childNodes.length);
+        for (uint256 i = 0; i < childNodes.length; i++) {
+            // Include the signalOrigin (user's address) in the signalKey
+            bytes32 userTargetedPreference = keccak256(abi.encodePacked(signalOrigin, parentNodeId, childNodes[i]));
 
-    for (uint256 i = 0; i < childNodes.length; i++) {
-        // Include the signalOrigin (user's address) in the signalKey
-        bytes32 userTargetedPreference = keccak256(abi.encodePacked(signalOrigin, parentNodeId, childNodes[i]));
-        
-        // Store the signal value and the timestamp (assuming options[userKey] structure)
-        UserNodeSignals[i][0] = options[userTargetedPreference][0];  // Signal value
-        UserNodeSignals[i][1] = options[userTargetedPreference][1];  // Last updated timestamp
+            // Store the signal value and the timestamp (assuming options[userKey] structure)
+            UserNodeSignals[i][0] = options[userTargetedPreference][0]; // Signal value
+            UserNodeSignals[i][1] = options[userTargetedPreference][1]; // Last updated timestamp
+        }
+
+        return UserNodeSignals;
     }
 
-    return UserNodeSignals;
-}
+    function getNodeDataWithUserSignals(uint256 nodeId, address user) public view returns (NodeState memory nodeData) {
+        nodeData = getNodeData(nodeId);
+        nodeData.basicInfo[6] = balanceOf(user, nodeId).toString();
+        nodeData.signals = new UserSignal[](1);
+        nodeData.signals[0].MembraneInflation = new string[2][](childrenOf[nodeId].length);
+        nodeData.signals[0].lastRedistSignal = new string[](childrenOf[nodeId].length);
 
-function getNodeDataWithUserSignals(uint256 nodeId, address user) public view returns (NodeState memory nodeData) {
-    nodeData = getNodeData(nodeId);
-    nodeData.basicInfo[6] = balanceOf(user, nodeId).toString();
-    nodeData.signals = new UserSignal[](1);
-    nodeData.signals[0].MembraneInflation = new string[2][](childrenOf[nodeId].length);
-    nodeData.signals[0].lastRedistSignal = new string[](childrenOf[nodeId].length);
+        for (uint256 i = 0; i < childrenOf[nodeId].length; i++) {
+            // Add inflation to the MembraneInflation array
+            nodeData.signals[0].MembraneInflation[i][1] = inflSec[nodeId][0].toString(); // Inflation
 
-    for (uint256 i = 0; i < childrenOf[nodeId].length; i++) {
-        // Add inflation to the MembraneInflation array
-        nodeData.signals[0].MembraneInflation[i][1] = inflSec[nodeId][0].toString(); // Inflation
-
-        // Retrieve signaled value from the options mapping
-        bytes32 userKey = keccak256(abi.encodePacked(user, nodeId, childrenOf[nodeId][i] ));
-        nodeData.signals[0].lastRedistSignal[i] = options[userKey][0].toString();
-
-
+            // Retrieve signaled value from the options mapping
+            bytes32 userKey = keccak256(abi.encodePacked(user, nodeId, childrenOf[nodeId][i]));
+            nodeData.signals[0].lastRedistSignal[i] = options[userKey][0].toString();
+        }
     }
-}
-
-
-
-
 }

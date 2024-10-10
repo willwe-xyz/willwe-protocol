@@ -73,7 +73,6 @@ contract InflationTest is Test, TokenPrep, InitTest {
         assertTrue((Bt1 - Bt0) == 1 ether * 1 gwei * 100, "inflation mism or not in gwei");
     }
 
-
     function testPathBurn() public {
         testBasicInflation();
         address A100 = address(25600000000000);

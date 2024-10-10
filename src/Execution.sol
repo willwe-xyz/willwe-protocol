@@ -109,22 +109,23 @@ contract Execution is EIP712, Receiver {
         bytes32 descriptionHash,
         bytes memory data
     ) external virtual returns (bytes32 movementHash) {
-                console.log("got hereeeeeeee 0000");
 
         if (msg.sender != address(WillWe)) revert OnlyFun();
-        console.log("got hereeeeeeee 1111");
         if (typeOfMovement > 2 || typeOfMovement == 0) revert NoMovementType();
         if (!WillWe.isMember(origin, nodeId)) revert NotNodeMember();
 
         if (((typeOfMovement * nodeId * expiresInDays) == 0)) revert EmptyUnallowed();
         if (uint256(descriptionHash) == 0) revert EXEC_NoDescription();
-        
+
         if (executingAccount == address(0)) {
             executingAccount = createNodeEndpoint(origin, nodeId, typeOfMovement);
             engineOwner[executingAccount] = nodeId;
         } else {
             if (!(engineOwner[executingAccount] == nodeId)) revert NotExeAccOwner();
-            if (IPowerProxy(executingAccount).owner() != address(this) || IPowerProxy(executingAccount).allowedAuthType() != typeOfMovement) revert EXEC_BadOwnerOrAuthType();
+            if (
+                IPowerProxy(executingAccount).owner() != address(this)
+                    || IPowerProxy(executingAccount).allowedAuthType() != typeOfMovement
+            ) revert EXEC_BadOwnerOrAuthType();
         }
 
         Movement memory M;
@@ -264,7 +265,10 @@ contract Execution is EIP712, Receiver {
         emit EndpointCreatedForAgent(nodeId, endpoint, owner);
     }
 
-    function createNodeEndpoint(address originOrNode, uint256 endpointOwner_, uint8 consensusType) internal returns (address endpoint) {
+    function createNodeEndpoint(address originOrNode, uint256 endpointOwner_, uint8 consensusType)
+        internal
+        returns (address endpoint)
+    {
         if (msg.sig == this.createEndpointForOwner.selector) {
             endpoint = spawnNodeEndpoint(originOrNode, 3);
             engineOwner[endpoint] = originOrNode == address(this) ? endpointOwner_ : uint160(originOrNode);

@@ -13,7 +13,7 @@ contract Will is SuperchainERC20, ERC20ASG {
     bool entered;
 
     constructor(uint256 price_, uint256 pps_, address[] memory initMintAddrs_, uint256[] memory initMintAmts_)
-        ERC20ASG("Willings", "WILL", price_, pps_, initMintAddrs_, initMintAmts_)
+        ERC20ASG("WILL Root Value Token", "WRVT", price_, pps_, initMintAddrs_, initMintAmts_)
     {}
 
     error ATransferFailed();

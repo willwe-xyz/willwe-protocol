@@ -36,7 +36,7 @@ contract MintTest is Test {
         endowmentAmts[1] = 20 ether;
         endowmentAmts[2] = 100 ether;
 
-        Will20 = new Will(123456789, 10, tokenGenesisHaves, endowmentAmts);
+        Will20 = new Will(123456789, 10 gwei, tokenGenesisHaves, endowmentAmts);
 
         Xtoken1 = new X20();
         Xtoken2 = new X20();

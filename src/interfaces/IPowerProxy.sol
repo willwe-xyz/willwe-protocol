@@ -56,6 +56,4 @@ interface IPowerProxy {
     /// @notice Sets the validity of a given hash
     /// @param hash_ The hash to set the validity of
     function setSignedHash(bytes32 hash_) external;
-
-
 }
