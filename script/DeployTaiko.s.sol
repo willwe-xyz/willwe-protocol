@@ -113,6 +113,8 @@ contract DeployTaiko is Script {
    
 //   ###############################
    
+//  https://blockscoutapi.hekla.taiko.xyz/address/0x1F0966dC854F6911F1Ab38752130F3158293fdCE/contracts#address-tabs
+
 //   ###############################
 //   Foundation Agent Safe at:  0x8ed4Dc0d7b6Ff664b044aF0794Ca240d22A4e20b
 //   Will:  0xe432f1B9463Db4500CBa0CA4101938D4548d9c88

@@ -8,7 +8,14 @@ import "../src/Will.sol";
 import "../src/Membranes.sol";
 import "../test/mock/Tokens.sol";
 
+import "openzeppelin-contracts/contracts/utils/Strings.sol";
+
+
 contract PopulateScript is Script {
+
+    using Strings for uint256;
+
+
     WillWe public willwe;
     Execution public execution;
     Will public will;
@@ -18,20 +25,33 @@ contract PopulateScript is Script {
     X20RONAlias public dogCoinMax;
     X20RONAlias public xVentures;
 
+//   ###############################
+//   Foundation Agent Safe at:  0x8ed4Dc0d7b6Ff664b044aF0794Ca240d22A4e20b
+//   Will:  0xe432f1B9463Db4500CBa0CA4101938D4548d9c88
+//   Membrane:  0x7DA446815C1dcB9D0A009C96CE28Ed1Fcfe751ed
+//   Execution:  0x9ac6503f163A5053259740fd15933a230aB2d59c
+//   WillWe:  0x1F0966dC854F6911F1Ab38752130F3158293fdCE
+//   ###############################
+
     // Specified contract addresses (checksummed and payable)
-    address payable constant WILL_ADDRESS = payable(0xA0F47AE56845209DB2F22C32AF206Ce33f8447a0);
-    address payable constant EXECUTION_ADDRESS = payable(0xD5717A4BfC0C06540700E5F326d8c63B23D9216d);
-    address payable constant MEMBRANES_ADDRESS = payable(0xC2985039aeB2040Ac403484C8d792a5De53cDfB1);
-    address payable constant WILLWE_ADDRESS = payable(0xCDF01592c88eaA45Cf3EfFF824f7C7e0687263aD);
+    address payable constant WILL_ADDRESS = payable(0xe432f1B9463Db4500CBa0CA4101938D4548d9c88);
+    address payable constant EXECUTION_ADDRESS = payable(0x9ac6503f163A5053259740fd15933a230aB2d59c);
+    address payable constant MEMBRANES_ADDRESS = payable(0x7DA446815C1dcB9D0A009C96CE28Ed1Fcfe751ed);
+    address payable constant WILLWE_ADDRESS = payable(0x1F0966dC854F6911F1Ab38752130F3158293fdCE);
 
     // Private keys for multiple accounts
-    uint256 ACCOUNT1_PRIVATE_KEY = vm.envUint("WEWILL_USER1");
-    uint256 ACCOUNT2_PRIVATE_KEY = vm.envUint("WEWILL_USER2");
+    uint256 ACCOUNT1_PRIVATE_KEY = uint256(keccak256(abi.encodePacked("WeiShogun")));
+    uint256 ACCOUNT2_PRIVATE_KEY = uint256(keccak256(abi.encodePacked("TodShogun")));
+
+
 
     function setUp() public {
         vm.label(vm.addr(vm.envUint("WEWILL_02")), "Deployer 0_WEWILL_2");
         vm.label(vm.addr(ACCOUNT1_PRIVATE_KEY), "WEWILL_USER1");
         vm.label(vm.addr(ACCOUNT2_PRIVATE_KEY), "WEWILL_USER2");
+
+        console.log("WeiShogun 1 PVK : ", ACCOUNT1_PRIVATE_KEY.toHexString());
+        console.log("TodShogun 2 PVK : ", ACCOUNT2_PRIVATE_KEY.toHexString());
     }
 
     function run() public {
@@ -49,14 +69,12 @@ contract PopulateScript is Script {
 
         // mintPathOperations(deployer, rootNode1, rootNode2, rootNode3, rootNode4);
 
-        // account1Operations(deployer);
 
-        // account2Operations(deployer);
     }
 
     function setupAccounts() internal returns (address deployer) {
         console.log("#####3 setupAccounts ####");
-        uint256 deployerPrivateKey = vm.envUint("WEWILL_02");
+        uint256 deployerPrivateKey = vm.envUint("WW_deployer_taiko");
         deployer = vm.addr(deployerPrivateKey);
         address account1 = vm.addr(ACCOUNT1_PRIVATE_KEY);
         address account2 = vm.addr(ACCOUNT2_PRIVATE_KEY);
@@ -73,9 +91,9 @@ contract PopulateScript is Script {
     function deployTokens(address deployer) internal {
         console.log("#####3 deployTokens ####");
         weth = new X20RONAlias("Wrapped Ether", "WETH");
-        mkr = new X20RONAlias("Spark", "SPK");
-        dogCoinMax = new X20RONAlias("DogCoinMax", "DCM");
-        xVentures = new X20RONAlias("XVentures", "XV");
+        mkr = new X20RONAlias("Public Funding Coin", "PFC");
+        dogCoinMax = new X20RONAlias("Dog Coin Ultra", "DCU");
+        xVentures = new X20RONAlias("X Ventures Value Unit", "XVVU");
 
         console.log("Deployer WETH balance:", weth.balanceOf(deployer));
         console.log("Deployer MKR balance:", mkr.balanceOf(deployer));
@@ -125,7 +143,7 @@ contract PopulateScript is Script {
     }
 
     function approveTokensForDeposits(address deployer) internal {
-        console.log("#####3 approveTokensForDeposits ####");
+        console.log("##### approveTokensForDeposits ####");
         uint256 approveAmount = 500_000 ether;
         weth.approve(address(willwe), approveAmount);
         mkr.approve(address(willwe), approveAmount);

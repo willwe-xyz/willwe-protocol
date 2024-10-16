@@ -147,7 +147,7 @@ contract Fungido is ERC1155, PureUtils {
         if (fungible20_.code.length == 0) revert EOA();
 
         fID = toID(fungible20_);
-        if (parentOf[fID] == fID) revert RootExists();
+        if (parentOf[fID] != 0) revert RootExists();
 
         _localizeNode(fID, fID);
                 ++entityCount;
@@ -163,7 +163,7 @@ contract Fungido is ERC1155, PureUtils {
         ++entityCount;
 
         newID = fid_ - block.chainid - entityCount - block.number - block.prevrandao % 100;
-
+        if (parentOf[newID] != 0) revert BranchAlreadyExists();
         _setApprovalForAll(toAddress(newID), address(this), true);
         _localizeNode(newID, fid_);
         if (msg.sender != address(this)) _giveMembership(_msgSender(), newID);
