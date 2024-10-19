@@ -29,7 +29,7 @@ contract DeployTaiko is Script {
         console.log("##### Deployer : ", deployer, "| expected", "0x259c1F1FaF930a23D009e85867A6b5206b2a6d44");
         console.log("#________________________________");
 
-              address deployer2 = 0xE7b30A037F5598E4e73702ca66A59Af5CC650Dcd;
+        address deployer2 = 0xE7b30A037F5598E4e73702ca66A59Af5CC650Dcd;
         address protocol_guild = 0x32e3C7fD24e175701A35c224f2238d18439C7dBC;
 
         address[] memory founders = new address[](2);
@@ -91,28 +91,28 @@ contract DeployTaiko is Script {
 }
 // == Logs ==
 //   ###############################
-                                                               
+
 //      Deploy script started for network :  167009
-                                                               
+
 //   ###############################
 //   ##### Deployer :  0xC9a9C487BB6f53BA8ABe8471d39358C875B388c5 | expected 0x259c1F1FaF930a23D009e85867A6b5206b2a6d44
 //   #________________________________
 //   ###############################
-   
+
 //   Fun deployed at :  0x1F0966dC854F6911F1Ab38752130F3158293fdCE
-   
+
 //   ###############################
 //   ###############################
-   
+
 //   Root Value in Control :  0xe432f1B9463Db4500CBa0CA4101938D4548d9c88
 //   Controling Extrmity:  0x8ed4Dc0d7b6Ff664b044aF0794Ca240d22A4e20b
 //   ###############################
-//   Balances: deployer | Agent 
+//   Balances: deployer | Agent
 //   0 10000000000000000000000000
 //   Will Price in ETH: 1000000000
-   
+
 //   ###############################
-   
+
 //  https://blockscoutapi.hekla.taiko.xyz/address/0x1F0966dC854F6911F1Ab38752130F3158293fdCE/contracts#address-tabs
 
 //   ###############################

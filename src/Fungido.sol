@@ -133,6 +133,7 @@ contract Fungido is ERC1155, PureUtils {
         control[1] = IExecution(executionAddress).createEndpointForOwner(
             executionAddress, this.spawnBranch(toID(Will)), executionAddress
         );
+        M.setInitWillWe();
         emit SelfControlAtAddress(control[1]);
     }
 
@@ -150,7 +151,7 @@ contract Fungido is ERC1155, PureUtils {
         if (parentOf[fID] != 0) revert RootExists();
 
         _localizeNode(fID, fID);
-                ++entityCount;
+        ++entityCount;
     }
 
     /// @notice creates new context nested under a parent node id

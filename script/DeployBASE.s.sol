@@ -42,7 +42,7 @@ contract DeployBASE is Script, TokenPrep, AliasPicker {
 
         address deployer = 0xE7b30A037F5598E4e73702ca66A59Af5CC650Dcd;
         address protocol_guild = 0x32e3C7fD24e175701A35c224f2238d18439C7dBC;
-        
+
         address[] memory founders = new address[](1);
         uint256[] memory amounts = new uint256[](1);
 
@@ -110,9 +110,6 @@ contract DeployBASE is Script, TokenPrep, AliasPicker {
 
         vm.stopBroadcast();
     }
-
-    
-
 }
 
 // == Logs ==

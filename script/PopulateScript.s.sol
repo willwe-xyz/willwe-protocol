@@ -10,11 +10,8 @@ import "../test/mock/Tokens.sol";
 
 import "openzeppelin-contracts/contracts/utils/Strings.sol";
 
-
 contract PopulateScript is Script {
-
     using Strings for uint256;
-
 
     WillWe public willwe;
     Execution public execution;
@@ -25,13 +22,13 @@ contract PopulateScript is Script {
     X20RONAlias public dogCoinMax;
     X20RONAlias public xVentures;
 
-//   ###############################
-//   Foundation Agent Safe at:  0x8ed4Dc0d7b6Ff664b044aF0794Ca240d22A4e20b
-//   Will:  0xe432f1B9463Db4500CBa0CA4101938D4548d9c88
-//   Membrane:  0x7DA446815C1dcB9D0A009C96CE28Ed1Fcfe751ed
-//   Execution:  0x9ac6503f163A5053259740fd15933a230aB2d59c
-//   WillWe:  0x1F0966dC854F6911F1Ab38752130F3158293fdCE
-//   ###############################
+    //   ###############################
+    //   Foundation Agent Safe at:  0x8ed4Dc0d7b6Ff664b044aF0794Ca240d22A4e20b
+    //   Will:  0xe432f1B9463Db4500CBa0CA4101938D4548d9c88
+    //   Membrane:  0x7DA446815C1dcB9D0A009C96CE28Ed1Fcfe751ed
+    //   Execution:  0x9ac6503f163A5053259740fd15933a230aB2d59c
+    //   WillWe:  0x1F0966dC854F6911F1Ab38752130F3158293fdCE
+    //   ###############################
 
     // Specified contract addresses (checksummed and payable)
     address payable constant WILL_ADDRESS = payable(0xe432f1B9463Db4500CBa0CA4101938D4548d9c88);
@@ -42,8 +39,6 @@ contract PopulateScript is Script {
     // Private keys for multiple accounts
     uint256 ACCOUNT1_PRIVATE_KEY = uint256(keccak256(abi.encodePacked("WeiShogun")));
     uint256 ACCOUNT2_PRIVATE_KEY = uint256(keccak256(abi.encodePacked("TodShogun")));
-
-
 
     function setUp() public {
         vm.label(vm.addr(vm.envUint("WEWILL_02")), "Deployer 0_WEWILL_2");
@@ -68,8 +63,6 @@ contract PopulateScript is Script {
         approveTokensForDeposits(deployer);
 
         // mintPathOperations(deployer, rootNode1, rootNode2, rootNode3, rootNode4);
-
-
     }
 
     function setupAccounts() internal returns (address deployer) {

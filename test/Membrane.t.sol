@@ -22,6 +22,7 @@ contract MembraneTests is Test, InitTest {
 
     uint256 rootBranch;
     uint256 B1;
+    uint256 B2;
 
     function setUp() public override {
         super.setUp();
@@ -35,9 +36,16 @@ contract MembraneTests is Test, InitTest {
         rootBranch = F.spawnRootBranch(address(X20token));
         vm.prank(A1);
         B1 = F.spawnBranch(rootBranch);
+        vm.prank(A1);
+        B2 = F.spawnBranch(rootBranch);
 
         vm.prank(address(this));
-        X20token.transfer(A1, 1 ether);
+        X20token.transfer(A1, 10 ether);
+        X20token.transfer(A2, 5 ether);
+        X20token.transfer(A3, 2 ether);
+
+        vm.prank(A1);
+        X20token.approve(address(F), 10 ether);
     }
 
     function testCreatesMembrane() public returns (uint256 mID) {
@@ -129,6 +137,69 @@ contract MembraneTests is Test, InitTest {
         vm.prank(address(5));
         F.membershipEnforce(address(5), B1);
         assertFalse(F.isMember(address(5), B1), "renonce fail");
+    }
+
+    function testMembershipConditions() public {
+        // Create a membrane with X20token requirement
+        address[] memory tokens = new address[](1);
+        uint256[] memory balances = new uint256[](1);
+        tokens[0] = address(X20token);
+        balances[0] = 1 ether;
+        uint256 membraneId = M.createMembrane(tokens, balances, "X20 Requirement");
+
+        // Set membrane for B1
+        uint256[] memory signal = new uint256[](F.getChildrenOf(B1).length + 2);
+        signal[0] = membraneId;
+        vm.prank(A1);
+        F.mintPath(B1, 2 ether);
+        vm.prank(A1);
+        F.sendSignal(B1, signal);
+
+        assertTrue(F.balanceOf(A1, B1) > F.totalSupply(B1) / 2, "A1 should have more than half of the total supply");
+        assertTrue(F.getMembraneOf(B1) == membraneId, "membrane not changed 0");
+
+        // A2 should be able to mint membership (has 5 ether of X20token)
+        vm.startPrank(A2);
+        X20token.approve(address(F), 1 ether);
+        F.mintMembership(B1);
+        vm.stopPrank();
+        assertTrue(F.isMember(A2, B1), "A2 should be a member");
+
+        // A3 should be able to mint membership (has 2 ether of X20token)
+        vm.startPrank(A3);
+        X20token.approve(address(F), 1 ether);
+        F.mintMembership(B1);
+        vm.stopPrank();
+        assertTrue(F.isMember(A3, B1), "A3 should be a member");
+
+        uint256 snap1 = vm.snapshot();
+
+        tokens = new address[](2);
+        balances = new uint256[](2);
+
+        tokens[0] = A2;
+        tokens[1] = A1;
+
+        balances[1] = 1;
+        balances[0] = uint256(uint160(A2));
+
+        membraneId = M.createMembrane(tokens, balances, "blacklist whitelist");
+        vm.warp(block.timestamp + 100);
+        // Set membrane for B1
+        signal = new uint256[](F.getChildrenOf(B1).length + 2);
+        signal[0] = membraneId;
+        vm.prank(A1);
+        F.sendSignal(B1, signal);
+
+        assertTrue(F.getMembraneOf(B1) == membraneId, "membrane not changed 1");
+        assertTrue(F.isMember(A1, B1), "A1 should still be member");
+
+        vm.prank(A2);
+        F.membershipEnforce(A1, B1);
+        assertFalse(F.isMember(A1, B1), "A1 should no longer be member");
+
+        vm.prank(A1);
+        assertFalse(F.isMember(A1, B1), "A1 should not be a member");
     }
 
     function testProxyControl() public {

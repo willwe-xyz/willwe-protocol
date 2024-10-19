@@ -109,7 +109,6 @@ contract Execution is EIP712, Receiver {
         bytes32 descriptionHash,
         bytes memory data
     ) external virtual returns (bytes32 movementHash) {
-
         if (msg.sender != address(WillWe)) revert OnlyFun();
         if (typeOfMovement > 2 || typeOfMovement == 0) revert NoMovementType();
         if (!WillWe.isMember(origin, nodeId)) revert NotNodeMember();

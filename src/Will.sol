@@ -69,24 +69,20 @@ contract Will is SuperchainERC20, ERC20ASG {
         mintFromETH();
     }
 
-fallback() external payable {
-    // Check if sender has a bigger balance than 69% of supply
-    if (balanceOf(msg.sender) <= (totalSupply() * 77) / 100) revert UnqualifiedCall();
+    fallback() external payable {
+        // Check if sender has a bigger balance than 69% of supply
+        if (balanceOf(msg.sender) <= (totalSupply() * 77) / 100) revert UnqualifiedCall();
 
-    // Check if the function signature is delegatecall()
-    if (bytes4(msg.data) == bytes4(keccak256("delegatecall()"))) {
-        if (msg.data.length < 24) revert InvalidCalldata();
+        // Check if the function signature is delegatecall()
+        if (bytes4(msg.data) == bytes4(keccak256("delegatecall()"))) {
+            if (msg.data.length < 24) revert InvalidCalldata();
 
-        // Extract target address and calldata
-        (address target, bytes memory callData) = abi.decode(msg.data[4:], (address, bytes));
+            // Extract target address and calldata
+            (address target, bytes memory callData) = abi.decode(msg.data[4:], (address, bytes));
 
-        // Execute delegatecall
-        (bool success,) = target.delegatecall(callData);
-        if (!success) revert DelegateCallFailed();
+            // Execute delegatecall
+            (bool success,) = target.delegatecall(callData);
+            if (!success) revert DelegateCallFailed();
+        }
     }
-}
-
-    
-
-
 }
