@@ -16,7 +16,7 @@ contract Membranes is IMembrane {
     error Membrane__UnauthorizedWillWeSet();
 
     event WillWeSet(address willWeAddress);
-    event MembraneCreated(uint256 indexed membraneId);
+    event MembraneCreated(uint256 indexed membraneId, string CID);
 
     /// @notice creates membrane. Used to control and define.
     /// @notice To be read and understood as: Givent this membrane, of each of the tokens_[x], the user needs at least balances_[x].
@@ -32,9 +32,8 @@ contract Membranes is IMembrane {
         virtual
         returns (uint256 id)
     {
-        if (!((tokens_.length / balances_.length) * bytes(meta_).length >= 1)) {
-            revert Membrane__EmptyFieldOnMembraneCreation();
-        }
+        if (tokens_.length != balances_.length) revert Membrane__EmptyFieldOnMembraneCreation();
+
         Membrane memory M;
         M.tokens = tokens_;
         M.balances = balances_;
@@ -42,7 +41,7 @@ contract Membranes is IMembrane {
         id = uint256(keccak256(abi.encode(M)));
         membraneById[id] = M;
 
-        emit MembraneCreated(id);
+        emit MembraneCreated(id, meta_);
     }
 
     function setInitWillWe() external {

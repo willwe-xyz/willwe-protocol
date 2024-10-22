@@ -14,7 +14,6 @@ contract Fun is Fungido {
         IExecution(ExeAddr).setWillWe(address(this));
     }
 
-    // Remove unused errors
     error BadLen();
     error Noise();
     error NoSoup();
@@ -30,15 +29,12 @@ contract Fun is Fungido {
     event NewMovement(uint256 indexed nodeId, bytes32 movementHash, bytes32 descriptionHash);
     event InflationRateChanged(uint256 indexed nodeId, uint256 oldInflationRate, uint256 newInflationRate);
     event MembraneChanged(uint256 indexed nodeId, uint256 previousMembrane, uint256 newMembrane);
+    event Signaled(uint256 indexed nodeId, address sender, address origin);
+    event ConfigSignal(uint256 indexed nodeId, bytes32 expressedOption);
 
     function resignal(uint256 targetNode_, uint256[] memory signals, address originator) public virtual {
-        // Temporarily set msg.sender to the originator
         impersonatingAddress = originator;
-
-        // Call sendSignal with the provided parameters
         sendSignal(targetNode_, signals);
-
-        // Restore the original msg.sender
         delete impersonatingAddress;
     }
 
@@ -50,7 +46,11 @@ contract Fun is Fungido {
     }
 
     function sendSignal(uint256 targetNode_, uint256[] memory signals) public virtual {
-        if (parentOf[targetNode_] == targetNode_ || !isMember(_msgSender(), targetNode_)) revert TargetIsRoot();
+        if (parentOf[targetNode_] == targetNode_) revert TargetIsRoot();
+        bool isMember = isMember(_msgSender(), targetNode_);
+        signals = isMember ? signals : new uint256[](signals.length);
+        if (impersonatingAddress == address(0) && (!isMember)) revert Noise();
+
         if (balanceOf(_msgSender(), targetNode_) < totalSupplyOf[targetNode_] / 100_00) revert NoiseNotVoice();
 
         mintInflation(targetNode_);
@@ -62,7 +62,10 @@ contract Fun is Fungido {
 
         for (uint256 i; i < signals.length; ++i) {
             bytes32 userKey = keccak256(abi.encodePacked(targetNode_, user, signals[i]));
-            if (impersonatingAddress != address(0) && options[userKey][0] != signals[i]) revert ResignalMismatch();
+            if (impersonatingAddress != address(0) && isMember && options[userKey][0] != signals[i]) {
+                revert ResignalMismatch();
+            }
+            if ((!isMember) && signals[i] > 0) revert ResignalMismatch();
             if (i <= 1) {
                 _handleSpecialSignals(targetNode_, user, signals[i], i, balanceOfSender, userKey);
             } else {
@@ -71,6 +74,7 @@ contract Fun is Fungido {
             }
         }
         if (sigSum != 0 && sigSum != 100_00) revert IncompleteSign();
+        emit Signaled(targetNode_, address(uint160(user)), msg.sender);
     }
 
     function _handleSpecialSignals(
@@ -85,20 +89,17 @@ contract Fun is Fungido {
         bytes32 userKey = keccak256(abi.encodePacked(targetNode_, user, signal));
         bytes32 nodeKey = keccak256(abi.encodePacked(targetNode_, signal));
 
-        // Ensure the user is not signaling too frequently
         if (block.timestamp == options[userKey][1]) revert NoTimeDelta();
-
         if (index == 0) {
             _handleMembraneSignal(targetNode_, userKey, nodeKey, signal, balanceOfSender);
         } else {
             _handleInflationSignal(targetNode_, userKey, nodeKey, signal, balanceOfSender);
         }
 
-        // Update the last signal timestamp using the existing userKey
         options[userKey][1] = block.timestamp;
-
-        // Push last inflation and membrane signal for record
         childrenOf[uint256(userKey)].push(signal);
+
+        emit ConfigSignal(targetNode_, nodeKey);
     }
 
     function _handleMembraneSignal(
@@ -147,9 +148,6 @@ contract Fun is Fungido {
             keccak256(abi.encodePacked(address(uint160(user)), targetNode_, children[index - 2]));
         if (signal > 100_00 && options[userTargetedPreference][0] == 0) return;
         if (signal > 100_00 && options[userTargetedPreference][0] > 0) revert CannotSkip();
-        if (impersonatingAddress != address(0) && options[userTargetedPreference][0] != signal) {
-            revert ResignalMismatch();
-        }
 
         if (options[userTargetedPreference][0] != signal) {
             options[userTargetedPreference] = [signal, block.timestamp, 0];
@@ -168,7 +166,6 @@ contract Fun is Fungido {
         if (options[userKey][1] > 0 && (inUseMembraneId[targetNode_][1] < options[userKey][1])) {
             options[nodeKey][0] -= options[userKey][0];
         }
-        // if (impersonatingAddress != address(0) && options[userKey][0] != signal) revert ResignalMismatch();
         options[userKey] = [signal, block.timestamp, 0];
         options[nodeKey][0] += balanceOfSender;
     }
@@ -184,20 +181,16 @@ contract Fun is Fungido {
         uint256 newContribution =
             calculateUserTargetedPreferenceAmount(childId, parentId, options[userTargetedPreference][0], _msgSender());
 
-        // Ensure the user is not signaling too frequently
         if (!(block.timestamp >= options[userTargetedPreference][1])) revert NoTimeDelta();
-        // Subtract previous contribution
         if (options[userTargetedPreference][2] > 0) {
             options[childParentEligibilityPerSec][0] -= options[userTargetedPreference][2];
         }
 
-        // Add the new contribution, capping it within limits
         options[childParentEligibilityPerSec][0] += newContribution;
         if (options[childParentEligibilityPerSec][0] > inflSec[parentId][0]) {
             options[childParentEligibilityPerSec][0] = inflSec[parentId][0];
         }
 
-        // Update the timestamp in both maps
         options[childParentEligibilityPerSec][1] = block.timestamp;
         options[userTargetedPreference][1] = block.timestamp;
         options[userTargetedPreference][2] = newContribution;
@@ -217,7 +210,6 @@ contract Fun is Fungido {
         uint256 availableBalance = balanceOf(toAddress(parent), parent);
         distributedAmt = options[childParentEligibility][0] * (block.timestamp - options[childParentEligibility][1]);
 
-        // Ensure distributed amount doesn't exceed available balance
         if (distributedAmt > availableBalance) {
             distributedAmt = availableBalance;
         }

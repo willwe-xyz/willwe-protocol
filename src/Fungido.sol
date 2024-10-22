@@ -356,27 +356,6 @@ contract Fungido is ERC1155, PureUtils {
     ////////////////////////////////////////////////
     //////________OVERRIDE________/////////////////
 
-    // function _afterTokenTransfer(
-    //     address from,
-    //     address to,
-    //     uint256[] memory ids,
-    //     uint256[] memory amounts,
-    //     bytes memory data
-    // ) internal virtual override {
-    //     if (from == address(0)) {
-    //         for (uint256 i; ids.length > i;) {
-    //             uint256 x = uint256(uint160(to)) + (ids[i]);
-    //             if (childrenOf[x].length == 0 && to == _msgSender()) {
-    //                 // childrenOf[x].push(x);
-    //                 // childrenOf[uint160(_msgSender())].push(ids[i]);
-    //             }
-    //             unchecked {
-    //                 ++i;
-    //             }
-    //         }
-    //     }
-    // }
-
     function _useAfterTokenTransfer() internal view override returns (bool) {
         return false;
     }

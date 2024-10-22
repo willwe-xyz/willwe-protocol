@@ -114,7 +114,7 @@ contract FunTests is Test, TokenPrep, InitTest {
 
         vm.prank(address(uint160(uint256(keccak256(abi.encode("not member"))))));
         vm.warp(block.timestamp + 1);
-        vm.expectRevert(Fun.TargetIsRoot.selector);
+        vm.expectRevert(Fun.Noise.selector);
         F.sendSignal(B1, signal);
 
         vm.startPrank(A1);
