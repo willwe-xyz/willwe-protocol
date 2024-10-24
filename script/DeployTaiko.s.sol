@@ -116,9 +116,9 @@ contract DeployTaiko is Script {
 //  https://blockscoutapi.hekla.taiko.xyz/address/0x1F0966dC854F6911F1Ab38752130F3158293fdCE/contracts#address-tabs
 
 //   ###############################
-//   Foundation Agent Safe at:  0x8ed4Dc0d7b6Ff664b044aF0794Ca240d22A4e20b
-//   Will:  0xe432f1B9463Db4500CBa0CA4101938D4548d9c88
-//   Membrane:  0x7DA446815C1dcB9D0A009C96CE28Ed1Fcfe751ed
-//   Execution:  0x9ac6503f163A5053259740fd15933a230aB2d59c
-//   WillWe:  0x1F0966dC854F6911F1Ab38752130F3158293fdCE
+//   Foundation Agent Safe at:  0xF33c1682a9C68cd3982666612279aE8a2E55AbA3
+//   Will:  0xC27A26bDF3dCA8A7e18AAE061EeE1b38183562F2
+//   Membrane:  0x8E448f0568A47359a0077494B032eb9D588cB9d1
+//   Execution:  0x5F7147439f991722e95296BA10B3E34b2Ea75C55
+//   WillWe:  0x573879054B44b10a33f77f74EB70084F303bcb11
 //   ###############################

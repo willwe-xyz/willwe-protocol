@@ -106,6 +106,10 @@ contract Fungido is ERC1155, PureUtils {
     //////________EVENTS________///////////////////
 
     event SelfControlAtAddress(address AgencyLocus);
+    event NewRootBranch(uint256 indexed rootBranchId);
+    event NewBranch(uint256 indexed newId, uint256 indexed parentId);
+
+
 
     ////////////////////////////////////////////////
     //////________MODIFIER________/////////////////
@@ -152,6 +156,8 @@ contract Fungido is ERC1155, PureUtils {
 
         _localizeNode(fID, fID);
         ++entityCount;
+
+        emit NewRootBranch(fID);
     }
 
     /// @notice creates new context nested under a parent node id
@@ -167,6 +173,8 @@ contract Fungido is ERC1155, PureUtils {
         _setApprovalForAll(toAddress(newID), address(this), true);
         _localizeNode(newID, fid_);
         if (msg.sender != address(this)) _giveMembership(_msgSender(), newID);
+    
+        emit NewBranch(newID,fid_);
     }
 
     /// @notice spawns branch with an enforceable membership mechanism
