@@ -164,6 +164,9 @@ contract Fungido is ERC1155, PureUtils {
     /// @notice agent spawning a new underlink needs to be a member in containing context
     /// @param fid_ context node id
     function spawnBranch(uint256 fid_) public virtual returns (uint256 newID) {
+
+        fid_ = (parentOf[fid_] == 0) ? spawnRootBranch(toAddress(fid_)) : fid_;
+
         if (parentOf[fid_] == 0) revert UnregisteredFungible();
         if (!isMember(_msgSender(), fid_) && (parentOf[fid_] != fid_)) revert NotMember();
 
@@ -500,7 +503,7 @@ contract Fungido is ERC1155, PureUtils {
      * actual token type ID.
      */
     function uri(uint256 id_) public view virtual override returns (string memory) {
-        return string(abi.encodePacked("https://willwe.xyz/metadata/", id_));
+        return string(abi.encodePacked("https://willwe.xyz/metadata/", id_.toString() ));
     }
 
     function setApprovalForAll(address operator, bool isApproved) public override {
