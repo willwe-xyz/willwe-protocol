@@ -184,7 +184,7 @@ contract Fungido is ERC1155, PureUtils {
     /// @param fid_ context (parent) node
     /// @param membraneID_ id of membrane to be used by new entity
     function spawnBranchWithMembrane(uint256 fid_, uint256 membraneID_) public virtual returns (uint256 newID) {
-        if (M.getMembraneById(membraneID_).tokens.length == 0) revert UniniMembrane();
+        if (abi.encodePacked((M.getMembraneById(membraneID_).meta)).length  == 0) revert UniniMembrane();
         newID = spawnBranch(fid_);
         inUseMembraneId[newID][0] = membraneID_;
         inUseMembraneId[newID][1] = block.timestamp;
