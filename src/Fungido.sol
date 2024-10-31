@@ -107,7 +107,7 @@ contract Fungido is ERC1155, PureUtils {
 
     event SelfControlAtAddress(address AgencyLocus);
     event NewRootBranch(uint256 indexed rootBranchId);
-    event NewBranch(uint256 indexed newId, uint256 indexed parentId);
+    event NewBranch(uint256 indexed newId, uint256 indexed parentId, address indexed creator);
 
 
 
@@ -177,7 +177,7 @@ contract Fungido is ERC1155, PureUtils {
         _localizeNode(newID, fid_);
         if (msg.sender != address(this)) _giveMembership(_msgSender(), newID);
     
-        emit NewBranch(newID,fid_);
+        emit NewBranch(newID,fid_, msg.sender);
     }
 
     /// @notice spawns branch with an enforceable membership mechanism
@@ -526,6 +526,7 @@ contract Fungido is ERC1155, PureUtils {
         NodeData.basicInfo[5] = (inUseMembraneId[nodeId][0]).toString();
         NodeData.basicInfo[7] = inflSec[nodeId][0].toString();
         NodeData.basicInfo[8] = inflSec[nodeId][2].toString();
+        NodeData.membraneMeta = M.getMembraneById(inUseMembraneId[nodeId][0]).meta;
         NodeData.membersOfNode = members[nodeId];
         NodeData.childrenNodes = uintArrayToStringArray(childrenOf[nodeId]);
         NodeData.rootPath = uintArrayToStringArray(getFidPath(nodeId));
