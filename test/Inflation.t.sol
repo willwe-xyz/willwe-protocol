@@ -70,7 +70,7 @@ contract InflationTest is Test, TokenPrep, InitTest {
 
         console.log("2 - T1 default inflation, balance", F.inflationOf(B1), F.totalSupply(B1));
         console.log(Bt1 - Bt0, "diff after 100 sec. of 1 ether inflation");
-        assertTrue((Bt1 - Bt0) == 1 ether * 1 gwei * 100, "inflation mism or not in gwei");
+        assertTrue((Bt1 - Bt0) == F.inflationOf(B1) * 100, "inflation mism or not in gwei");
     }
 
     function testPathBurn() public {

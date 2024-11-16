@@ -48,15 +48,16 @@ contract Fun is Fungido {
     function sendSignal(uint256 targetNode_, uint256[] memory signals) public virtual {
         if (parentOf[targetNode_] == targetNode_) revert TargetIsRoot();
         bool isMember = isMember(_msgSender(), targetNode_);
-        signals = isMember ? signals : new uint256[](signals.length);
         if (impersonatingAddress == address(0) && (!isMember)) revert Noise();
 
-        if (balanceOf(_msgSender(), targetNode_) < totalSupplyOf[targetNode_] / 100_00) revert NoiseNotVoice();
 
+        uint256 balanceOfSender = balanceOf(_msgSender(), targetNode_);
+        if (balanceOf(_msgSender(), targetNode_) < totalSupplyOf[targetNode_] / 100_00) revert NoiseNotVoice();
         mintInflation(targetNode_);
 
+
         uint256 user = toID(_msgSender());
-        uint256 balanceOfSender = balanceOf(_msgSender(), targetNode_);
+        uint256[] memory children = childrenOf[targetNode_];
 
         uint256 sigSum;
 
@@ -69,7 +70,7 @@ contract Fun is Fungido {
             if (i <= 1) {
                 _handleSpecialSignals(targetNode_, user, signals[i], i, balanceOfSender, userKey);
             } else {
-                _handleRegularSignals(targetNode_, user, signals[i], i, balanceOfSender, signals.length);
+                _handleRegularSignals(targetNode_, user, signals[i], i, balanceOfSender, signals.length, children);
                 sigSum += signals[i];
             }
         }
@@ -139,9 +140,9 @@ contract Fun is Fungido {
         uint256 signal,
         uint256 index,
         uint256 balanceOfSender,
-        uint256 signalsLength
+        uint256 signalsLength,
+        uint256[] memory children
     ) private {
-        uint256[] memory children = childrenOf[targetNode_];
         if (children.length != (signalsLength - 2)) revert BadLen();
 
         bytes32 userTargetedPreference =

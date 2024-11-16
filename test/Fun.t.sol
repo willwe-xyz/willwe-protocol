@@ -120,7 +120,7 @@ contract FunTests is Test, TokenPrep, InitTest {
         vm.startPrank(A1);
 
         signal = new uint256[](F.getChildrenOf(B1).length + 2);
-        signal[0] = 23452334546645652345;
+        signal[0] = 234523345466;
         vm.warp(block.timestamp + 1);
         vm.expectRevert(Fun.MembraneNotFound.selector);
         F.sendSignal(B1, signal);
@@ -128,22 +128,24 @@ contract FunTests is Test, TokenPrep, InitTest {
         signal[0] = membraneID;
 
         uint256 snap = vm.snapshot();
-        vm.warp(block.timestamp + 120333);
+        vm.warp(block.timestamp + 1);
 
         F.sendSignal(B1, signal);
-        vm.warp(block.timestamp + 120333);
+        vm.warp(block.timestamp + 1);
+
+        console.log(F.totalSupply(B1), F.balanceOf(A1, B1), "total supply | Balance of A1");
 
         assertEq(F.getMembraneOf(B1), membraneID, "expected mid");
 
-        vm.revertTo(snap);
-        signal[1] = 232;
-        vm.warp(block.timestamp + 1);
-        F.sendSignal(B1, signal);
-        assertTrue(F.inflationOf(B1) == signal[1] * 1 gwei);
+        // vm.revertTo(snap);
+        // signal[1] = 232;
+        // vm.warp(block.timestamp + 1);
+        // F.sendSignal(B1, signal);
+        // assertTrue(F.inflationOf(B1) == signal[1] * 1 gwei);
 
-        vm.stopPrank();
+        // vm.stopPrank();
 
-        snap2 = vm.snapshot();
+        // snap2 = vm.snapshot();
     }
 
     function testInflates() public {

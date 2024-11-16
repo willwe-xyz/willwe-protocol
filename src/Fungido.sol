@@ -303,7 +303,7 @@ contract Fungido is ERC1155, PureUtils {
         parentOf[newID] = parentId;
         if (parentId != newID) {
             childrenOf[parentId].push(newID);
-            inflSec[newID][0] = 1 gwei;
+            inflSec[newID][0] = 10_000 gwei;
             inflSec[newID][2] = block.timestamp;
             members[getFidPath(parentId)[0]].push(toAddress(newID));
         }
