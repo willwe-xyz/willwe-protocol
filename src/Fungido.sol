@@ -12,8 +12,6 @@ import {Strings} from "openzeppelin-contracts/contracts/utils/Strings.sol";
 import {PureUtils} from "./components/PureUtils.sol";
 import "./interfaces/IMembrane.sol";
 
-import "forge-std/console.sol";
-
 ///////////////////////////////////////////////
 //////////////////////////////////////////////
 /// @title Fungido
@@ -109,8 +107,6 @@ contract Fungido is ERC1155, PureUtils {
     event NewRootBranch(uint256 indexed rootBranchId);
     event NewBranch(uint256 indexed newId, uint256 indexed parentId, address indexed creator);
 
-
-
     ////////////////////////////////////////////////
     //////________MODIFIER________/////////////////
 
@@ -164,27 +160,24 @@ contract Fungido is ERC1155, PureUtils {
     /// @notice agent spawning a new underlink needs to be a member in containing context
     /// @param fid_ context node id
     function spawnBranch(uint256 fid_) public virtual returns (uint256 newID) {
-
-        fid_ = (parentOf[fid_] == 0) ? spawnRootBranch(toAddress(fid_)) : fid_;
-
-        if (parentOf[fid_] == 0) revert UnregisteredFungible();
+        if (parentOf[fid_] == 0) spawnRootBranch(toAddress(fid_));
         if (!isMember(_msgSender(), fid_) && (parentOf[fid_] != fid_)) revert NotMember();
 
         ++entityCount;
 
-        newID = fid_ - block.chainid - entityCount - block.number - block.prevrandao % 100;
+        newID = fid_ - block.timestamp - entityCount - (block.prevrandao % 1000000000);
         _setApprovalForAll(toAddress(newID), address(this), true);
         _localizeNode(newID, fid_);
         if (msg.sender != address(this)) _giveMembership(_msgSender(), newID);
-    
-        emit NewBranch(newID,fid_, msg.sender);
+
+        emit NewBranch(newID, fid_, msg.sender);
     }
 
     /// @notice spawns branch with an enforceable membership mechanism
     /// @param fid_ context (parent) node
     /// @param membraneID_ id of membrane to be used by new entity
     function spawnBranchWithMembrane(uint256 fid_, uint256 membraneID_) public virtual returns (uint256 newID) {
-        if (abi.encodePacked((M.getMembraneById(membraneID_).meta)).length  == 0) revert UniniMembrane();
+        if (abi.encodePacked((M.getMembraneById(membraneID_).meta)).length == 0) revert UniniMembrane();
         newID = spawnBranch(fid_);
         inUseMembraneId[newID][0] = membraneID_;
         inUseMembraneId[newID][1] = block.timestamp;
@@ -257,6 +250,7 @@ contract Fungido is ERC1155, PureUtils {
             amount = burn(target_, amount);
             target_ = paths[x];
         }
+        burn(target_, amount);
     }
 
     //// @notice enforces membership conditions on target
@@ -503,7 +497,7 @@ contract Fungido is ERC1155, PureUtils {
      * actual token type ID.
      */
     function uri(uint256 id_) public view virtual override returns (string memory) {
-        return string(abi.encodePacked("https://willwe.xyz/metadata/", id_.toString() ));
+        return string(abi.encodePacked("https://willwe.xyz/metadata/", id_.toString()));
     }
 
     function setApprovalForAll(address operator, bool isApproved) public override {

@@ -50,11 +50,9 @@ contract Fun is Fungido {
         bool isMember = isMember(_msgSender(), targetNode_);
         if (impersonatingAddress == address(0) && (!isMember)) revert Noise();
 
-
         uint256 balanceOfSender = balanceOf(_msgSender(), targetNode_);
         if (balanceOf(_msgSender(), targetNode_) < totalSupplyOf[targetNode_] / 100_00) revert NoiseNotVoice();
         mintInflation(targetNode_);
-
 
         uint256 user = toID(_msgSender());
         uint256[] memory children = childrenOf[targetNode_];

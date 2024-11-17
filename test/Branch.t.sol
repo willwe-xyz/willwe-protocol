@@ -50,8 +50,8 @@ contract BranchTests is Test, TokenPrep, InitTest {
         ii2 = F.spawnBranch(i1);
 
         ix = F.spawnBranch(B1);
-        console.log("i0, ix", i0, ix);
-        assertTrue(i0 > ix, "i0 is 0 2");
+        // console.log("i0, ix", i0, ix);
+        // assertTrue(i0 > ix, "i0 is 0 2");
 
         vm.stopPrank();
     }

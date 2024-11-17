@@ -168,9 +168,15 @@ contract InflationTest is Test, TokenPrep, InitTest {
         vm.warp((uint256(block.timestamp) + 1_000_01));
         F.mintInflation(root3);
 
-        console.log("here gdfngj4353");
-        F.burnPath(root3, F.balanceOf(A100, root3));
+        {
+            uint256 bpT0 = T20.balanceOf(address(25600000000000));
+            console.log("F20 balance before burnPath : ", bpT0);
+            F.burnPath(root3, F.balanceOf(address(25600000000000), root3));
+            uint256 bpT1 = T20.balanceOf(address(25600000000000));
+            console.log("F20 balance after burnPath : ", bpT1);
 
+            assertTrue(bpT0 < bpT1 + 100, "no root token refund");
+        }
         vm.stopPrank();
     }
 }
