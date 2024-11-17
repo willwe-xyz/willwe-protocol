@@ -1,50 +1,70 @@
-## Under Development
+# WillWe: A Permissionless Proactive Public Organization Structure
 
-protocolized anarchy    
-for the onchain economy
+## Abstract
 
-### How to Contribute
+The protocol proposes and supports a new way of organizing that centers on distributing fungible units of arbitrary value as signals for communal configuration. This approach is designed to:  
 
-Will is minted and burned for ETH. 
-Its price growth is linear and acts as share of revenue, inter-member arbitrage and governance token. 
-It is continuously used within the WillWe protocol to fund WillWe development.  
-Participation is encouraged yet not recommended as it will initially incur loss.  
-If you read this, you are too early as meaningful engagement in the absence of visual sensemaking tools is currently very demanding.  
-It is likely the best potential upside you have ever encountered by chance. But even more likely, it is just very foolish.  
-No help is available at this stage as it could produce long-lasting unfair asymmetries.
+- Cultivate plurality  
+- Enhance the legibility of the commons  
+- Empower individuals to credibly and continuously commit to political and economic outcomes at all levels  
 
-### Do-ocracy
+The resulting structure is envisioned as a novel economic engine, driving innovation, fostering collaboration, and enhancing the global prevalence of co-interested value.
 
-Those who take initiative to do something in the group can decide how they do it.
+---
 
-*   **Values**: Bias for action, consultation, decentralization
-*   **Membership**: Anyone who actively contributes to the community's mission can self-identify as a participant.
-*   **Autonomy**: There are no fixed structures. Participants can organize meetings or sub-groups as they see fit.
-*   **Do-ocracy**: Participants are responsible for carrying out their own initiatives, optionally in collaboration with others.
-*   **Lobbying**: If someone has serious concerns about an initiative, they should raise those concerns with the person responsible for it.
+## Under Development  
 
-  
+**Protocolized Anarchy**  
+_For the on-chain economy_
 
-[source](https://communityrule.info/templates/do-ocracy.html)
+### How to Contribute  
 
-----
+**Will** is minted and burned for ETH, with linear price growth functioning as:  
 
-### Dasein
+- A share of revenue  
+- An inter-member arbitrage mechanism  
+- A governance token  
 
-Animality falls from its universal, from life, directly into the sigleness of Dasein or being-there, the moments of simple determinateness, and the single organic life united in this actuality, produce Becoming only as a contingent movement. 
- <br>
- Action itself is the good as individualized universality. The cultivation of gifts, capacities and strenghts becoems the end itself.
-<br>
+Will is continuously utilized within the WillWe protocol to fund its development.  
 
- The circumstance of seeing each-other daily makes possible a common education and a vital democracy.
+#### Notes for Early Participants:  
 
- <br>
-Arbitrary multy-scale competency .
+- Participation is encouraged but may initially incur loss.  
+- Meaningful engagement is challenging without visual sensemaking tools.  
+- While this may hold significant potential, it could also be a foolish endeavor.  
+- No assistance is available at this stage to avoid creating long-lasting asymmetries.  
 
- <br>
- Goal directedness.
- <br>
- 
+---
+
+## Do-ocracy  
+
+This project operates as a **do-ocracy**—those who take the initiative decide how to act.  
+
+- **Values**: Bias for action, consultation, decentralization  
+- **Membership**: Anyone who actively contributes can self-identify as a participant.  
+- **Autonomy**: No fixed structures; participants can organize as needed.  
+- **Responsibility**: Participants are accountable for their initiatives, optionally collaborating with others.  
+- **Lobbying**: Serious concerns about initiatives should be raised directly with responsible parties.  
+
+_Adapted from the [Do-ocracy template](https://communityrule.info/templates/do-ocracy.html)_  
+
+---
+
+## Dasein  
+
+> “Animality falls from its universal, from life, directly into the singleness of Dasein or being-there. The moments of simple determinateness and single organic life, united in this actuality, produce Becoming only as a contingent movement.”  
+
+### Key Concepts  
+
+- **Action as the Good**: The cultivation of gifts, capacities, and strengths becomes an end in itself.  
+- **Common Education**: Daily interaction fosters a shared education and a vital democracy.  
+- **Arbitrary Multiscale Competency**: Encouraging competency across multiple scales.  
+- **Goal-Directedness**: Focused on meaningful, collective outcomes.  
+
+---
+
+### Deployment Addresses
+Soon TM
 
 
- #### Foundation Safes
+
