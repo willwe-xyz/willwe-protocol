@@ -44,13 +44,15 @@ struct UserSignal {
 }
 
 struct NodeState {
-    string[9] basicInfo; // [nodeId, inflation, balanceAnchor, balanceBudget, value, membraneId, balanceOfUser, childParentEligibilityPerSec, lastParentRedistribution ]
-    string membraneMeta;
+    string[9] basicInfo; ///  [nodeId, inflation,balance in parent reserve,budget, valuation denominated in root token,membraneid,(balance of user in nodeId),redistribution eligibility from parent per sec,last redistribution timestamp,Membrane Metadata CID,members array,array of direct children ids,path from root token to node id, ancestors]
+    string membraneMeta;  
     address[] membersOfNode;
     string[] childrenNodes;
     string[] rootPath;
     UserSignal[] signals;
 }
+
+
 
 interface IExecution {
     function createEndpointForOwner(address origin, uint256 nodeId_, address owner)

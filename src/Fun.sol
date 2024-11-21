@@ -66,6 +66,7 @@ contract Fun is Fungido {
             }
             if ((!isMember) && signals[i] > 0) revert ResignalMismatch();
             if (i <= 1) {
+                if (signals[i] == 0) continue;
                 _handleSpecialSignals(targetNode_, user, signals[i], i, balanceOfSender, userKey);
             } else {
                 _handleRegularSignals(targetNode_, user, signals[i], i, balanceOfSender, signals.length, children);
@@ -142,13 +143,13 @@ contract Fun is Fungido {
         uint256[] memory children
     ) private {
         if (children.length != (signalsLength - 2)) revert BadLen();
-
         bytes32 userTargetedPreference =
             keccak256(abi.encodePacked(address(uint160(user)), targetNode_, children[index - 2]));
-        if (signal > 100_00 && options[userTargetedPreference][0] == 0) return;
-        if (signal > 100_00 && options[userTargetedPreference][0] > 0) revert CannotSkip();
+        uint256 prevSignal = options[userTargetedPreference][0];
+        if (signal > 100_00 && prevSignal == 0) return;
+        if (signal > 100_00) revert CannotSkip();
 
-        if (options[userTargetedPreference][0] != signal) {
+        if (prevSignal != signal) {
             options[userTargetedPreference] = [signal, block.timestamp, 0];
             redistribute(children[index - 2]);
             _updateChildParentEligibility(children[index - 2], targetNode_, userTargetedPreference, balanceOfSender);
@@ -176,7 +177,6 @@ contract Fun is Fungido {
         uint256 balanceOfSender
     ) private {
         bytes32 childParentEligibilityPerSec = keccak256(abi.encodePacked(childId, parentId));
-
         uint256 newContribution =
             calculateUserTargetedPreferenceAmount(childId, parentId, options[userTargetedPreference][0], _msgSender());
 
@@ -303,8 +303,8 @@ contract Fun is Fungido {
         uint256 totalSupplyParent = totalSupplyOf[parentId];
         uint256 balanceOfSenderParent = balanceOf(user, parentId);
         uint256 parentInflationRate = inflSec[parentId][0];
+        if (balanceOfSenderParent <= 1 gwei) return 0;
 
-        // Calculate contribution while capping within parent's limits
         uint256 newContribution = (balanceOfSenderParent * signal * parentInflationRate) / (totalSupplyParent * 100_00);
 
         return newContribution;

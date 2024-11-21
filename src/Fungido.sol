@@ -513,17 +513,29 @@ contract Fungido is ERC1155, PureUtils {
     /// @dev for eth_call
     function getNodeData(uint256 nodeId) public view returns (NodeState memory NodeData) {
         NodeData.basicInfo[0] = nodeId.toString();
+        /// nodeId
         NodeData.basicInfo[1] = inflSec[nodeId][0].toString();
+        /// inflation
         NodeData.basicInfo[2] = balanceOf(toAddress(nodeId), parentOf[nodeId]).toString();
+        /// balance in parent reserve
         NodeData.basicInfo[3] = balanceOf(toAddress(nodeId), nodeId).toString();
+        /// budget
         NodeData.basicInfo[4] = (asRootValuation(nodeId, balanceOf(toAddress(nodeId), nodeId))).toString();
+        /// valuation denominated in root token
         NodeData.basicInfo[5] = (inUseMembraneId[nodeId][0]).toString();
-        NodeData.basicInfo[7] = inflSec[nodeId][0].toString();
+        /// membrane id
+        NodeData.basicInfo[7] = getChildParentEligibilityPerSec(nodeId, parentOf[nodeId]).toString();
+        /// redistribution eligibility from parent per sec
         NodeData.basicInfo[8] = inflSec[nodeId][2].toString();
+        /// last redistribution timestamp
         NodeData.membraneMeta = M.getMembraneById(inUseMembraneId[nodeId][0]).meta;
+        /// Membrane Metadata CID
         NodeData.membersOfNode = members[nodeId];
+        /// members array
         NodeData.childrenNodes = uintArrayToStringArray(childrenOf[nodeId]);
+        /// array of direct children ids
         NodeData.rootPath = uintArrayToStringArray(getFidPath(nodeId));
+        /// path from root token to node id, ancestors
     }
 
     function getNodes(uint256[] memory nodeIds) public view returns (NodeState[] memory nodes) {
