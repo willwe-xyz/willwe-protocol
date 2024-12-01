@@ -109,7 +109,7 @@ contract Fun is Fungido {
         uint256 signal,
         uint256 balanceOfSender
     ) private {
-        if (signal < type(uint160).max || M.getMembraneById(signal).tokens.length == 0) revert MembraneNotFound();
+        if (signal < type(uint160).max || bytes(M.getMembraneById(signal).meta).length == 0) revert MembraneNotFound();
         _updateSignalOption(targetNode_, userKey, nodeKey, signal, balanceOfSender);
         if (options[nodeKey][0] * 2 > totalSupplyOf[targetNode_]) {
             mintInflation(targetNode_);
