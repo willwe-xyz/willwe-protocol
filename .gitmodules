@@ -22,3 +22,6 @@
 [submodule "lib/optimism"]
 	path = lib/optimism
 	url = https://github.com/ethereum-optimism/optimism
+[submodule "lib/will"]
+	path = lib/will
+	url = https://github.com/parseb/will
