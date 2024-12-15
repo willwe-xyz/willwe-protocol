@@ -6,7 +6,7 @@ import {ERC1155} from "solady/tokens/ERC1155.sol";
 import {IERC20} from "openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 
 import "./interfaces/IExecution.sol";
-import {IWill} from "./interfaces/IWill.sol";
+import {IWill} from "will/contracts/interfaces/IWill.sol";
 import {NodeState} from "./interfaces/IExecution.sol";
 import {Strings} from "openzeppelin-contracts/contracts/utils/Strings.sol";
 import {PureUtils} from "./components/PureUtils.sol";

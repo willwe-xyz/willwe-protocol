@@ -5,7 +5,7 @@ import "forge-std/Test.sol";
 import "../src/Fungido.sol";
 import {TokenPrep} from "./mock/Tokens.sol";
 
-import {Will} from "../src/Will.sol";
+import {Will} from "will/contracts/Will.sol";
 import {Execution} from "../src/Execution.sol";
 
 import {WillWe} from "../src/WillWe.sol";

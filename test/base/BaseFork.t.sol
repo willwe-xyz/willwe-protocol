@@ -3,7 +3,7 @@
 
 // import {InitTest} from "./Init.t.sol";
 
-// import {Will} from "../../src/Will.sol";
+// import {Will} from "../will/contracts/Will.sol";
 // import {WillWe} from "../../src/WillWe.sol";
 // import {Movement, Call} from "../../src/interfaces/IExecution.sol";
 // import {IERC20} from "openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";

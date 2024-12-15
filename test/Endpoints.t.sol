@@ -9,7 +9,7 @@ import {TokenPrep} from "./mock/Tokens.sol";
 import {SignatureQueue, SQState, MovementType} from "../src/interfaces/IExecution.sol";
 import {Movement, Call} from "../src/interfaces/IExecution.sol";
 import {IERC20} from "openzeppelin/token/ERC20/IERC20.sol";
-import {Will} from "../src/Will.sol";
+import {Will} from "will/contracts/Will.sol";
 import {InitTest} from "./Init.t.sol";
 import {ECDSA} from "openzeppelin/utils/cryptography/ECDSA.sol";
 import {IPowerProxy} from "../src/interfaces/IPowerProxy.sol";

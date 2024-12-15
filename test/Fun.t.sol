@@ -7,7 +7,7 @@ import {TokenPrep} from "./mock/Tokens.sol";
 
 // import {SQState, MovementType, Movement, SignatureQueue} from "../src/interfaces/IFungi.sol";
 // import {ISafe} from "../src/interfaces/ISafe.sol";
-import {Will} from "../src/Will.sol";
+import {Will} from "will/contracts/Will.sol";
 
 import {Execution} from "../src/Execution.sol";
 import {NodeState} from "../src/interfaces/IExecution.sol";

@@ -5,7 +5,7 @@ import "forge-std/Script.sol";
 import {WillWe} from "../src/WillWe.sol";
 import {Execution} from "../src/Execution.sol";
 import {Membranes} from "../src/Membranes.sol";
-import {Will} from "../src/Will.sol";
+import {Will} from "will/contracts/Will.sol";
 import {TokenPrep} from "../test/mock/Tokens.sol";
 import {AliasPicker} from "./Alias.sol";
 import {Strings} from "openzeppelin-contracts/contracts/utils/Strings.sol";
@@ -58,7 +58,7 @@ contract DeployBASE is Script, TokenPrep, AliasPicker {
         // );
         // console.log("##### mockRON token ", randomToken);
         //// [0] in gwei
-        F20 = new Will(36, piper_sec, founders, amounts);
+        F20 = new Will(founders, amounts);
         vm.label(address(F20), "Will");
 
         Membranes M = new Membranes();

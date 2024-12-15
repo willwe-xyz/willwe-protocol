@@ -5,7 +5,7 @@ import "forge-std/Script.sol";
 import {WillWe} from "../src/WillWe.sol";
 import {Execution} from "../src/Execution.sol";
 import {Membranes} from "../src/Membranes.sol";
-import {Will} from "../src/Will.sol";
+import {Will} from "will/contracts/Will.sol";
 
 contract DeployTaiko is Script {
     WillWe FunFun;
@@ -44,7 +44,7 @@ contract DeployTaiko is Script {
 
         vm.startBroadcast(runPVK);
         //// price in gwei | price increase per second in gwei | founder addresses | amounts
-        F20 = new Will(1, 1, founders, amounts);
+        F20 = new Will(founders, amounts);
         vm.label(address(F20), "Will");
 
         Membranes M = new Membranes();

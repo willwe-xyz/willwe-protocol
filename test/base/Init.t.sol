@@ -4,7 +4,7 @@ pragma solidity 0.8.25;
 import "forge-std/Test.sol";
 import "../../src/Fungido.sol";
 
-import {Will} from "../../src/Will.sol";
+import {Will} from "will/contracts/Will.sol";
 import {WillWe} from "../../src/WillWe.sol";
 
 import {IFun} from "../../src/interfaces/IFun.sol";
@@ -38,7 +38,7 @@ contract InitTest is Test {
         founders[0] = address(A1);
         amounts[0] = 1 ether * 10_000_000;
 
-        F20 = new Will(10, 1, founders, amounts);
+        F20 = new Will(founders, amounts);
         M = new Membranes();
         E = address(new Execution(address(F20)));
         F = new WillWe(E, address(M));

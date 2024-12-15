@@ -5,7 +5,7 @@ pragma solidity ^0.8.18;
 // import {WillWe} from "../src/WillWe.sol";
 // import {Execution} from "../src/Execution.sol";
 // import {Membranes} from "../src/Membranes.sol";
-// import {Will} from "../src/Will.sol";
+// import {Will} from "will/contracts/Will.sol";
 // import {TokenPrep} from "../test/mock/Tokens.sol";
 // import {AliasPicker} from "./Alias.sol";
 // import {Strings} from "openzeppelin-contracts/contracts/utils/Strings.sol";
