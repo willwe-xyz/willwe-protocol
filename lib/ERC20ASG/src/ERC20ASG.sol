@@ -23,7 +23,7 @@ contract ERC20ASG is ERC20, IERC20ASG {
     //// @notice constructor function instantiates immutable contract instance
     //// @param name_ wanted name of token
     //// @param symbol_ wanted symbol of token
-    //// @param price_ wanted starting price in giga-wei
+    //// @param price_ wanted starting price in gwei
     //// @param pps_ wanted linear price increase in wei per second
     constructor(
         string memory name_,
@@ -33,7 +33,7 @@ contract ERC20ASG is ERC20, IERC20ASG {
         address[] memory initMintAddrs_,
         uint256[] memory initMintAmts_
     ) ERC20(name_, symbol_) {
-        price = price_ == 0 ? ((uint256(uint160(bytes20(address(this))) % 10)) + 1 gwei) : price_ * 1 gwei;
+        price = price_ == 0 ? ((uint256(uint160(bytes20(address(this))) % 10)) * 1 gwei) : price_ * 1 gwei;
 
         pps = pps_ == 0 ? 1 gwei : pps_;
         initTime = block.timestamp;
@@ -73,17 +73,17 @@ contract ERC20ASG is ERC20, IERC20ASG {
     }
 
     //// @notice returns current price per unit
-    function currentPrice() public view returns (uint256) {
+    function currentPrice() public virtual view returns (uint256) {
         return (price + (pps * (block.timestamp - initTime)));
     }
 
     //// @inheritdoc IERC20GM
-    function mintCost(uint256 amt_) public view returns (uint256) {
+    function mintCost(uint256 amt_) public virtual view returns (uint256) {
         return currentPrice() * amt_;
     }
 
     //// @inheritdoc IERC20GM
-    function burnReturns(uint256 amt_) public view returns (uint256 rv) {
+    function burnReturns(uint256 amt_) public virtual view returns (uint256 rv) {
         if (totalSupply() > 0) rv = amt_ * address(this).balance / totalSupply();
     }
 }
