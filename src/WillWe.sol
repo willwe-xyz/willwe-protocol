@@ -56,9 +56,4 @@ contract WillWe is Fun {
         amount = super.mintInflation(node);
         emit InflationMinted(node, amount);
     }
-
-    function sendSignal(uint256 targetNode_, uint256[] memory signals) public override {
-        super.sendSignal(targetNode_, signals);
-        emit SignalSent(targetNode_, msg.sender, signals);
-    }
 }

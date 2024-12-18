@@ -20,6 +20,7 @@ contract InitTest is Test {
     WillWe public F;
     Membranes public M;
     address public E;
+    address public WillBaseEndpoint;
 
     address public A1;
     address public A2;
@@ -43,6 +44,7 @@ contract InitTest is Test {
         M = new Membranes();
         E = address(new Execution(address(F20)));
         F = new WillWe(E, address(M));
+        WillBaseEndpoint = F.initSelfControl();
 
         vm.label(address(F20), "F20");
         vm.label(address(E), "Execution");

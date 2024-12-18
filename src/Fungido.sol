@@ -125,16 +125,15 @@ contract Fungido is ERC1155, PureUtils {
     }
 
     //// @notice initializes control address default to Will and creates an endpoint for it
-    //// @return controlingAgent address of agency of controling extremity
-    function initSelfControl() external returns (address controlingAgent) {
+    //// @return address of agency of controling extremity
+    function initSelfControl() external returns (address) {
         if (control[0] != address(0)) revert isControled();
-        control[0] = Will;
-        this.spawnRootBranch(Will);
-        control[1] = IExecution(executionAddress).createEndpointForOwner(
+        control[0] = IExecution(executionAddress).createEndpointForOwner(
             executionAddress, this.spawnBranch(toID(Will)), executionAddress
         );
         M.setInitWillWe();
-        emit SelfControlAtAddress(control[1]);
+        emit SelfControlAtAddress(control[0]);
+        return control[0];
     }
 
     ////////////////////////////////////////////////

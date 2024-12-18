@@ -259,6 +259,7 @@ contract Execution is EIP712, Receiver {
         if (hasEndpointOrInteraction[nodeId + uint160(bytes20(owner))]) revert AlreadyHasEndpoint();
         hasEndpointOrInteraction[nodeId + uint160(bytes20(owner))] = true;
 
+        
         endpoint = createNodeEndpoint(origin, nodeId, 3);
 
         emit EndpointCreatedForAgent(nodeId, endpoint, owner);
@@ -269,7 +270,8 @@ contract Execution is EIP712, Receiver {
         returns (address endpoint)
     {
         if (msg.sig == this.createEndpointForOwner.selector) {
-            endpoint = spawnNodeEndpoint(originOrNode, 3);
+            if (consensusType == 3 && originOrNode == address(this)) consensusType = 2;
+            endpoint = spawnNodeEndpoint(originOrNode, consensusType);
             engineOwner[endpoint] = originOrNode == address(this) ? endpointOwner_ : uint160(originOrNode);
         } else {
             endpoint = spawnNodeEndpoint(address(this), consensusType);
