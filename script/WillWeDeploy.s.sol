@@ -38,7 +38,6 @@ contract WillWeDeploy is Script {
         uint256 piper_sec = 1;
 
         vm.startBroadcast(runPVK);
-        //// price in gwei | price increase per second in gwei | founder addresses | amounts
         F20 = new Will(founders, amounts);
         vm.label(address(F20), "Will");
 
@@ -84,3 +83,35 @@ contract WillWeDeploy is Script {
         vm.stopBroadcast();
     }
 }
+
+// == Logs ==
+//   ###############################
+                                                               
+//      Deploy script started for network :  11155420
+                                                               
+//   ###############################
+//   ##### Deployer :  0x259c1F1FaF930a23D009e85867A6b5206b2a6d44 | expected 0x259c1F1FaF930a23D009e85867A6b5206b2a6d44
+//   #________________________________
+//   ###############################
+   
+//   Fun deployed at :  0x91Ac0Fa9A36101362814d20C00873CF0d4680a5C
+   
+//   ###############################
+//   ###############################
+   
+//   Root Value in Control :  0x135288e116CA226E7Fa7BD60F002e0bc54fB062e
+//   Controling Extrmity:  0x0000000000000000000000000000000000000000
+//   ###############################
+//   Balances: deployer | Agent 
+//   0 10000000
+//   Will Price in ETH: 0
+   
+//   ###############################
+   
+//   ###############################
+//   Foundation Agent Safe at:  0x0000000000000000000000000000000000000000
+//   Will:  0x99e612d393a89798dDDE4903040659a3ae9E5932
+//   Membrane:  0x3e0bb52B6440CEcAF9ecF8b0951D51F9A0B82F48
+//   Execution:  0x4b2487E6C275eE0bAF3F290EE0880530fb91708f
+//   WillWe:  0x91Ac0Fa9A36101362814d20C00873CF0d4680a5C
+//   ###############################
