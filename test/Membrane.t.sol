@@ -223,4 +223,39 @@ contract MembraneTests is Test, InitTest {
         assertTrue(P.implementation() == address(1), "impl is ! 1");
         assertTrue(P.owner() == address(1), "owner no 1");
     }
+
+    function testMembraneSignalPressureAccounting() public {
+        // Create first membrane
+        address[] memory tokens = new address[](1);
+        uint256[] memory balances = new uint256[](1);
+        tokens[0] = address(X20token);
+        balances[0] = 1 ether;
+        uint256 membrane1 = M.createMembrane(tokens, balances, "First Membrane");
+        
+        // Create second membrane
+        uint256 membrane2 = M.createMembrane(tokens, balances, "Second Membrane");
+
+        // Setup user balance and approve
+        vm.prank(A1);
+        F.mintPath(B1, 5 ether);
+        
+        // Signal first membrane
+        uint256[] memory signal = new uint256[](F.getChildrenOf(B1).length + 2);
+        signal[0] = membrane1;
+        vm.prank(A1);
+        F.sendSignal(B1, signal);
+        
+        // Wait some time
+        vm.warp(block.timestamp + 100);
+        
+        // Signal second membrane
+        signal[0] = membrane2; 
+        vm.prank(A1);
+        F.sendSignal(B1, signal);
+        
+        // Verify membrane changed
+        assertTrue(F.getMembraneOf(B1) == membrane2, "membrane should be updated");
+    }
+
+    
 }

@@ -44,7 +44,7 @@ contract Fungido is ERC1155, PureUtils {
     mapping(uint256 => address[]) members;
 
     /// @notice stores a users option for change and node state [ wanted value, lastExpressedAt ]
-    mapping(bytes32 NodeXUserXValue => uint256[3] valueAtTime) options;
+    mapping(bytes32 NodeXUserXValue => uint256[3] valueAtTime) public options;
 
     /// @notice tax rate on withdrawals as share in base root value token (default: 0.01%)
     mapping(address => uint256) taxRate;
