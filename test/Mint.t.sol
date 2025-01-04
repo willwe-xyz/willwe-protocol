@@ -149,7 +149,7 @@ contract MintTest is Test, TokenPrep, InitTest {
         uint256 totalInternalPost = F.totalSupply(B1);
         uint256 FungiTotal20BalPost = T20.balanceOf(address(F));
 
-        assertTrue((balance1 + 1 ether - ((1 ether) / 100_00)) == balance2, "burn balance growth");
+        assertTrue((balance1 + 1 ether - ((1 ether) / 100_0)) == balance2, "burn balance growth");
 
         ///@dev default tax rate
         assertTrue(FungiTotal20BalPost < FungiTotal20BalPre, "same on burn");
@@ -190,7 +190,7 @@ contract MintTest is Test, TokenPrep, InitTest {
         uint256 totalInternalPost = F.totalSupply(B1);
         uint256 FungiTotal20BalPost = T20.balanceOf(address(F));
 
-        assertTrue(balance1 + 1 ether - (1 ether / 100_00) == balance2, "burn balance growth");
+        assertTrue(balance1 + 1 ether - (1 ether / 100_0) == balance2, "burn balance growth");
 
         /// @dev tax
         assertTrue(FungiTotal20BalPost < FungiTotal20BalPre, "same on burn");

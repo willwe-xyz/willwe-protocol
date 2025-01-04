@@ -58,7 +58,7 @@ contract Fungido is ERC1155, PureUtils {
     bool useBefore;
 
     constructor(address executionAddr, address membranes) {
-        taxRate[address(0)] = 100_00;
+        taxRate[address(0)] = 100_0;
         executionAddress = executionAddr;
         Will = IExecution(executionAddr).WillToken();
         M = IMembrane(membranes);
@@ -303,6 +303,7 @@ contract Fungido is ERC1155, PureUtils {
     }
 
     //// @notice sets default or specific tax policy preference
+    /// @notice default is 100_0 0.1%. custom range 1-100_00 basis points
     //// @param rootToken_ address (root node) for which to change tax rate
     /// @param taxRate_ share retained at full exit withdrawal expressed as basis points (default 0.01% or 100)
     function taxPolicyPreference(address rootToken_, uint256 taxRate_) external {
