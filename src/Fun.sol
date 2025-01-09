@@ -165,18 +165,14 @@ contract Fun is Fungido {
     ) private {
         if (options[userKey][1] > 0 && (inUseMembraneId[targetNode_][1] < options[userKey][1])) {
             if (options[userKey][2] > 0) {
-                options[nodeKey][0] -= options[userKey][2]; 
+                options[nodeKey][0] -= options[userKey][2];
             }
         }
-        options[userKey] = [signal, block.timestamp, balanceOfSender]; 
-        options[nodeKey][0] += balanceOfSender; 
+        options[userKey] = [signal, block.timestamp, balanceOfSender];
+        options[nodeKey][0] += balanceOfSender;
     }
 
-    function _updateChildParentEligibility(
-        uint256 childId,
-        uint256 parentId,
-        bytes32 userTargetedPreference
-    ) private {
+    function _updateChildParentEligibility(uint256 childId, uint256 parentId, bytes32 userTargetedPreference) private {
         bytes32 childParentEligibilityPerSec = keccak256(abi.encodePacked(childId, parentId));
         uint256 newContribution =
             calculateUserTargetedPreferenceAmount(childId, parentId, options[userTargetedPreference][0], _msgSender());

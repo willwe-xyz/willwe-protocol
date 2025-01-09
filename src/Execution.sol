@@ -259,7 +259,6 @@ contract Execution is EIP712, Receiver {
         if (hasEndpointOrInteraction[nodeId + uint160(bytes20(owner))]) revert AlreadyHasEndpoint();
         hasEndpointOrInteraction[nodeId + uint160(bytes20(owner))] = true;
 
-        
         endpoint = createNodeEndpoint(origin, nodeId, 3);
 
         emit EndpointCreatedForAgent(nodeId, endpoint, owner);

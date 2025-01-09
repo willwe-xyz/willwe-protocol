@@ -512,30 +512,35 @@ contract Fungido is ERC1155, PureUtils {
     /// @param nodeId node identifier
     /// @dev for eth_call
     function getNodeData(uint256 nodeId) public view returns (NodeState memory NodeData) {
+        /// Node identifier
         NodeData.basicInfo[0] = nodeId.toString();
-        /// nodeId
+        /// Current inflation rate per second
         NodeData.basicInfo[1] = inflSec[nodeId][0].toString();
-        /// inflation
+        /// Reserve balance - amount of tokens held in parent's reserve
         NodeData.basicInfo[2] = balanceOf(toAddress(nodeId), parentOf[nodeId]).toString();
-        /// balance in parent reserve
+        /// Budget balance - amount of tokens held in node's own account
         NodeData.basicInfo[3] = balanceOf(toAddress(nodeId), nodeId).toString();
-        /// budget
+        /// Root valuation of node's budget (denominated in root token)
         NodeData.basicInfo[4] = (asRootValuation(nodeId, balanceOf(toAddress(nodeId), nodeId))).toString();
-        /// valuation denominated in root token
-        NodeData.basicInfo[5] = (inUseMembraneId[nodeId][0]).toString();
-        /// membrane id
+        /// Root valuation of node's reserve (denominated in root token)
+        NodeData.basicInfo[5] = (asRootValuation(nodeId, balanceOf(toAddress(nodeId), parentOf[nodeId]))).toString();
+        /// Active membrane identifier
+        NodeData.basicInfo[6] = (inUseMembraneId[nodeId][0]).toString();
+        /// Redistribution eligibility rate from parent per second
         NodeData.basicInfo[7] = getChildParentEligibilityPerSec(nodeId, parentOf[nodeId]).toString();
-        /// redistribution eligibility from parent per sec
+        /// Timestamp of last redistribution
         NodeData.basicInfo[8] = inflSec[nodeId][2].toString();
-        /// last redistribution timestamp
-        NodeData.membraneMeta = M.getMembraneById(inUseMembraneId[nodeId][0]).meta;
+        /// Balance of user
+        /// basicInfo[9];
+
         /// Membrane Metadata CID
+        NodeData.membraneMeta = M.getMembraneById(inUseMembraneId[nodeId][0]).meta;
+        /// Array of member addresses
         NodeData.membersOfNode = members[nodeId];
-        /// members array
+        /// Array of direct children node IDs
         NodeData.childrenNodes = uintArrayToStringArray(childrenOf[nodeId]);
-        /// array of direct children ids
+        /// Path from root token to node ID (ancestors)
         NodeData.rootPath = uintArrayToStringArray(getFidPath(nodeId));
-        /// path from root token to node id, ancestors
     }
 
     function getNodes(uint256[] memory nodeIds) public view returns (NodeState[] memory nodes) {
@@ -590,7 +595,7 @@ contract Fungido is ERC1155, PureUtils {
 
     function getNodeDataWithUserSignals(uint256 nodeId, address user) public view returns (NodeState memory nodeData) {
         nodeData = getNodeData(nodeId);
-        nodeData.basicInfo[6] = balanceOf(user, nodeId).toString();
+        nodeData.basicInfo[9] = balanceOf(user, nodeId).toString();
         nodeData.signals = new UserSignal[](1);
         nodeData.signals[0].MembraneInflation = new string[2][](childrenOf[nodeId].length);
         nodeData.signals[0].lastRedistSignal = new string[](childrenOf[nodeId].length);

@@ -48,7 +48,7 @@ contract WillBaseEndpointTest is Test, TokenPrep, InitTest {
         vm.prank(A3);
         F.mintMembership(rootBranchID);
 
-                deal(A1, 6 ether);
+        deal(A1, 6 ether);
         deal(A2, 6 ether);
         deal(A3, 6 ether);
 
@@ -56,16 +56,14 @@ contract WillBaseEndpointTest is Test, TokenPrep, InitTest {
         vm.startPrank(A1);
         testToken.approve(address(F), 1 ether);
         F.mint(rootBranchID, 1 ether);
-        F20.mintFromETH{value: 5 ether}();        
+        F20.mintFromETH{value: 5 ether}();
 
         vm.stopPrank();
-
-
 
         vm.startPrank(A2);
         testToken.approve(address(F), 1 ether);
         F.mint(rootBranchID, 1 ether);
-        F20.mintFromETH{value: 5 ether}();        
+        F20.mintFromETH{value: 5 ether}();
         vm.stopPrank();
 
         vm.startPrank(A3);
@@ -90,7 +88,7 @@ contract WillBaseEndpointTest is Test, TokenPrep, InitTest {
 
     function testWillBaseEndpointUsability() public {
         address endpoint = WillBaseEndpoint;
-        
+
         uint256[] memory firstChildren = F.getChildrenOf(F.toID(address(F.Will())));
         uint256[] memory children = F.getChildrenOf(firstChildren[0]);
 
@@ -99,7 +97,6 @@ contract WillBaseEndpointTest is Test, TokenPrep, InitTest {
         bytes32 description = keccak256("Test movement description");
         bytes memory data = _getCallData();
 
-        
         vm.startPrank(A1);
 
         F.mintMembership(parentOfEndpoint);
@@ -108,7 +105,7 @@ contract WillBaseEndpointTest is Test, TokenPrep, InitTest {
             2, // Energetic Majority
             parentOfEndpoint,
             12,
-            endpoint, 
+            endpoint,
             description,
             data
         );
@@ -117,10 +114,7 @@ contract WillBaseEndpointTest is Test, TokenPrep, InitTest {
         SignatureQueue memory SQ = F.getSigQueue(moveHash);
 
         assertTrue(SQ.state == SQState.Initialized, "Movement should be initialized");
-        assertTrue(
-            SQ.Action.exeAccount == endpoint,
-            "Incorrect execution account"
-        );
+        assertTrue(SQ.Action.exeAccount == endpoint, "Incorrect execution account");
         assertTrue(SQ.Action.category == MovementType.EnergeticMajority, "Incorrect movement type");
 
         // Submit signatures
@@ -166,7 +160,6 @@ contract WillBaseEndpointTest is Test, TokenPrep, InitTest {
         // Verify execution
         assertTrue(F20.balanceOf(receiver) == 0.1 ether, "Transfer should be executed");
         assertTrue(F.getSigQueue(moveHash).state == SQState.Executed, "Movement should be executed");
-
 
         assertTrue(F20.balanceOf(receiver) > 0, "Receiver was not givern a balance");
     }

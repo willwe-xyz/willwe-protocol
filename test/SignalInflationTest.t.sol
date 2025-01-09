@@ -226,10 +226,9 @@ contract SignalInflationTests is InitTest, TokenPrep {
         assertEq(nodeData.basicInfo[2], F.balanceOf(address(uint160(B1)), rootBranchID).toString());
         assertEq(nodeData.basicInfo[3], F.balanceOf(address(uint160(B1)), B1).toString());
         assertEq(nodeData.basicInfo[4], F.asRootValuation(B1, F.balanceOf(address(uint160(B1)), B1)).toString());
-        assertEq(nodeData.basicInfo[5], F.getMembraneOf(B1).toString());
-        assertEq(nodeData.basicInfo[6], F.balanceOf(A1, B1).toString());
+        assertEq(nodeData.basicInfo[6], F.getMembraneOf(B1).toString());
+        assertEq(nodeData.basicInfo[9], F.balanceOf(A1, B1).toString());
 
-        // Check if the signals are correct
         assertEq(nodeData.signals.length, 1);
         assertEq(nodeData.signals[0].lastRedistSignal.length, 2);
         assertEq(nodeData.signals[0].lastRedistSignal[0], "6000");
