@@ -70,7 +70,23 @@ contract BranchTests is Test, TokenPrep, InitTest {
         vm.prank(address(1));
         T20.approve(address(F), type(uint256).max);
         vm.prank(address(1));
+        
+        assertTrue(F.totalSupply(c) == 0, "c expected 0 supply");
+        vm.prank(address(1));
+        F.mintPath(c, 1 ether);
+        assertTrue(F.totalSupply(c) == 1 ether, "c expected 100 supply");
 
-        F.mintPath(c, 100);
+        vm.warp(block.timestamp + 100 days);
+        assertTrue(F.totalSupply(c) == 1 ether, "c expected 100 supply");
+        uint256 supplyBeforeRedistri = F.totalSupply(c);
+        vm.prank(address(1));
+        F.redistributePath(c);
+        assertTrue(F.totalSupply(c) > supplyBeforeRedistri, "c expected with inflation");
+        uint256 inflPerSec = F.inflationOf(c);
+        console.log(inflPerSec, "inflPerSec");
+        assertTrue( F.totalSupply(c) == ( supplyBeforeRedistri + (inflPerSec * 100 days)), "c with infl expected value");
+
+
+
     }
 }
