@@ -219,6 +219,7 @@ contract SignalInflationTests is InitTest, TokenPrep {
         F.sendSignal(B1, signals);
 
         NodeState memory nodeData = F.getNodeDataWithUserSignals(B1, A1);
+        
 
         // Check if the basic info is correct
         assertEq(nodeData.basicInfo[0], uint256(uint160(B1)).toString());
@@ -226,7 +227,9 @@ contract SignalInflationTests is InitTest, TokenPrep {
         assertEq(nodeData.basicInfo[2], F.balanceOf(address(uint160(B1)), rootBranchID).toString());
         assertEq(nodeData.basicInfo[3], F.balanceOf(address(uint160(B1)), B1).toString());
         assertEq(nodeData.basicInfo[4], F.asRootValuation(B1, F.balanceOf(address(uint160(B1)), B1)).toString());
+        assertEq(nodeData.basicInfo[5], F.asRootValuation(B1, F.balanceOf(address(uint160(B1)), rootBranchID)).toString());
         assertEq(nodeData.basicInfo[6], F.getMembraneOf(B1).toString());
+        assertEq(nodeData.basicInfo[7] , F.getChildParentEligibilityPerSec(B1, rootBranchID).toString());
         assertEq(nodeData.basicInfo[9], F.balanceOf(A1, B1).toString());
 
         assertEq(nodeData.signals.length, 1);
