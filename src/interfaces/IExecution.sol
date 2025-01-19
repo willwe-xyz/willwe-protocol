@@ -43,14 +43,13 @@ struct UserSignal {
     string[] lastRedistSignal;
 }
 
-
 struct NodeState {
-    string[10] basicInfo;        // [nodeId, inflation, reserve, budget, rootValuationBudget, rootValuationReserve, membraneId, eligibilityPerSec, lastRedistributionTime, balanceOfUser [0 default]
-    string membraneMeta;        // Membrane Metadata CID
-    address[] membersOfNode;    // Array of member addresses
-    string[] childrenNodes;     // Array of children node IDs
-    string[] rootPath;          // Path from root to current node
-    UserSignal[] signals;       // Array of signals
+    string[10] basicInfo; // [nodeId, inflation, reserve, budget, rootValuationBudget, rootValuationReserve, membraneId, eligibilityPerSec, lastRedistributionTime, balanceOfUser [0 default]
+    string membraneMeta; // Membrane Metadata CID
+    address[] membersOfNode; // Array of member addresses
+    string[] childrenNodes; // Array of children node IDs
+    string[] rootPath; // Path from root to current node
+    UserSignal[] signals; // Array of signals
 }
 
 interface IExecution {
