@@ -176,16 +176,19 @@ contract Fungido is ERC1155, PureUtils {
     /// @param tokens_ array of token addresses for membrane conditions
     /// @param balances_ array of required balances for each token
     /// @param meta_ metadata string (e.g. IPFS hash) for membrane details
+    /// @param inflationRate_ rate for new branch token shares in gwei
     function spawnBranchWithMembrane(
         uint256 fid_,
         address[] memory tokens_,
         uint256[] memory balances_, 
-        string memory meta_
+        string memory meta_,
+        uint256 inflationRate_
     ) public virtual returns (uint256 newID) {
         uint256 membraneID = M.createMembrane(tokens_, balances_, meta_);
         newID = spawnBranch(fid_);
         inUseMembraneId[newID][0] = membraneID;
         inUseMembraneId[newID][1] = block.timestamp;
+        inflSec[newID][0] = inflationRate_ == 0 ? 1_000 gwei : inflationRate_;
     }
 
     /// @notice mints membership to calling address if it satisfies membership conditions

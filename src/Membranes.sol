@@ -33,7 +33,7 @@ contract Membranes is IMembrane {
         returns (uint256 id)
     {
         if (tokens_.length != balances_.length) revert Membrane__EmptyFieldOnMembraneCreation();
-
+        if (bytes(meta_).length == 0) revert Membrane__EmptyFieldOnMembraneCreation();
         Membrane memory M;
         M.tokens = tokens_;
         M.balances = balances_;

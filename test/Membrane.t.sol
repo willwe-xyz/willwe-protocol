@@ -79,6 +79,7 @@ contract MembraneTests is Test, InitTest {
         tokens_ = new address[](0);
         balances_ = new uint256[](0);
         meta_ = "";
+        vm.expectRevert();
         mID = M.createMembrane(tokens_, balances_, meta_);
     }
 
