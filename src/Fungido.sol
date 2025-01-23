@@ -176,7 +176,7 @@ contract Fungido is ERC1155, PureUtils {
     /// @param tokens_ array of token addresses for membrane conditions
     /// @param balances_ array of required balances for each token
     /// @param meta_ metadata string (e.g. IPFS hash) for membrane details
-    /// @param inflationRate_ rate for new branch token shares in gwei
+    /// @param inflationRate_ rate for new branch token shares in gwei per second
     function spawnBranchWithMembrane(
         uint256 fid_,
         address[] memory tokens_,
