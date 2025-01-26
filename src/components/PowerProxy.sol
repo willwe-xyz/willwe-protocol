@@ -40,6 +40,7 @@ contract PowerProxy is Receiver {
     struct Call {
         address target;
         bytes callData;
+        uint256 value;
     }
 
     struct Result {
@@ -111,11 +112,4 @@ contract PowerProxy is Receiver {
         }
     }
 
-    function onERC1155Received(address operator, address from, uint256 id, uint256 value, bytes calldata data)
-        external
-        pure
-        returns (bytes4)
-    {
-        return 0xf23a6e61;
-    }
 }

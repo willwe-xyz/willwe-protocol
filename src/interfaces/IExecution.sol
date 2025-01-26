@@ -12,12 +12,14 @@ enum SQState {
 enum MovementType {
     Revert,
     AgentMajority,
-    EnergeticMajority
+    EnergeticMajority,
+    OwnerCall
 }
 
 struct Call {
     address target;
     bytes callData;
+    uint256 value;
 }
 
 struct Movement {

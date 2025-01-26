@@ -80,6 +80,7 @@ contract WillBaseEndpointTest is Test, TokenPrep, InitTest {
         S.target = address(F20);
         bytes memory data = abi.encodeWithSelector(IERC20.transfer.selector, receiver, 0.1 ether);
         S.callData = data;
+        S.value = 0;
 
         Call[] memory calls = new Call[](1);
         calls[0] = S;

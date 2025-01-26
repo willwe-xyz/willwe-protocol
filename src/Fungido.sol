@@ -188,7 +188,7 @@ contract Fungido is ERC1155, PureUtils {
         newID = spawnBranch(fid_);
         inUseMembraneId[newID][0] = membraneID;
         inUseMembraneId[newID][1] = block.timestamp;
-        inflSec[newID][0] = inflationRate_ == 0 ? 1_000 gwei : inflationRate_;
+        inflSec[newID][0] = inflationRate_ == 0 ? 1_000 gwei : inflationRate_ * 1 gwei;
     }
 
     /// @notice mints membership to calling address if it satisfies membership conditions
@@ -535,8 +535,8 @@ contract Fungido is ERC1155, PureUtils {
         NodeData.basicInfo[5] = (asRootValuation(nodeId, balanceOf(toAddress(nodeId), parentOf[nodeId]))).toString();
         /// Active membrane identifier
         NodeData.basicInfo[6] = (inUseMembraneId[nodeId][0]).toString();
-        /// Redistribution eligibility rate from parent per second
-        NodeData.basicInfo[7] = getChildParentEligibilityPerSec(nodeId, parentOf[nodeId]).toString();
+        /// Redistribution eligibility rate from parent per second in root valuation
+        NodeData.basicInfo[7] = (asRootValuation(getChildParentEligibilityPerSec(nodeId, parentOf[nodeId]), parentOf[nodeId])).toString();
         /// Timestamp of last redistribution
         NodeData.basicInfo[8] = inflSec[nodeId][2].toString();
         /// Balance of user

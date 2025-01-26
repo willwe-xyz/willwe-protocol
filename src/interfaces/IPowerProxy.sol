@@ -7,6 +7,7 @@ interface IPowerProxy {
     struct Call {
         address target;
         bytes callData;
+        uint256 value;
     }
 
     /// @notice Struct representing the result of a call made in the tryAggregate function

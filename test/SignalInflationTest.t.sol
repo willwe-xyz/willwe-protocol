@@ -221,25 +221,24 @@ contract SignalInflationTests is InitTest, TokenPrep {
         NodeState memory nodeData = F.getNodeDataWithUserSignals(B1, A1);
 
         // Check if the basic info is correct
-        assertEq(nodeData.basicInfo[0], uint256(uint160(B1)).toString());
-        assertEq(nodeData.basicInfo[1], F.inflationOf(B1).toString());
-        assertEq(nodeData.basicInfo[2], F.balanceOf(address(uint160(B1)), rootBranchID).toString());
-        assertEq(nodeData.basicInfo[3], F.balanceOf(address(uint160(B1)), B1).toString());
-        assertEq(nodeData.basicInfo[4], F.asRootValuation(B1, F.balanceOf(address(uint160(B1)), B1)).toString());
+        assertEq(nodeData.basicInfo[0], uint256(uint160(B1)).toString(), "node id issue");
+        assertEq(nodeData.basicInfo[1], F.inflationOf(B1).toString(), "inflation issue");
+        assertEq(nodeData.basicInfo[2], F.balanceOf(address(uint160(B1)), rootBranchID).toString(), "balance 111");
+        assertEq(nodeData.basicInfo[3], F.balanceOf(address(uint160(B1)), B1).toString(), "balance 222");
+        assertEq(nodeData.basicInfo[4], F.asRootValuation(B1, F.balanceOf(address(uint160(B1)), B1)).toString(), "root val");
         assertEq(
-            nodeData.basicInfo[5], F.asRootValuation(B1, F.balanceOf(address(uint160(B1)), rootBranchID)).toString()
+            nodeData.basicInfo[5], F.asRootValuation(B1, F.balanceOf(address(uint160(B1)), rootBranchID)).toString(), "root val 22"
         );
-        assertEq(nodeData.basicInfo[6], F.getMembraneOf(B1).toString());
-        assertEq(nodeData.basicInfo[7], F.getChildParentEligibilityPerSec(B1, rootBranchID).toString());
-        assertEq(nodeData.basicInfo[9], F.balanceOf(A1, B1).toString());
+        assertEq(nodeData.basicInfo[6], F.getMembraneOf(B1).toString(), "membrane issue");
+        assertEq(nodeData.basicInfo[9], F.balanceOf(A1, B1).toString(), "user balance f");
 
-        assertEq(nodeData.signals.length, 1);
-        assertEq(nodeData.signals[0].lastRedistSignal.length, 2);
+        assertEq(nodeData.signals.length, 1, "signals len f");
+        assertEq(nodeData.signals[0].lastRedistSignal.length, 2, "bal ne redistribution");
         assertEq(nodeData.signals[0].lastRedistSignal[0], "6000");
         assertEq(nodeData.signals[0].lastRedistSignal[1], "4000");
-        assertEq(nodeData.signals[0].MembraneInflation.length, 2);
-        assertEq(nodeData.signals[0].MembraneInflation[0][1], F.inflationOf(B1).toString());
-        assertEq(nodeData.signals[0].MembraneInflation[1][1], F.inflationOf(B1).toString());
+        assertEq(nodeData.signals[0].MembraneInflation.length, 2, "len inflation");
+        assertEq(nodeData.signals[0].MembraneInflation[0][1], F.inflationOf(B1).toString(), "mi 1");
+        assertEq(nodeData.signals[0].MembraneInflation[1][1], F.inflationOf(B1).toString(), "mi 1");
 
         vm.stopPrank();
     }

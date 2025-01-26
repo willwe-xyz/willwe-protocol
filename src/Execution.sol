@@ -255,7 +255,7 @@ contract Execution is EIP712, Receiver {
         returns (address endpoint)
     {
         if ((msg.sender != address(WillWe) && owner != address(this))) revert OnlyFun();
-        if (!WillWe.isMember(origin, nodeId) && owner != address(this)) revert NotNodeMember();
+        if (!WillWe.isMember(origin, nodeId) && owner != address(this)) revert NotNodeMember(); 
         if (hasEndpointOrInteraction[nodeId + uint160(bytes20(owner))]) revert AlreadyHasEndpoint();
         hasEndpointOrInteraction[nodeId + uint160(bytes20(owner))] = true;
 
