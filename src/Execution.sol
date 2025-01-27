@@ -78,7 +78,7 @@ contract Execution is EIP712, Receiver {
     /// @notice initialized actions from node [node -> latentActionsOfNode[] | [0] valid start index, prevs. 0]
     mapping(uint256 => bytes32[]) latentActions;
 
-    /// @notice stores node that ownes a particular execution agent authorisation
+    /// @notice stores node that owns a particular execution engine
     mapping(address exeAccount => uint256 endpointOwner) engineOwner;
 
     /// @notice any one agent is allowed to have only one endpoint
@@ -255,7 +255,7 @@ contract Execution is EIP712, Receiver {
         returns (address endpoint)
     {
         if ((msg.sender != address(WillWe) && owner != address(this))) revert OnlyFun();
-        if (!WillWe.isMember(origin, nodeId) && owner != address(this)) revert NotNodeMember(); 
+        if (!WillWe.isMember(origin, nodeId) && owner != address(this)) revert NotNodeMember();
         if (hasEndpointOrInteraction[nodeId + uint160(bytes20(owner))]) revert AlreadyHasEndpoint();
         hasEndpointOrInteraction[nodeId + uint160(bytes20(owner))] = true;
 

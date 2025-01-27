@@ -172,15 +172,16 @@ contract Fungido is ERC1155, PureUtils {
         emit NewBranch(newID, fid_, msg.sender);
     }
     /// @notice spawns branch with an enforceable membership mechanism and creates new membrane
-    /// @param fid_ context (parent) node 
+    /// @param fid_ context (parent) node
     /// @param tokens_ array of token addresses for membrane conditions
     /// @param balances_ array of required balances for each token
     /// @param meta_ metadata string (e.g. IPFS hash) for membrane details
     /// @param inflationRate_ rate for new branch token shares in gwei per second
+
     function spawnBranchWithMembrane(
         uint256 fid_,
         address[] memory tokens_,
-        uint256[] memory balances_, 
+        uint256[] memory balances_,
         string memory meta_,
         uint256 inflationRate_
     ) public virtual returns (uint256 newID) {
@@ -536,7 +537,8 @@ contract Fungido is ERC1155, PureUtils {
         /// Active membrane identifier
         NodeData.basicInfo[6] = (inUseMembraneId[nodeId][0]).toString();
         /// Redistribution eligibility rate from parent per second in root valuation
-        NodeData.basicInfo[7] = (asRootValuation(getChildParentEligibilityPerSec(nodeId, parentOf[nodeId]), parentOf[nodeId])).toString();
+        NodeData.basicInfo[7] =
+            (asRootValuation(getChildParentEligibilityPerSec(nodeId, parentOf[nodeId]), parentOf[nodeId])).toString();
         /// Timestamp of last redistribution
         NodeData.basicInfo[8] = inflSec[nodeId][2].toString();
         /// Balance of user

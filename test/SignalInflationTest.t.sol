@@ -225,9 +225,13 @@ contract SignalInflationTests is InitTest, TokenPrep {
         assertEq(nodeData.basicInfo[1], F.inflationOf(B1).toString(), "inflation issue");
         assertEq(nodeData.basicInfo[2], F.balanceOf(address(uint160(B1)), rootBranchID).toString(), "balance 111");
         assertEq(nodeData.basicInfo[3], F.balanceOf(address(uint160(B1)), B1).toString(), "balance 222");
-        assertEq(nodeData.basicInfo[4], F.asRootValuation(B1, F.balanceOf(address(uint160(B1)), B1)).toString(), "root val");
         assertEq(
-            nodeData.basicInfo[5], F.asRootValuation(B1, F.balanceOf(address(uint160(B1)), rootBranchID)).toString(), "root val 22"
+            nodeData.basicInfo[4], F.asRootValuation(B1, F.balanceOf(address(uint160(B1)), B1)).toString(), "root val"
+        );
+        assertEq(
+            nodeData.basicInfo[5],
+            F.asRootValuation(B1, F.balanceOf(address(uint160(B1)), rootBranchID)).toString(),
+            "root val 22"
         );
         assertEq(nodeData.basicInfo[6], F.getMembraneOf(B1).toString(), "membrane issue");
         assertEq(nodeData.basicInfo[9], F.balanceOf(A1, B1).toString(), "user balance f");

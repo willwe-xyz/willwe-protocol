@@ -111,5 +111,4 @@ contract PowerProxy is Receiver {
             default { return(0, returndatasize()) }
         }
     }
-
 }
