@@ -94,6 +94,8 @@ interface IExecution {
 
     function hashMessage(Movement memory movement) external view returns (bytes32);
 
+    function createInitWillWeEndpoint(uint256 nodeId_) external returns (address endpoint);
+
     //// cleanup functions
 
     function removeSignature(bytes32 sigHash_, uint256 index_, address who_) external;

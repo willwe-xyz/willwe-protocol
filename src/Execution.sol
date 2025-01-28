@@ -13,8 +13,6 @@ import {EIP712} from "./info/EIP712.sol";
 import {PowerProxy} from "./components/PowerProxy.sol";
 import {Receiver} from "solady/accounts/Receiver.sol";
 
-import "forge-std/console.sol";
-
 /// @title Execution
 /// @author parseb
 contract Execution is EIP712, Receiver {
@@ -49,7 +47,7 @@ contract Execution is EIP712, Receiver {
     error AlreadySigned();
     error LenErr();
     error AlreadyInit();
-    error OnlyFun();
+    error OnlyWillWe();
     error NoSignatures();
     error EXEC_SQInvalid();
     error EXEC_NoType();
@@ -109,7 +107,7 @@ contract Execution is EIP712, Receiver {
         bytes32 descriptionHash,
         bytes memory data
     ) external virtual returns (bytes32 movementHash) {
-        if (msg.sender != address(WillWe)) revert OnlyFun();
+        if (msg.sender != address(WillWe)) revert OnlyWillWe();
         if (typeOfMovement > 2 || typeOfMovement == 0) revert NoMovementType();
         if (!WillWe.isMember(origin, nodeId)) revert NotNodeMember();
 
@@ -117,7 +115,7 @@ contract Execution is EIP712, Receiver {
         if (uint256(descriptionHash) == 0) revert EXEC_NoDescription();
 
         if (executingAccount == address(0)) {
-            executingAccount = createNodeEndpoint(origin, nodeId, typeOfMovement);
+            executingAccount = createNodeEndpoint(nodeId, typeOfMovement);
             engineOwner[executingAccount] = nodeId;
         } else {
             if (!(engineOwner[executingAccount] == nodeId)) revert NotExeAccOwner();
@@ -150,7 +148,7 @@ contract Execution is EIP712, Receiver {
     }
 
     function executeQueue(bytes32 queueHash) public virtual returns (bool success) {
-        if (msg.sender != address(WillWe)) revert OnlyFun();
+        if (msg.sender != address(WillWe)) revert OnlyWillWe();
 
         SignatureQueue memory SQ = validateQueue(queueHash);
 
@@ -169,7 +167,7 @@ contract Execution is EIP712, Receiver {
     }
 
     function submitSignatures(bytes32 queueHash, address[] memory signers, bytes[] memory signatures) external {
-        if (msg.sender != address(WillWe)) revert OnlyFun();
+        if (msg.sender != address(WillWe)) revert OnlyWillWe();
 
         SignatureQueue memory SQ = getSigQueueByHash[queueHash];
 
@@ -226,7 +224,7 @@ contract Execution is EIP712, Receiver {
     }
 
     function removeSignature(bytes32 queueHash, uint256 index, address signer) external {
-        if (msg.sender != address(WillWe)) revert OnlyFun();
+        if (msg.sender != address(WillWe)) revert OnlyWillWe();
         SignatureQueue memory SQ = getSigQueueByHash[queueHash];
 
         if (SQ.Signers[index] != signer) revert EXEC_OnlySigner();
@@ -254,29 +252,26 @@ contract Execution is EIP712, Receiver {
         external
         returns (address endpoint)
     {
-        if ((msg.sender != address(WillWe) && owner != address(this))) revert OnlyFun();
+        if (msg.sender != address(WillWe)) revert OnlyWillWe();
         if (!WillWe.isMember(origin, nodeId) && owner != address(this)) revert NotNodeMember();
         if (hasEndpointOrInteraction[nodeId + uint160(bytes20(owner))]) revert AlreadyHasEndpoint();
         hasEndpointOrInteraction[nodeId + uint160(bytes20(owner))] = true;
 
-        endpoint = createNodeEndpoint(origin, nodeId, 3);
+        endpoint = spawnNodeEndpoint(owner, 3);
+        WillWe.localizeEndpoint(endpoint, nodeId, owner);
 
         emit EndpointCreatedForAgent(nodeId, endpoint, owner);
     }
 
-    function createNodeEndpoint(address originOrNode, uint256 endpointOwner_, uint8 consensusType)
-        internal
-        returns (address endpoint)
-    {
-        if (msg.sig == this.createEndpointForOwner.selector) {
-            if (consensusType == 3 && originOrNode == address(this)) consensusType = 2;
-            endpoint = spawnNodeEndpoint(originOrNode, consensusType);
-            engineOwner[endpoint] = originOrNode == address(this) ? endpointOwner_ : uint160(originOrNode);
-        } else {
-            endpoint = spawnNodeEndpoint(address(this), consensusType);
-            engineOwner[endpoint] = endpointOwner_;
-        }
-        WillWe.localizeEndpoint(endpoint, endpointOwner_, originOrNode);
+    function createInitWillWeEndpoint(uint256 nodeId_) external returns (address endpoint) {
+        if (msg.sender != address(WillWe)) revert OnlyWillWe();
+        endpoint = createNodeEndpoint(nodeId_, 2);
+    }
+
+    function createNodeEndpoint(uint256 nodeId_, uint8 consensusType_) private returns (address endpoint) {
+        endpoint = spawnNodeEndpoint(address(this), consensusType_);
+        engineOwner[endpoint] = nodeId_;
+        WillWe.localizeEndpoint(endpoint, nodeId_, address(this));
     }
 
     function spawnNodeEndpoint(address proxyOwner_, uint8 authType) private returns (address) {

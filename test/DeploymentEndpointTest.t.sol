@@ -89,7 +89,7 @@ contract WillBaseEndpointTest is Test, TokenPrep, InitTest {
 
     function testWillBaseEndpointUsability() public {
         address endpoint = WillBaseEndpoint;
-
+        console.log("Endpoint", endpoint);
         uint256[] memory firstChildren = F.getChildrenOf(F.toID(address(F.Will())));
         uint256[] memory children = F.getChildrenOf(firstChildren[0]);
 

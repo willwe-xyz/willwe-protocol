@@ -40,7 +40,7 @@ contract Fungido is ERC1155, PureUtils {
     /// @notice membrane being used by entity | entityID ->  [ membrane id | last Timestamp]
     mapping(uint256 => uint256[2]) inUseMembraneId;
 
-    /// @notice members of node
+    /// @notice members of node || user address -> user endpoints || root id -> all derrived subnodes ids
     mapping(uint256 => address[]) members;
 
     /// @notice stores a users option for change and node state [ wanted value, lastExpressedAt ]
@@ -128,9 +128,8 @@ contract Fungido is ERC1155, PureUtils {
     //// @return address of agency of controling extremity
     function initSelfControl() external returns (address) {
         if (control[0] != address(0)) revert isControled();
-        control[0] = IExecution(executionAddress).createEndpointForOwner(
-            executionAddress, this.spawnBranch(toID(Will)), executionAddress
-        );
+        control[0] = IExecution(executionAddress).createInitWillWeEndpoint(this.spawnBranch(toID(Will)));
+
         M.setInitWillWe();
         emit SelfControlAtAddress(control[0]);
         return control[0];
@@ -296,12 +295,13 @@ contract Fungido is ERC1155, PureUtils {
         _mint(to, membershipID(id), 1, abi.encodePacked(to, "membership", id));
     }
 
-    function localizeEndpoint(address endpoint_, uint256 endpointParent_, address endpointOwner_) external {
+    function localizeEndpoint(address endpoint_, uint256 endpointParent_, address owner_) external {
         if (msg.sender != executionAddress) revert ExecutionOnly();
+        if (isMember(owner_, endpointParent_)) members[uint256(uint160(owner_))].push(endpoint_);
         _localizeNode(toID(endpoint_), endpointParent_);
     }
 
-    function _localizeNode(uint256 newID, uint256 parentId) private {
+    function _localizeNode(uint256 newID, uint256 parentId) internal {
         if (parentOf[newID] != 0) revert BranchAlreadyExists();
         parentOf[newID] = parentId;
         if (parentId != newID) {

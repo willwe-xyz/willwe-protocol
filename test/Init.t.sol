@@ -52,6 +52,7 @@ contract InitTest is Test {
         vm.label(address(A1), "A1");
         vm.label(address(A2), "A2");
         vm.label(address(A3), "A3");
+        vm.label(address(WillBaseEndpoint), "WillBaseEndpoint");
     }
 
     function testInit() public {
