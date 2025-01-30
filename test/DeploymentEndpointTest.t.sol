@@ -127,18 +127,16 @@ contract WillBaseEndpointTest is Test, TokenPrep, InitTest {
 
         // Sign the movement
         vm.startPrank(A2);
-        console.log("A2 balance", testToken.balanceOf(A2));
         F.mintMembership(parentOfEndpoint);
-        F20.approve(address(F), 2 ether);
-        F20.mintFromETH{value: 1 ether}();
+        F20.approve(address(F), F20.balanceOf(A2) / 2);
         F.mintPath(parentOfEndpoint, F20.balanceOf(A2) / 2);
         vm.stopPrank();
 
         console.log("A2 balance", testToken.balanceOf(A2));
 
         vm.startPrank(A3);
-        F20.approve(address(F), 1 ether);
-        F20.mintFromETH{value: 1 ether}();
+        F20.approve(address(F), F20.balanceOf(A3) / 2);
+        console.log("fails here", F20.balanceOf(A3) / 2, F20.allowance(A3, address(F)));
         F.mintPath(parentOfEndpoint, F20.balanceOf(A3) / 2);
         vm.stopPrank();
 

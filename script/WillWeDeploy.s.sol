@@ -33,7 +33,7 @@ contract WillWeDeploy is Script {
         uint256[] memory amounts = new uint256[](1);
 
         founders[0] = deployer;
-        amounts[0] = 10_000_000;
+        amounts[0] = 10_000_000 ether;
 
         uint256 piper_sec = 1;
 
@@ -110,8 +110,8 @@ contract WillWeDeploy is Script {
 
 //   ###############################
 //   Foundation Agent Safe at:  0x0000000000000000000000000000000000000000
-//   Will:  0x99e612d393a89798dDDE4903040659a3ae9E5932
-//   Membrane:  0x3e0bb52B6440CEcAF9ecF8b0951D51F9A0B82F48
-//   Execution:  0x4b2487E6C275eE0bAF3F290EE0880530fb91708f
-//   WillWe:  0x91Ac0Fa9A36101362814d20C00873CF0d4680a5C
+//   Will:  0xc47b4FbEb72e53479d63F1E4aA8938D2917EE85F
+//   Membrane:  0xF84FEa374947e60E1fcD10d653e4e2B17894c0Fc
+//   Execution:  0xf033523A5d43C4A3E3a0B17bd77C0AE109Ea4Ed6
+//   WillWe:  0xaf0b052af825eA7227A4876667Efee1B0A2E5a57
 //   ###############################
