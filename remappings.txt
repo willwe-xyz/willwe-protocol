@@ -2,11 +2,11 @@ openzeppelin-contracts/token/=lib/openzeppelin-contracts/contracts/token/
 openzeppelin-contracts/contracts=lib/openzeppelin-contracts/contracts/
 @solady/=lib/solady/src/
 src/vendor/interfaces/=lib/optimism/packages/contracts-bedrock/src/vendor/interfaces/
-will/contracts/=lib/will/packages/contracts/src/
-@contracts-bedrock=lib/will/packages/contracts/lib/optimism/packages/contracts-bedrock/src/
-@solady-v0.0.245/=lib/will/packages/contracts/lib/optimism/packages/contracts-bedrock/lib/solady-v0.0.245/src/
+will/contracts/=lib/Will/packages/contracts/src/
+@contracts-bedrock=lib/Will/packages/contracts/lib/optimism/packages/contracts-bedrock/src/
+@solady-v0.0.245/=lib/Will/packages/contracts/lib/optimism/packages/contracts-bedrock/lib/solady-v0.0.245/src/
 
 
-src/L2/interfaces/=lib/will/packages/contracts/lib/optimism/packages/contracts-bedrock/src/L2/interfaces/
-src/universal/interfaces/=lib/will/packages/contracts/lib/optimism/packages/contracts-bedrock/src/universal/interfaces/
-src/libraries/=lib/will/packages/contracts/lib/optimism/packages/contracts-bedrock/src/libraries/
+src/L2/interfaces/=lib/Will/packages/contracts/lib/optimism/packages/contracts-bedrock/src/L2/interfaces/
+src/universal/interfaces/=lib/Will/packages/contracts/lib/optimism/packages/contracts-bedrock/src/universal/interfaces/
+src/libraries/=lib/Will/packages/contracts/lib/optimism/packages/contracts-bedrock/src/libraries/

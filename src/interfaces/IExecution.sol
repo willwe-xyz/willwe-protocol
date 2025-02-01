@@ -46,7 +46,7 @@ struct UserSignal {
 }
 
 struct NodeState {
-    string[10] basicInfo; // [nodeId, inflation, reserve, budget, rootValuationBudget, rootValuationReserve, membraneId, eligibilityPerSec, lastRedistributionTime, balanceOfUser [0 default]
+    string[11] basicInfo; // [nodeId, inflation, reserve, budget, rootValuationBudget, rootValuationReserve, membraneId, eligibilityPerSec, lastRedistributionTime, balanceOfUser [0 default], endpointOfUserForNode [address(0) defaul - no endpoint]]
     string membraneMeta; // Membrane Metadata CID
     address[] membersOfNode; // Array of member addresses
     string[] childrenNodes; // Array of children node IDs

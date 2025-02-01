@@ -16,7 +16,6 @@ contract WillWeDeploy2 is Script {
         console.log("###############################");
         console.log("                                                             ");
         console.log("   Deploy script started for network : ", block.chainid);
-
         console.log("                                                             ");
         console.log("###############################");
     }
