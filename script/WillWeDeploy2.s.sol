@@ -47,8 +47,7 @@ contract WillWeDeploy2 is Script {
 
         console.log("###############################");
         console.log(" ");
-        console.log("Root Value in Control : ", address(WW.control(0)));
-        console.log("Controling Extrmity: ", WW.control(1));
+        console.log("Control [0,1] : ", address(WW.control(0)), address(WW.control(1)));
         console.log("Will Price in ETH:", F20.currentPrice());
 
         console.log(" ");
