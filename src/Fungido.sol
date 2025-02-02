@@ -20,14 +20,11 @@ import "./interfaces/IMembrane.sol";
 contract Fungido is ERC1155, PureUtils {
     using Strings for uint256;
 
-    uint256 immutable INIT_TIME = block.timestamp;
-    uint256 immutable DEFAULT_INFLATION = 1_000 gwei;
-    uint256 immutable DEFAULT_TAXREATE = 100_0;
+    uint256 immutable initTime = block.timestamp;
     uint256 public entityCount;
     address public executionAddress;
     address public Will;
     IMembrane M;
-
     /// @notice stores the total supply of each id | id -> supply
     mapping(uint256 => uint256) totalSupplyOf;
 
@@ -49,7 +46,7 @@ contract Fungido is ERC1155, PureUtils {
     /// @notice stores a users option for change and node state [ wanted value, lastExpressedAt ]
     mapping(bytes32 NodeXUserXValue => uint256[3] valueAtTime) public options;
 
-    /// @notice tax rate on withdrawals as share in base root value token (default: 0.1%)
+    /// @notice tax rate on withdrawals as share in base root value token (default: 0.01%)
     mapping(address => uint256) taxRate;
 
     address[2] public control;
@@ -61,7 +58,7 @@ contract Fungido is ERC1155, PureUtils {
     bool useBefore;
 
     constructor(address executionAddr, address membranes) {
-        taxRate[address(0)] = DEFAULT_TAXREATE;
+        taxRate[address(0)] = 100_0;
         executionAddress = executionAddr;
         Will = IExecution(executionAddr).WillToken();
         M = IMembrane(membranes);
@@ -111,7 +108,7 @@ contract Fungido is ERC1155, PureUtils {
     event NewBranch(uint256 indexed newId, uint256 indexed parentId, address indexed creator);
 
     ////////////////////////////////////////////////
-    //////________INITIALIZERS________/////////////////
+    //////________MODIFIER________/////////////////
 
     /// @notice sets address in control of fiscal policy
     /// @notice can chenge token specific tax rates, should be an endpoint
@@ -300,11 +297,7 @@ contract Fungido is ERC1155, PureUtils {
 
     function localizeEndpoint(address endpoint_, uint256 endpointParent_, address owner_) external {
         if (msg.sender != executionAddress) revert ExecutionOnly();
-        if (isMember(owner_, endpointParent_)) {
-            members[uint256(uint160(owner_))].push(endpoint_);
-            members[endpointParent_ + uint256(uint160(owner_))].push(endpoint_);
-        }
-
+        if (isMember(owner_, endpointParent_)) members[uint256(uint160(owner_))].push(endpoint_);
         _localizeNode(toID(endpoint_), endpointParent_);
     }
 
@@ -420,7 +413,7 @@ contract Fungido is ERC1155, PureUtils {
                     }
                 } else {
                     useBefore = false;
-                    safeTransferFrom(_msgSender(), toAddress(currentID), parentOf[currentID], currentAmt, msg.data);
+                    safeTransferFrom(_msgSender(), toAddress(currentID), parentOf[currentID], currentAmt, msg.data[0:1]);
                     useBefore = true;
                 }
             }
@@ -521,8 +514,13 @@ contract Fungido is ERC1155, PureUtils {
         revert Disabled();
     }
 
+    ////////////////////////////////////////////////
+    //////____eth_call____/////////////////////////////
+
     /// @notice returns a node's data given its identifier
+    /// @notice basicInfo: [nodeId, inflation, balanceAnchor, balanceBudget, value, membraneId, (balance of user), balanceOfUser, childParentEligibilityPerSec, lastParentRedistribution]
     /// @param nodeId node identifier
+    /// @dev for eth_call
     function getNodeData(uint256 nodeId) public view returns (NodeState memory NodeData) {
         /// Node identifier
         NodeData.basicInfo[0] = nodeId.toString();
@@ -545,8 +543,6 @@ contract Fungido is ERC1155, PureUtils {
         NodeData.basicInfo[8] = inflSec[nodeId][2].toString();
         /// Balance of user
         /// basicInfo[9];
-        /// Endpoint of user for node
-        /// basicInfo[10]
 
         /// Membrane Metadata CID
         NodeData.membraneMeta = M.getMembraneById(inUseMembraneId[nodeId][0]).meta;
@@ -597,10 +593,12 @@ contract Fungido is ERC1155, PureUtils {
         UserNodeSignals = new uint256[2][](childNodes.length);
 
         for (uint256 i = 0; i < childNodes.length; i++) {
+            // Include the signalOrigin (user's address) in the signalKey
             bytes32 userTargetedPreference = keccak256(abi.encodePacked(signalOrigin, parentNodeId, childNodes[i]));
 
-            UserNodeSignals[i][0] = options[userTargetedPreference][0];
-            UserNodeSignals[i][1] = options[userTargetedPreference][1];
+            // Store the signal value and the timestamp (assuming options[userKey] structure)
+            UserNodeSignals[i][0] = options[userTargetedPreference][0]; // Signal value
+            UserNodeSignals[i][1] = options[userTargetedPreference][1]; // Last updated timestamp
         }
 
         return UserNodeSignals;
@@ -608,18 +606,16 @@ contract Fungido is ERC1155, PureUtils {
 
     function getNodeDataWithUserSignals(uint256 nodeId, address user) public view returns (NodeState memory nodeData) {
         nodeData = getNodeData(nodeId);
-        if (user == address(0)) return nodeData;
         nodeData.basicInfo[9] = balanceOf(user, nodeId).toString();
-        if (members[nodeId + uint256(uint160(user))].length > 0) {
-            nodeData.basicInfo[10] = Strings.toHexString(members[nodeId + uint256(uint160(user))][0]);
-        }
         nodeData.signals = new UserSignal[](1);
-
         nodeData.signals[0].MembraneInflation = new string[2][](childrenOf[nodeId].length);
         nodeData.signals[0].lastRedistSignal = new string[](childrenOf[nodeId].length);
 
         for (uint256 i = 0; i < childrenOf[nodeId].length; i++) {
-            nodeData.signals[0].MembraneInflation[i][1] = inflSec[nodeId][0].toString();
+            // Add inflation to the MembraneInflation array
+            nodeData.signals[0].MembraneInflation[i][1] = inflSec[nodeId][0].toString(); // Inflation
+
+            // Retrieve signaled value from the options mapping
             bytes32 userKey = keccak256(abi.encodePacked(user, nodeId, childrenOf[nodeId][i]));
             nodeData.signals[0].lastRedistSignal[i] = options[userKey][0].toString();
         }
