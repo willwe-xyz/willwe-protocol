@@ -12,6 +12,7 @@ build_info = true
 extra_output = ["storageLayout"]
 solc_version = "0.8.25"
 cbor_metadata = true
+ignored_error_codes= [2072, 5667, 2018, 6321]
 
 fs_permissions = [
     { access = "read", path = "./"},

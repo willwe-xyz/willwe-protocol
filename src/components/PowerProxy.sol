@@ -1,4 +1,5 @@
-pragma solidity ^0.8.19;
+/// SPDX-License-Identifier: UNLICENSED
+pragma solidity 0.8.25;
 
 import {Receiver} from "solady/accounts/Receiver.sol";
 import {IPowerProxy} from "../interfaces/IPowerProxy.sol";

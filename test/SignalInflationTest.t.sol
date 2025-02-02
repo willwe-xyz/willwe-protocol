@@ -218,7 +218,7 @@ contract SignalInflationTests is InitTest, TokenPrep {
         signals[3] = 4000; // 40% to B12
         F.sendSignal(B1, signals);
 
-        NodeState memory nodeData = F.getNodeDataWithUserSignals(B1, A1);
+        NodeState memory nodeData = F.getNodeData(B1, A1);
 
         // Check if the basic info is correct
         assertEq(nodeData.basicInfo[0], uint256(uint160(B1)).toString(), "node id issue");

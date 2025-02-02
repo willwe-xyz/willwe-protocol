@@ -1,3 +1,4 @@
+/// SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.19;
 
 /// @author parseb.eth @ github.com/parseb

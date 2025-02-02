@@ -331,6 +331,7 @@ contract Execution is EIP712, Receiver {
 
     function isValidSignature(bytes32 _hash, bytes memory _signature) public view returns (bytes4) {
         if (getSigQueueByHash[_hash].state == SQState.Valid) return EIP1271_MAGICVALUE;
+        return 0x00000000;
     }
 
     /// @notice retrieves the node or agent that owns the execution account

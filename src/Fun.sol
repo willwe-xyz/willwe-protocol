@@ -18,10 +18,8 @@ contract Fun is Fungido {
     error Noise();
     error NoSoup();
     error MembraneNotFound();
-    error RootNodeOrNone();
     error NoiseNotVoice();
     error TargetIsRoot();
-    error PathTooShort();
     error ResignalMismatch();
     error NoTimeDelta();
     error CannotSkip();

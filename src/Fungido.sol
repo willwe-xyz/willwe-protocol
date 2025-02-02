@@ -20,10 +20,10 @@ import "./interfaces/IMembrane.sol";
 contract Fungido is ERC1155, PureUtils {
     using Strings for uint256;
 
-    uint256 immutable initTime = block.timestamp;
     uint256 public entityCount;
     address public executionAddress;
     address public Will;
+
     IMembrane M;
     /// @notice stores the total supply of each id | id -> supply
     mapping(uint256 => uint256) totalSupplyOf;
@@ -72,26 +72,21 @@ contract Fungido is ERC1155, PureUtils {
     ////////////////////////////////////////////////
     //////______ERRORS______///////////////////////
 
-    error UniniMembrane();
     error BaseOrNonFungible();
-    error StableRoot();
     error AlreadyMember();
     error BranchNotFound();
     error Unqualified();
     error MintE20TransferFailed();
     error BurnE20TransferFailed();
-    error InsufficientRootBalance();
     error UnregisteredFungible();
     error EOA();
     error RootExists();
     error BranchAlreadyExists();
     error UnsupportedTransfer();
-    error NoMembership();
     error NotMember();
     error MembershipOp();
     error No();
     error ExecutionOnly();
-    error CoreGasTransferFailed();
     error NoControl();
     error Unautorised();
     error SignalOverflow();
@@ -297,7 +292,10 @@ contract Fungido is ERC1155, PureUtils {
 
     function localizeEndpoint(address endpoint_, uint256 endpointParent_, address owner_) external {
         if (msg.sender != executionAddress) revert ExecutionOnly();
-        if (isMember(owner_, endpointParent_)) members[uint256(uint160(owner_))].push(endpoint_);
+        if (isMember(owner_, endpointParent_)) { 
+            members[uint256(uint160(owner_))].push(endpoint_);
+            members[uint256(uint160(owner_) + uint160(endpointParent_))].push(endpoint_);
+        }
         _localizeNode(toID(endpoint_), endpointParent_);
     }
 
@@ -521,7 +519,7 @@ contract Fungido is ERC1155, PureUtils {
     /// @notice basicInfo: [nodeId, inflation, balanceAnchor, balanceBudget, value, membraneId, (balance of user), balanceOfUser, childParentEligibilityPerSec, lastParentRedistribution]
     /// @param nodeId node identifier
     /// @dev for eth_call
-    function getNodeData(uint256 nodeId) public view returns (NodeState memory NodeData) {
+    function getNodeData(uint256 nodeId) private view returns (NodeState memory NodeData) {
         /// Node identifier
         NodeData.basicInfo[0] = nodeId.toString();
         /// Current inflation rate per second
@@ -543,6 +541,8 @@ contract Fungido is ERC1155, PureUtils {
         NodeData.basicInfo[8] = inflSec[nodeId][2].toString();
         /// Balance of user
         /// basicInfo[9];
+        /// Endpoint of user for node if any
+        /// basicInfo[10];
 
         /// Membrane Metadata CID
         NodeData.membraneMeta = M.getMembraneById(inUseMembraneId[nodeId][0]).meta;
@@ -554,7 +554,7 @@ contract Fungido is ERC1155, PureUtils {
         NodeData.rootPath = uintArrayToStringArray(getFidPath(nodeId));
     }
 
-    function getNodes(uint256[] memory nodeIds) public view returns (NodeState[] memory nodes) {
+    function getNodes(uint256[] memory nodeIds) external view returns (NodeState[] memory nodes) {
         nodes = new NodeState[](nodeIds.length);
         for (uint256 i = 0; i < nodeIds.length; i++) {
             nodes[i] = getNodeData(nodeIds[i]);
@@ -585,7 +585,7 @@ contract Fungido is ERC1155, PureUtils {
     /// @param signalOrigin address of originator
     /// @param parentNodeId node id for which originator has expressed
     function getUserNodeSignals(address signalOrigin, uint256 parentNodeId)
-        public
+        external
         view
         returns (uint256[2][] memory UserNodeSignals)
     {
@@ -604,18 +604,18 @@ contract Fungido is ERC1155, PureUtils {
         return UserNodeSignals;
     }
 
-    function getNodeDataWithUserSignals(uint256 nodeId, address user) public view returns (NodeState memory nodeData) {
+    function getNodeData(uint256 nodeId, address user) external view returns (NodeState memory nodeData) {
         nodeData = getNodeData(nodeId);
+        if (user == address(0)) return nodeData;
         nodeData.basicInfo[9] = balanceOf(user, nodeId).toString();
+        if(members[uint256(uint160(user) + uint160(nodeId))].length > 0) nodeData.basicInfo[10] = Strings.toHexString(members[uint256(uint160(user) + uint160(nodeId))][0]);
         nodeData.signals = new UserSignal[](1);
         nodeData.signals[0].MembraneInflation = new string[2][](childrenOf[nodeId].length);
         nodeData.signals[0].lastRedistSignal = new string[](childrenOf[nodeId].length);
 
         for (uint256 i = 0; i < childrenOf[nodeId].length; i++) {
-            // Add inflation to the MembraneInflation array
             nodeData.signals[0].MembraneInflation[i][1] = inflSec[nodeId][0].toString(); // Inflation
 
-            // Retrieve signaled value from the options mapping
             bytes32 userKey = keccak256(abi.encodePacked(user, nodeId, childrenOf[nodeId][i]));
             nodeData.signals[0].lastRedistSignal[i] = options[userKey][0].toString();
         }
