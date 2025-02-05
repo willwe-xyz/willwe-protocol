@@ -294,7 +294,7 @@ contract Fungido is ERC1155, PureUtils {
         if (msg.sender != executionAddress) revert ExecutionOnly();
         if (isMember(owner_, endpointParent_)) { 
             members[uint256(uint160(owner_))].push(endpoint_);
-            members[uint256(uint160(owner_) + uint160(endpointParent_))].push(endpoint_);
+            members[uint256(uint160(owner_) + uint256(uint160(endpointParent_)))].push(endpoint_);
         }
         _localizeNode(toID(endpoint_), endpointParent_);
     }
@@ -608,7 +608,8 @@ contract Fungido is ERC1155, PureUtils {
         nodeData = getNodeData(nodeId);
         if (user == address(0)) return nodeData;
         nodeData.basicInfo[9] = balanceOf(user, nodeId).toString();
-        if(members[uint256(uint160(user) + uint160(nodeId))].length > 0) nodeData.basicInfo[10] = Strings.toHexString(members[uint256(uint160(user) + uint160(nodeId))][0]);
+        uint256 userEndpointId = uint256(uint256(uint160(user)) + nodeId);
+        if(members[userEndpointId].length > 0) nodeData.basicInfo[10] = Strings.toHexString(members[userEndpointId][0]);
         nodeData.signals = new UserSignal[](1);
         nodeData.signals[0].MembraneInflation = new string[2][](childrenOf[nodeId].length);
         nodeData.signals[0].lastRedistSignal = new string[](childrenOf[nodeId].length);

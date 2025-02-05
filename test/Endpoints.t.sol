@@ -7,12 +7,13 @@ import {Execution} from "../src/Execution.sol";
 import {SignatureQueue, IExecution} from "../src/interfaces/IExecution.sol";
 import {TokenPrep} from "./mock/Tokens.sol";
 import {SignatureQueue, SQState, MovementType} from "../src/interfaces/IExecution.sol";
-import {Movement, Call} from "../src/interfaces/IExecution.sol";
+import {Movement, Call, NodeState} from "../src/interfaces/IExecution.sol";
 import {IERC20} from "openzeppelin/token/ERC20/IERC20.sol";
 import {Will} from "will/contracts/Will.sol";
 import {InitTest} from "./Init.t.sol";
 import {ECDSA} from "openzeppelin/utils/cryptography/ECDSA.sol";
 import {IPowerProxy} from "../src/interfaces/IPowerProxy.sol";
+import {Strings} from "openzeppelin/utils/Strings.sol";
 
 contract Endpoints is Test, TokenPrep, InitTest {
     using ECDSA for bytes32;
@@ -249,6 +250,11 @@ contract Endpoints is Test, TokenPrep, InitTest {
 
         assertTrue(F.balanceOf(A1, membershipID) == 1, "the id owner");
         assertTrue(F.isMember(A1, membershipID), "expected member");
+
+        NodeState memory N = F.getNodeData(rootBranchID, A1);
+        assertEq(N.basicInfo[10], Strings.toHexString(endpoint), "expected endpoint in node data w user");
+        assertEq(F.allMembersOf((F.toID(A1) + rootBranchID))[0] , endpoint, "expected endpoint");
+
 
         vm.stopPrank();
     }
