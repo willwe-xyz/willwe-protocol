@@ -421,6 +421,8 @@ contract Endpoints is Test, TokenPrep, InitTest {
         assertTrue(movements.length == 1, "expected movements");
         assertTrue(movements[0].movement.category == MovementType.EnergeticMajority, "expected type 1");
         assertTrue(movements[0].movement.exeAccount == executingAccount, "expected exe account");
+        assertTrue(viaNode  > 0, "expected populated");
+
         assertTrue(movements[0].signatureQueue.state == SQState.Initialized, "expected initialized");
         vm.startPrank(A1);
         F20.transfer(SQ.Action.exeAccount, F20.balanceOf(A1));
@@ -429,6 +431,14 @@ contract Endpoints is Test, TokenPrep, InitTest {
         movements = IExecution(E).getLatentMovements(viaNode);
         assertTrue(movements[0].signatureQueue.state == SQState.Executed, "expected executed");
         
+
         IExecution(E).removeLatentAction(move, 0);
+        movements = IExecution(E).getLatentMovements(viaNode);
+        assertTrue(movements[0].signatureQueue.state == SQState.None, "expected initialized");
+        assertTrue(movements[0].movement.viaNode  == 0, "expected deleted");
+
+
+
+
     }
 }
