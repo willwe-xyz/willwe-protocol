@@ -4,7 +4,7 @@ pragma solidity 0.8.25;
 import "forge-std/Test.sol";
 import {Fun} from "../src/Fun.sol";
 import {Execution} from "../src/Execution.sol";
-import {SignatureQueue, IExecution} from "../src/interfaces/IExecution.sol";
+import {SignatureQueue, IExecution, Movement, LatentMovement} from "../src/interfaces/IExecution.sol";
 import {TokenPrep} from "./mock/Tokens.sol";
 import {SignatureQueue, SQState, MovementType} from "../src/interfaces/IExecution.sol";
 import {Movement, Call, NodeState} from "../src/interfaces/IExecution.sol";
@@ -405,5 +405,30 @@ contract Endpoints is Test, TokenPrep, InitTest {
 
         SQ = F.getSigQueue(move);
         assertTrue(SQ.state == SQState.Executed, "expected executed");
+    }
+
+
+    function testGetLatentMovements() public {
+        bytes32 move = testSubmitsSignatures();
+        SignatureQueue memory SQ = F.getSigQueue(move);
+
+        assertTrue(SQ.Sigs.length > 0, "expected signatures");
+        
+        address executingAccount = SQ.Action.exeAccount;
+        uint256 viaNode = SQ.Action.viaNode;
+        LatentMovement[] memory movements = IExecution(E).getLatentMovements(viaNode);
+
+        assertTrue(movements.length == 1, "expected movements");
+        assertTrue(movements[0].movement.category == MovementType.EnergeticMajority, "expected type 1");
+        assertTrue(movements[0].movement.exeAccount == executingAccount, "expected exe account");
+        assertTrue(movements[0].signatureQueue.state == SQState.Initialized, "expected initialized");
+        vm.startPrank(A1);
+        F20.transfer(SQ.Action.exeAccount, F20.balanceOf(A1));
+        vm.stopPrank();
+        F.executeQueue(move);
+        movements = IExecution(E).getLatentMovements(viaNode);
+        assertTrue(movements[0].signatureQueue.state == SQState.Executed, "expected executed");
+        
+        IExecution(E).removeLatentAction(move, 0);
     }
 }

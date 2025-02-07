@@ -32,6 +32,11 @@ struct Movement {
     bytes executedPayload;
 }
 
+    struct LatentMovement {
+        Movement movement;
+        SignatureQueue signatureQueue;
+    }
+
 struct SignatureQueue {
     SQState state;
     Movement Action;
@@ -44,6 +49,7 @@ struct UserSignal {
     string[2][] MembraneInflation;
     string[] lastRedistSignal;
 }
+
 
 struct NodeState {
     string[11] basicInfo; // [nodeId, inflation, reserve, budget, rootValuationBudget, rootValuationReserve, membraneId, eligibilityPerSec, lastRedistributionTime, balanceOfUser [0 default], endpointOfUserForNode [address(0) defaul - no endpoint]]
@@ -95,6 +101,8 @@ interface IExecution {
     function hashMessage(Movement memory movement) external view returns (bytes32);
 
     function createInitWillWeEndpoint(uint256 nodeId_) external returns (address endpoint);
+
+    function getLatentMovements(uint256 nodeId_) external view returns (LatentMovement[] memory latentMovements);
 
     //// cleanup functions
 

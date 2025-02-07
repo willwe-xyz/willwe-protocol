@@ -5,7 +5,7 @@ import {SignatureChecker} from "openzeppelin-contracts/contracts/utils/cryptogra
 import {Address} from "openzeppelin-contracts/contracts/utils/Address.sol";
 import {Strings} from "openzeppelin-contracts/contracts/utils/Strings.sol";
 import {ECDSA} from "openzeppelin-contracts/contracts/utils/cryptography/ECDSA.sol";
-import {SignatureQueue, SQState, MovementType, Movement, Call} from "./interfaces/IExecution.sol";
+import {SignatureQueue, SQState, MovementType, Movement, Call, LatentMovement} from "./interfaces/IExecution.sol";
 import {IFun} from "./interfaces/IFun.sol";
 import {IPowerProxy} from "./interfaces/IPowerProxy.sol";
 import {IERC1155Receiver} from "openzeppelin-contracts/contracts/token/ERC1155/IERC1155Receiver.sol";
@@ -190,9 +190,7 @@ contract Execution is EIP712, Receiver {
                 continue;
             }
 
-            (uint8 v, bytes32 r, bytes32 s) = splitSignature(signatures[i]);
-            address recovered = ecrecover(digest, v, r, s);
-            if (recovered != signers[i]) continue;
+            if ( ! SignatureChecker.isValidSignatureNow(signers[i], digest, signatures[i])) continue;
 
             hasEndpointOrInteraction[uint256(queueHash) - uint160(signers[i])] = true;
             validCount++;
@@ -343,6 +341,19 @@ contract Execution is EIP712, Receiver {
 
     function getSigQueue(bytes32 hash_) public view returns (SignatureQueue memory) {
         return getSigQueueByHash[hash_];
+    }
+
+    function getLatentMovements(uint256 nodeId) public view returns (LatentMovement[] memory latentMovements) {
+        bytes32[] memory nodeActions = latentActions[nodeId];
+        latentMovements = new LatentMovement[](nodeActions.length);
+        
+        for (uint256 i = 0; i < nodeActions.length; i++) {
+            SignatureQueue memory sq = getSigQueueByHash[nodeActions[i]];
+            latentMovements[i] = LatentMovement({
+                movement: sq.Action,
+                signatureQueue: sq
+            });
+        }
     }
 
     function hashMovement(Movement memory movement) public pure returns (bytes32) {
