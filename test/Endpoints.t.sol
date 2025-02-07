@@ -253,8 +253,7 @@ contract Endpoints is Test, TokenPrep, InitTest {
 
         NodeState memory N = F.getNodeData(rootBranchID, A1);
         assertEq(N.basicInfo[10], Strings.toHexString(endpoint), "expected endpoint in node data w user");
-        assertEq(F.allMembersOf((F.toID(A1) + rootBranchID))[0] , endpoint, "expected endpoint");
-
+        assertEq(F.allMembersOf((F.toID(A1) + rootBranchID))[0], endpoint, "expected endpoint");
 
         vm.stopPrank();
     }
@@ -407,13 +406,12 @@ contract Endpoints is Test, TokenPrep, InitTest {
         assertTrue(SQ.state == SQState.Executed, "expected executed");
     }
 
-
     function testGetLatentMovements() public {
         bytes32 move = testSubmitsSignatures();
         SignatureQueue memory SQ = F.getSigQueue(move);
 
         assertTrue(SQ.Sigs.length > 0, "expected signatures");
-        
+
         address executingAccount = SQ.Action.exeAccount;
         uint256 viaNode = SQ.Action.viaNode;
         LatentMovement[] memory movements = IExecution(E).getLatentMovements(viaNode);
@@ -421,7 +419,7 @@ contract Endpoints is Test, TokenPrep, InitTest {
         assertTrue(movements.length == 1, "expected movements");
         assertTrue(movements[0].movement.category == MovementType.EnergeticMajority, "expected type 1");
         assertTrue(movements[0].movement.exeAccount == executingAccount, "expected exe account");
-        assertTrue(viaNode  > 0, "expected populated");
+        assertTrue(viaNode > 0, "expected populated");
 
         assertTrue(movements[0].signatureQueue.state == SQState.Initialized, "expected initialized");
         vm.startPrank(A1);
@@ -430,15 +428,10 @@ contract Endpoints is Test, TokenPrep, InitTest {
         F.executeQueue(move);
         movements = IExecution(E).getLatentMovements(viaNode);
         assertTrue(movements[0].signatureQueue.state == SQState.Executed, "expected executed");
-        
 
         IExecution(E).removeLatentAction(move, 0);
         movements = IExecution(E).getLatentMovements(viaNode);
         assertTrue(movements[0].signatureQueue.state == SQState.None, "expected initialized");
-        assertTrue(movements[0].movement.viaNode  == 0, "expected deleted");
-
-
-
-
+        assertTrue(movements[0].movement.viaNode == 0, "expected deleted");
     }
 }

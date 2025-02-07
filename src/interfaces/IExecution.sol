@@ -32,10 +32,10 @@ struct Movement {
     bytes executedPayload;
 }
 
-    struct LatentMovement {
-        Movement movement;
-        SignatureQueue signatureQueue;
-    }
+struct LatentMovement {
+    Movement movement;
+    SignatureQueue signatureQueue;
+}
 
 struct SignatureQueue {
     SQState state;
@@ -49,7 +49,6 @@ struct UserSignal {
     string[2][] MembraneInflation;
     string[] lastRedistSignal;
 }
-
 
 struct NodeState {
     string[11] basicInfo; // [nodeId, inflation, reserve, budget, rootValuationBudget, rootValuationReserve, membraneId, eligibilityPerSec, lastRedistributionTime, balanceOfUser [0 default], endpointOfUserForNode [address(0) defaul - no endpoint]]

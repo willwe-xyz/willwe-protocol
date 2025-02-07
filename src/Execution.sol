@@ -190,7 +190,7 @@ contract Execution is EIP712, Receiver {
                 continue;
             }
 
-            if ( ! SignatureChecker.isValidSignatureNow(signers[i], digest, signatures[i])) continue;
+            if (!SignatureChecker.isValidSignatureNow(signers[i], digest, signatures[i])) continue;
 
             hasEndpointOrInteraction[uint256(queueHash) - uint160(signers[i])] = true;
             validCount++;
@@ -346,13 +346,10 @@ contract Execution is EIP712, Receiver {
     function getLatentMovements(uint256 nodeId) public view returns (LatentMovement[] memory latentMovements) {
         bytes32[] memory nodeActions = latentActions[nodeId];
         latentMovements = new LatentMovement[](nodeActions.length);
-        
+
         for (uint256 i = 0; i < nodeActions.length; i++) {
             SignatureQueue memory sq = getSigQueueByHash[nodeActions[i]];
-            latentMovements[i] = LatentMovement({
-                movement: sq.Action,
-                signatureQueue: sq
-            });
+            latentMovements[i] = LatentMovement({movement: sq.Action, signatureQueue: sq});
         }
     }
 
