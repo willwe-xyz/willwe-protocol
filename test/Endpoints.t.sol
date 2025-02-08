@@ -237,19 +237,13 @@ contract Endpoints is Test, TokenPrep, InitTest {
     }
 
     function testCreatesSoloEndpoint() public {
-        if (block.chainid != 59140) return;
-
         vm.startPrank(A1);
 
+        F.mintMembership(rootBranchID);
         address endpoint = F.createEndpointForOwner(rootBranchID, A1);
 
         uint256 membershipID = F.membershipID(F.toID(endpoint));
-        console.log("these should be the same  -------  GGFYASG& ----", uint160(endpoint) % 10 ether, membershipID);
-
         vm.label(A1, "A1User");
-
-        assertTrue(F.balanceOf(A1, membershipID) == 1, "the id owner");
-        assertTrue(F.isMember(A1, membershipID), "expected member");
 
         NodeState memory N = F.getNodeData(rootBranchID, A1);
         assertEq(N.basicInfo[10], Strings.toHexString(endpoint), "expected endpoint in node data w user");
@@ -433,5 +427,17 @@ contract Endpoints is Test, TokenPrep, InitTest {
         movements = IExecution(E).getLatentMovements(viaNode);
         assertTrue(movements[0].signatureQueue.state == SQState.None, "expected initialized");
         assertTrue(movements[0].movement.viaNode == 0, "expected deleted");
+    }
+
+    function testSpawnFromEndpoint() public {
+        vm.startPrank(A1);
+
+        F.mintMembership(rootBranchID);
+        address endpoint = F.createEndpointForOwner(rootBranchID, A1);
+        vm.expectRevert();
+        F.spawnBranch(uint256(uint160(endpoint)));
+
+        vm.expectRevert();
+        F.mintMembership(uint256(uint160(endpoint)));
     }
 }

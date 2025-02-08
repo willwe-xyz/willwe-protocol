@@ -86,6 +86,7 @@ contract Fungido is ERC1155, PureUtils {
     error NotMember();
     error MembershipOp();
     error No();
+    error Endpoint();
     error ExecutionOnly();
     error NoControl();
     error Unautorised();
@@ -155,6 +156,7 @@ contract Fungido is ERC1155, PureUtils {
     function spawnBranch(uint256 fid_) public virtual returns (uint256 newID) {
         if (parentOf[fid_] == 0) spawnRootBranch(toAddress(fid_));
         if (!isMember(_msgSender(), fid_) && (parentOf[fid_] != fid_)) revert NotMember();
+        if (totalSupplyOf[fid_] == type(uint256).max) revert Endpoint();
 
         ++entityCount;
 
@@ -190,6 +192,7 @@ contract Fungido is ERC1155, PureUtils {
     /// @param fid_ node for which to mint membership
     function mintMembership(uint256 fid_) public virtual {
         if (parentOf[fid_] == 0) revert BranchNotFound();
+        if (totalSupplyOf[fid_] == type(uint256).max) revert Endpoint();
         if (isMember(_msgSender(), fid_)) revert AlreadyMember();
         if (!M.gCheck(_msgSender(), getMembraneOf(fid_))) revert Unqualified();
 
@@ -293,8 +296,9 @@ contract Fungido is ERC1155, PureUtils {
     function localizeEndpoint(address endpoint_, uint256 endpointParent_, address owner_) external {
         if (msg.sender != executionAddress) revert ExecutionOnly();
         if (isMember(owner_, endpointParent_)) {
-            members[uint256(uint160(owner_))].push(endpoint_);
-            members[uint256(uint160(owner_) + uint256(uint160(endpointParent_)))].push(endpoint_);
+            members[toID(owner_)].push(endpoint_);
+            members[toID(owner_) + endpointParent_].push(endpoint_);
+            totalSupplyOf[toID(endpoint_)] = type(uint256).max;
         }
         _localizeNode(toID(endpoint_), endpointParent_);
     }
@@ -304,9 +308,10 @@ contract Fungido is ERC1155, PureUtils {
         parentOf[newID] = parentId;
         if (parentId != newID) {
             childrenOf[parentId].push(newID);
+            members[getFidPath(parentId)[0]].push(toAddress(newID));
+            if (totalSupplyOf[newID] == type(uint256).max) return;
             inflSec[newID][0] = 1_000 gwei;
             inflSec[newID][2] = block.timestamp;
-            members[getFidPath(parentId)[0]].push(toAddress(newID));
         }
     }
 
@@ -608,7 +613,7 @@ contract Fungido is ERC1155, PureUtils {
         nodeData = getNodeData(nodeId);
         if (user == address(0)) return nodeData;
         nodeData.basicInfo[9] = balanceOf(user, nodeId).toString();
-        uint256 userEndpointId = uint256(uint256(uint160(user)) + nodeId);
+        uint256 userEndpointId = toID(user) + nodeId;
         if (members[userEndpointId].length > 0) {
             nodeData.basicInfo[10] = Strings.toHexString(members[userEndpointId][0]);
         }

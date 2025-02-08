@@ -23,7 +23,6 @@ contract Execution is EIP712, Receiver {
     IFun public WillWe;
     bytes32 public lastSalt;
 
-
     bytes4 internal constant EIP1271_MAGICVALUE = 0x1626ba7e;
     bytes4 internal constant EIP1271_MAGIC_VALUE_LEGACY = 0x20c13b0b;
 

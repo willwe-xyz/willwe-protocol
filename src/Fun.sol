@@ -256,10 +256,8 @@ contract Fun is Fungido {
     /// @notice node owner can be external
     /// @param nodeId_ id of context node
     /// @param owner address of agent that will control the endpoint
-    function createEndpointForOwner(uint256 nodeId_, address owner) external returns (address endpoint) {
-        endpoint = IExecution(executionAddress).createEndpointForOwner(_msgSender(), nodeId_, owner);
-        members[uint256(uint160(owner))].push(endpoint);
-        _localizeNode(uint256(uint160(owner)), nodeId_);
+    function createEndpointForOwner(uint256 nodeId_, address owner) external returns (address) {
+        return IExecution(executionAddress).createEndpointForOwner(_msgSender(), nodeId_, owner);
     }
 
     /// @notice executes the signature queue identified by its hash if signing requirements

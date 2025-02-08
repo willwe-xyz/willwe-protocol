@@ -13,29 +13,15 @@ contract Create2Factory {
     function deploy(bytes memory bytecode, uint256 salt) public payable returns (address payable) {
         address addr;
         assembly {
-            addr := create2(
-                callvalue(),
-                add(bytecode, 0x20),
-                mload(bytecode),
-                salt
-            )
-            if iszero(extcodesize(addr)) {
-                revert(0, 0)
-            }
+            addr := create2(callvalue(), add(bytecode, 0x20), mload(bytecode), salt)
+            if iszero(extcodesize(addr)) { revert(0, 0) }
         }
         emit Deployed(addr, salt);
         return payable(addr);
     }
 
     function computeAddress(bytes memory bytecode, uint256 salt) public view returns (address) {
-        bytes32 hash = keccak256(
-            abi.encodePacked(
-                bytes1(0xff),
-                address(this),
-                salt,
-                keccak256(bytecode)
-            )
-        );
+        bytes32 hash = keccak256(abi.encodePacked(bytes1(0xff), address(this), salt, keccak256(bytecode)));
         return address(uint160(uint256(hash)));
     }
 }
@@ -45,7 +31,7 @@ contract WillWeDeploy2 is Script {
     Execution public E;
     Will public F20;
     Create2Factory public factory;
-    
+
     // Salt values for each contract
     uint256 constant WILL_SALT = 1;
     uint256 constant MEMBRANES_SALT = 2;
@@ -77,10 +63,7 @@ contract WillWeDeploy2 is Script {
         uint256[] memory amounts;
 
         // Deploy Will with CREATE2
-        bytes memory willBytecode = abi.encodePacked(
-            type(Will).creationCode,
-            abi.encode(founders, amounts)
-        );
+        bytes memory willBytecode = abi.encodePacked(type(Will).creationCode, abi.encode(founders, amounts));
         address payable willAddr = factory.deploy(willBytecode, WILL_SALT);
         F20 = Will(willAddr);
         vm.label(address(F20), "Will");
@@ -91,21 +74,15 @@ contract WillWeDeploy2 is Script {
         Membranes M = Membranes(membranesAddr);
 
         // Deploy Execution with CREATE2
-        bytes memory executionBytecode = abi.encodePacked(
-            type(Execution).creationCode,
-            abi.encode(address(F20))
-        );
+        bytes memory executionBytecode = abi.encodePacked(type(Execution).creationCode, abi.encode(address(F20)));
         address payable executionAddr = factory.deploy(executionBytecode, EXECUTION_SALT);
         E = Execution(executionAddr);
 
         // Deploy WillWe with CREATE2
-        bytes memory willWeBytecode = abi.encodePacked(
-            type(WillWe).creationCode,
-            abi.encode(address(E), address(M))
-        );
+        bytes memory willWeBytecode = abi.encodePacked(type(WillWe).creationCode, abi.encode(address(E), address(M)));
         address willWeAddr = factory.deploy(willWeBytecode, WILLWE_SALT);
         WW = WillWe(willWeAddr);
-        
+
         vm.label(address(WW), "WillWe");
         WW.initSelfControl();
         vm.label(WW.control(0), "kyberfoundation");
