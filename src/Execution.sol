@@ -21,6 +21,8 @@ contract Execution is EIP712, Receiver {
 
     address public WillToken;
     IFun public WillWe;
+    bytes32 public lastSalt;
+
 
     bytes4 internal constant EIP1271_MAGICVALUE = 0x1626ba7e;
     bytes4 internal constant EIP1271_MAGIC_VALUE_LEGACY = 0x20c13b0b;
@@ -273,7 +275,8 @@ contract Execution is EIP712, Receiver {
     }
 
     function spawnNodeEndpoint(address proxyOwner_, uint8 authType) private returns (address) {
-        return address(new PowerProxy(proxyOwner_, authType));
+        lastSalt = keccak256(abi.encodePacked(block.prevrandao, block.timestamp, block.chainid, lastSalt));
+        return address(new PowerProxy{salt: lastSalt}(proxyOwner_, authType));
     }
 
     function validateQueue(bytes32 sigHash) internal returns (SignatureQueue memory SQM) {
