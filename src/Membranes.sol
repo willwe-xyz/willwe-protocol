@@ -19,9 +19,9 @@ contract Membranes is IMembrane {
     event MembraneCreated(uint256 indexed membraneId, string CID);
 
     /// @notice creates membrane. Used to control and define.
-    /// @notice To be read and understood as: Givent this membrane, of each of the tokens_[x], the user needs at least balances_[x].
+    /// @notice To be read and understood as: Given this membrane, of each of the tokens_[x], the user needs at least balances_[x].
     /// @param tokens_ ERC20 or ERC721 token addresses array. Each is used as a constituent item of the membrane and condition for
-    /// @param tokens_ at [x] can e a user address that is whitelisted or blacklisted. for whitelist uint256(uint160(address of user)). any other (0) for blacklist.
+    /// @param tokens_ at [x] can also be a user address that is whitelisted or blacklisted. for whitelist uint256(uint160(address of user)). any other (0) for blacklist.
     /// @param tokens_ at [x] if it is willwe address the balancce_ at [x] is the node id of which the user is required to already be a member of
     /// @param tokens_ belonging or not. Membership is established by a chain of binary claims whereby
     /// @param tokens_ the balance of address checked needs to satisfy all balances_ of all tokens_ stated as benchmark for belonging
@@ -38,6 +38,7 @@ contract Membranes is IMembrane {
         M.tokens = tokens_;
         M.balances = balances_;
         M.meta = meta_;
+        M.createdAt = block.timestamp;
         id = uint256(keccak256(abi.encode(M)));
         membraneById[id] = M;
 
