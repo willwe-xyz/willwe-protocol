@@ -68,8 +68,6 @@ contract Endpoints is Test, TokenPrep, InitTest {
         vm.startPrank(A1);
         rootBranchID = F.spawnBranch(uint160(address(T1)));
 
-    
-        
         B1 = F.spawnBranch(rootBranchID);
         B11 = F.spawnBranch(B1);
         B12 = F.spawnBranch(B1);
@@ -134,7 +132,7 @@ contract Endpoints is Test, TokenPrep, InitTest {
 
         vm.startPrank(A1);
         F.mintPath(rootBranchID, 1 ether);
-        console.log( "balance A1 rootBranchID" ,F.balanceOf(A1, rootBranchID) );
+        console.log("balance A1 rootBranchID", F.balanceOf(A1, rootBranchID));
         F.mintPath(B1, 0.9 ether);
         vm.stopPrank();
 

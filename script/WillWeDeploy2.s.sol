@@ -31,7 +31,7 @@ contract WillWeDeploy2 is Script {
         bytes32 salt = bytes32(config.salt);
         bytes32 initCodeHash = keccak256(config.bytecode);
         address predictedAddress = vm.computeCreate2Address(salt, initCodeHash);
-        
+
         // Check if there's already code at the predicted address
         uint256 size;
         assembly {
@@ -50,10 +50,7 @@ contract WillWeDeploy2 is Script {
         }
     }
 
-    function generateBytecode(
-        bytes memory creationCode,
-        bytes memory args
-    ) internal pure returns (bytes memory) {
+    function generateBytecode(bytes memory creationCode, bytes memory args) internal pure returns (bytes memory) {
         return args.length > 0 ? abi.encodePacked(creationCode, args) : creationCode;
     }
 
@@ -81,37 +78,55 @@ contract WillWeDeploy2 is Script {
         uint256[] memory amounts;
 
         // Deploy Will
-        F20 = Will(payable(deploy(DeploymentConfig({
-            bytecode: generateBytecode(type(Will).creationCode, abi.encode(founders, amounts)),
-            salt: block.timestamp,
-            label: "Will",
-            isPayable: true
-        }))));
+        F20 = Will(
+            payable(
+                deploy(
+                    DeploymentConfig({
+                        bytecode: generateBytecode(type(Will).creationCode, abi.encode(founders, amounts)),
+                        salt: block.timestamp,
+                        label: "Will",
+                        isPayable: true
+                    })
+                )
+            )
+        );
 
         // Deploy Membranes
-        membranesAddr = deploy(DeploymentConfig({
-            bytecode: type(Membranes).creationCode,
-            salt: block.timestamp,
-            label: "Membranes",
-            isPayable: false
-        }));
+        membranesAddr = deploy(
+            DeploymentConfig({
+                bytecode: type(Membranes).creationCode,
+                salt: block.timestamp,
+                label: "Membranes",
+                isPayable: false
+            })
+        );
         Membranes M = Membranes(membranesAddr);
 
         // Deploy Execution
-        E = Execution(payable(deploy(DeploymentConfig({
-            bytecode: generateBytecode(type(Execution).creationCode, abi.encode(address(F20))),
-            salt: block.timestamp,
-            label: "Execution",
-            isPayable: true
-        }))));
+        E = Execution(
+            payable(
+                deploy(
+                    DeploymentConfig({
+                        bytecode: generateBytecode(type(Execution).creationCode, abi.encode(address(F20))),
+                        salt: block.timestamp,
+                        label: "Execution",
+                        isPayable: true
+                    })
+                )
+            )
+        );
 
         // Deploy WillWe
-        WW = WillWe(deploy(DeploymentConfig({
-            bytecode: generateBytecode(type(WillWe).creationCode, abi.encode(address(E), address(M))),
-            salt: block.timestamp,
-            label: "WillWe",
-            isPayable: false
-        })));
+        WW = WillWe(
+            deploy(
+                DeploymentConfig({
+                    bytecode: generateBytecode(type(WillWe).creationCode, abi.encode(address(E), address(M))),
+                    salt: block.timestamp,
+                    label: "WillWe",
+                    isPayable: false
+                })
+            )
+        );
 
         // Initialize WillWe
         WW.initSelfControl();
