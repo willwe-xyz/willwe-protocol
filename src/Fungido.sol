@@ -95,6 +95,7 @@ contract Fungido is ERC1155, PureUtils {
     error IncompleteSign();
     error isControled();
     error Disabled();
+    error Overreach();
 
     ////////////////////////////////////////////////
     //////________EVENTS________///////////////////
@@ -192,6 +193,7 @@ contract Fungido is ERC1155, PureUtils {
     /// @param fid_ node for which to mint membership
     function mintMembership(uint256 fid_) public virtual {
         if (parentOf[fid_] == 0) revert BranchNotFound();
+        if (parentOf[fid_] == fid_) revert BaseOrNonFungible();
         if (totalSupplyOf[fid_] == type(uint256).max) revert Endpoint();
         if (isMember(_msgSender(), fid_)) revert AlreadyMember();
         if (!M.gCheck(_msgSender(), getMembraneOf(fid_))) revert Unqualified();
@@ -321,6 +323,7 @@ contract Fungido is ERC1155, PureUtils {
     /// @param taxRate_ share retained at full exit withdrawal expressed as basis points (default 0.01% or 100)
     function taxPolicyPreference(address rootToken_, uint256 taxRate_) external {
         if (_msgSender() != control[0]) revert Unautorised();
+        if (taxRate_ == 1) revert Overreach();
         taxRate[rootToken_] = taxRate_;
     }
 
@@ -573,11 +576,9 @@ contract Fungido is ERC1155, PureUtils {
         returns (NodeState[] memory nodes)
     {
         uint256 rootId = toID(rootAddress);
-        bool u = (userIfAny != address(0));
         nodes = new NodeState[](members[rootId].length);
         for (uint256 i = 0; i < members[rootId].length; i++) {
-            nodes[i] = getNodeData(toID(members[rootId][i]));
-            if (u) nodes[i].basicInfo[6] = (balanceOf(userIfAny, toID(members[rootId][i]))).toString();
+            nodes[i] = getNodeData(toID(members[rootId][i]), userIfAny);
         }
     }
 
@@ -609,7 +610,7 @@ contract Fungido is ERC1155, PureUtils {
         return UserNodeSignals;
     }
 
-    function getNodeData(uint256 nodeId, address user) external view returns (NodeState memory nodeData) {
+    function getNodeData(uint256 nodeId, address user) public view returns (NodeState memory nodeData) {
         nodeData = getNodeData(nodeId);
         if (user == address(0)) return nodeData;
         nodeData.basicInfo[9] = balanceOf(user, nodeId).toString();

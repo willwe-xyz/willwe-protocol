@@ -66,8 +66,10 @@ contract Endpoints is Test, TokenPrep, InitTest {
         T2.approve(address(F), type(uint256).max);
 
         vm.startPrank(A1);
-        rootBranchID = F.spawnRootBranch(address(T1));
+        rootBranchID = F.spawnBranch(uint160(address(T1)));
 
+    
+        
         B1 = F.spawnBranch(rootBranchID);
         B11 = F.spawnBranch(B1);
         B12 = F.spawnBranch(B1);
@@ -107,7 +109,7 @@ contract Endpoints is Test, TokenPrep, InitTest {
         uint256 before = T1.balanceOf(A1);
 
         vm.prank(A1);
-        F.mint(rootBranchID, 1 ether);
+        F.mintPath(rootBranchID, 1 ether);
 
         vm.prank(address(1));
         T1.transfer(address(F), 10 ether);
@@ -122,27 +124,28 @@ contract Endpoints is Test, TokenPrep, InitTest {
     function testEnergTxIni() public {
         vm.skip(false);
         vm.prank(address(1));
-        T1.transfer(A1, 1 ether);
+        T1.transfer(A1, 2 ether);
 
         vm.prank(address(1));
-        T1.transfer(A2, 2.1 ether);
+        T1.transfer(A2, 4.1 ether);
 
         vm.prank(address(1));
-        T1.transfer(A3, 3 ether);
+        T1.transfer(A3, 6 ether);
 
         vm.startPrank(A1);
-        F.mint(rootBranchID, 1 ether);
-        F.mint(B1, 0.9 ether);
+        F.mintPath(rootBranchID, 1 ether);
+        console.log( "balance A1 rootBranchID" ,F.balanceOf(A1, rootBranchID) );
+        F.mintPath(B1, 0.9 ether);
         vm.stopPrank();
 
         vm.startPrank(A2);
-        F.mint(rootBranchID, 1 ether);
-        F.mint(B1, 1 ether);
+        F.mintPath(rootBranchID, 1 ether);
+        F.mintPath(B1, 1 ether);
         vm.stopPrank();
 
         vm.startPrank(A3);
-        F.mint(rootBranchID, 2 ether);
-        F.mint(B1, 1.2 ether);
+        F.mintPath(rootBranchID, 2 ether);
+        F.mintPath(B1, 1.2 ether);
         vm.stopPrank();
     }
 
@@ -239,7 +242,6 @@ contract Endpoints is Test, TokenPrep, InitTest {
     function testCreatesSoloEndpoint() public {
         vm.startPrank(A1);
 
-        F.mintMembership(rootBranchID);
         address endpoint = F.createEndpointForOwner(rootBranchID, A1);
 
         uint256 membershipID = F.membershipID(F.toID(endpoint));
@@ -432,7 +434,6 @@ contract Endpoints is Test, TokenPrep, InitTest {
     function testSpawnFromEndpoint() public {
         vm.startPrank(A1);
 
-        F.mintMembership(rootBranchID);
         address endpoint = F.createEndpointForOwner(rootBranchID, A1);
         vm.expectRevert();
         F.spawnBranch(uint256(uint160(endpoint)));

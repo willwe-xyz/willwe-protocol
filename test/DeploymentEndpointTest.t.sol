@@ -36,7 +36,7 @@ contract WillBaseEndpointTest is Test, TokenPrep, InitTest {
 
         // Create root branch
         vm.startPrank(A1);
-        rootBranchID = F.spawnRootBranch(address(testToken));
+        rootBranchID = F.spawnBranch(uint256(uint160(address(testToken))));
         vm.stopPrank();
 
         uint256 parentOfEndpoint = F.getParentOf(F.toID(ExeEndpointAddress));
@@ -55,20 +55,20 @@ contract WillBaseEndpointTest is Test, TokenPrep, InitTest {
         // Mint tokens for members
         vm.startPrank(A1);
         testToken.approve(address(F), 1 ether);
-        F.mint(rootBranchID, 1 ether);
+        F.mintPath(rootBranchID, 1 ether);
         F20.mintFromETH{value: 5 ether}();
 
         vm.stopPrank();
 
         vm.startPrank(A2);
         testToken.approve(address(F), 1 ether);
-        F.mint(rootBranchID, 1 ether);
+        F.mintPath(rootBranchID, 1 ether);
         F20.mintFromETH{value: 5 ether}();
         vm.stopPrank();
 
         vm.startPrank(A3);
         testToken.approve(address(F), 1 ether);
-        F.mint(rootBranchID, 1 ether);
+        F.mintPath(rootBranchID, 1 ether);
         vm.stopPrank();
 
         // Set up receiver

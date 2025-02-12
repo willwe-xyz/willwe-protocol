@@ -54,7 +54,7 @@ contract PowerProxy is Receiver {
     error Multicall2();
 
     function tryAggregate(bool requireSuccess, Call[] calldata calls) public returns (Result[] memory returnData) {
-        if (msg.sender != owner) revert NotOwner();
+        if (msg.sender != owner && msg.sender != address(this)) revert NotOwner();
         returnData = new Result[](calls.length);
         for (uint256 i = 0; i < calls.length; i++) {
             (bool success, bytes memory ret) = calls[i].target.call(calls[i].callData);
