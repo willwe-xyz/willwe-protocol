@@ -59,13 +59,14 @@ contract Fun is Fungido {
 
         for (uint256 i; i < signals.length; ++i) {
             bytes32 userKey = keccak256(abi.encodePacked(targetNode_, user, signals[i]));
+
             if (impersonatingAddress != address(0) && isMember && options[userKey][0] != signals[i]) {
                 revert ResignalMismatch();
             }
             if ((!isMember) && signals[i] > 0) revert ResignalMismatch();
             if (i <= 1) {
                 if (signals[i] == 0) continue;
-                _handleSpecialSignals(targetNode_, user, signals[i], i, balanceOfSender, userKey);
+                _handleSpecialSignals(targetNode_, signals[i], i, balanceOfSender, userKey);
             } else {
                 _handleRegularSignals(targetNode_, user, signals[i], i, balanceOfSender, signals.length, children);
                 sigSum += signals[i];
@@ -77,14 +78,13 @@ contract Fun is Fungido {
 
     function _handleSpecialSignals(
         uint256 targetNode_,
-        uint256 user,
         uint256 signal,
         uint256 index,
         uint256 balanceOfSender,
-        bytes32 userkey
+        bytes32 userKey
     ) private {
         if (signal == 0) return;
-        bytes32 userKey = keccak256(abi.encodePacked(targetNode_, user, signal));
+        // bytes32 userKey = keccak256(abi.encodePacked(targetNode_, user, signal));
         bytes32 nodeKey = keccak256(abi.encodePacked(targetNode_, signal));
 
         if (block.timestamp == options[userKey][1]) revert NoTimeDelta();

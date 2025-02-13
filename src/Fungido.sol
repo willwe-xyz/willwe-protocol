@@ -20,7 +20,7 @@ import "./interfaces/IMembrane.sol";
 contract Fungido is ERC1155, PureUtils {
     using Strings for uint256;
 
-    uint256 public entityCount;
+    uint256 entityCount;
     address public executionAddress;
     address public Will;
 
@@ -50,7 +50,6 @@ contract Fungido is ERC1155, PureUtils {
     mapping(address => uint256) taxRate;
 
     address[2] public control;
-    address initControlAddress;
     address impersonatingAddress;
 
     string public name;
@@ -556,6 +555,8 @@ contract Fungido is ERC1155, PureUtils {
         NodeData.membraneMeta = M.getMembraneById(inUseMembraneId[nodeId][0]).meta;
         /// Array of member addresses
         NodeData.membersOfNode = members[nodeId];
+
+        NodeData.movementEndpoints = members[toID(executionAddress) + nodeId];
         /// Array of direct children node IDs
         NodeData.childrenNodes = uintArrayToStringArray(childrenOf[nodeId]);
         /// Path from root token to node ID (ancestors)
@@ -623,7 +624,7 @@ contract Fungido is ERC1155, PureUtils {
         nodeData.signals[0].lastRedistSignal = new string[](childrenOf[nodeId].length);
 
         for (uint256 i = 0; i < childrenOf[nodeId].length; i++) {
-            nodeData.signals[0].MembraneInflation[i][1] = inflSec[nodeId][0].toString(); // Inflation
+            nodeData.signals[0].MembraneInflation[i][1] = inflSec[nodeId][0].toString();
 
             bytes32 userKey = keccak256(abi.encodePacked(user, nodeId, childrenOf[nodeId][i]));
             nodeData.signals[0].lastRedistSignal[i] = options[userKey][0].toString();

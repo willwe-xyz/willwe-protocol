@@ -55,6 +55,7 @@ struct NodeState {
     string membraneMeta; // Membrane Metadata CID
     address[] membersOfNode; // Array of member addresses
     string[] childrenNodes; // Array of children node IDs
+    address[] movementEndpoints; // Array of movement endpoints
     string[] rootPath; // Path from root to current node
     UserSignal[] signals; // Array of signals
 }
