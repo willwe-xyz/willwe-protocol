@@ -130,7 +130,7 @@ contract WillWeDeploy2 is Script {
 
         // Initialize WillWe
         WW.initSelfControl();
-        vm.label(WW.control(0), "kyberfoundation");
+        vm.label(WW.control(0), "kiber");
     }
 
     function logDeployments() external view {
