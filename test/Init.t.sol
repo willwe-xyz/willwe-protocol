@@ -55,6 +55,19 @@ contract InitTest is Test {
         vm.label(address(WillBaseEndpoint), "WillBaseEndpoint");
     }
 
+    function stringToUint(string memory str) public pure returns (uint256) {
+        bytes memory b = bytes(str);
+        uint256 result = 0;
+
+        for (uint256 i = 0; i < b.length; i++) {
+            uint8 c = uint8(b[i]);
+            if (c >= 48 && c <= 57) {
+                result = result * 10 + (c - 48);
+            }
+        }
+        return result;
+    }
+
     function testInit() public {
         assertTrue(address(E).code.length != 0, "Fungo failed to deploy");
     }

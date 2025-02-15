@@ -2,54 +2,80 @@
 pragma solidity >=0.8.3;
 
 import {IERC1155} from "openzeppelin-contracts/contracts/token/ERC1155/IERC1155.sol";
-import {IExecution, SignatureQueue, NodeState} from "./IExecution.sol";
+import {IExecution, SignatureQueue, NodeState, Movement} from "./IExecution.sol";
 
 interface IFun is IERC1155, IExecution {
+    // Root and Branch Management
     function spawnRootBranch(address fungible20_) external returns (uint256 fID);
-
     function spawnBranch(uint256 fid_) external returns (uint256 newID);
+    function spawnBranchWithMembrane(
+        uint256 fid_,
+        address[] memory tokens_,
+        uint256[] memory balances_,
+        string memory meta_,
+        uint256 inflationRate_
+    ) external returns (uint256 newID);
 
-    function spawnBranchWithMembrane(uint256 fid_, uint256 membraneID_) external returns (uint256 newID);
-
-    function mintMembership(uint256 fid_, address to_) external returns (uint256 mID);
-
+    // Membership Functions
+    function mintMembership(uint256 fid_) external;
     function membershipEnforce(address target, uint256 fid_) external returns (bool s);
-    function burn(uint256 fid_, uint256 amount_) external;
-    function allMembersOf(uint256 fid_) external view returns (address[] memory);
-    function mint(uint256 fid_, uint256 amount_) external;
-    function toID(address x) external view returns (uint256);
-    function toAddress(uint256 x) external view returns (address);
     function isMember(address whoabout_, uint256 whereabout_) external view returns (bool);
-    function getInUseMemberaneID(uint256 fid_) external view returns (uint256 membraneID_);
+
+    // Token Operations
+    function mint(uint256 fid_, uint256 amount_) external;
+    function mintPath(uint256 target_, uint256 amount_) external;
+    function burn(uint256 fid_, uint256 amount_) external returns (uint256 topVal);
+    function burnPath(uint256 target_, uint256 amount) external;
+    function mintInflation(uint256 node) external returns (uint256 amount);
+
+    // Signals and Control
+    function sendSignal(uint256 targetNode_, uint256[] memory signals) external;
+    function resignal(uint256 targetNode_, uint256[] memory signals, address originator) external;
+    function initSelfControl() external returns (address controlingAgent);
+    function setControl(address newController) external;
+    function redistribute(uint256 nodeId_) external returns (uint256 distributedAmt);
+    function redistributePath(uint256 nodeId_) external returns (uint256 distributedAmt);
+    function taxPolicyPreference(address rootToken_, uint256 taxRate_) external;
+
+    // Movement Management
+    function startMovement(
+        uint8 typeOfMovement,
+        uint256 node,
+        uint256 expiresInDays,
+        address executingAccount,
+        string memory description,
+        bytes memory data
+    ) external returns (bytes32 movementHash);
+
+    // Endpoint Management
+    function localizeEndpoint(address endpoint_, uint256 endpointParent_, address owner_) external;
+
+    // View Functions
+    function asRootValuation(uint256 target_, uint256 amount) external view returns (uint256 rAmt);
+    function inParentDenomination(uint256 amt_, uint256 id_) external view returns (uint256);
+    function getFidPath(uint256 fid_) external view returns (uint256[] memory fids);
     function getMembraneOf(uint256 fid_) external view returns (uint256);
+    function allMembersOf(uint256 fid_) external view returns (address[] memory);
     function getChildrenOf(uint256 fid_) external view returns (uint256[] memory);
     function getParentOf(uint256 fid_) external view returns (uint256);
     function membershipID(uint256 fid_) external pure returns (uint256);
-    function getRootId(uint256 fid_) external view returns (uint256);
-    function getRootToken(uint256 fid_) external view returns (address);
-    function fungo() external returns (address);
-    function createEndpointForOwner(uint256 nodeId_, address owner) external returns (address endpoint);
-    function localizeEndpoint(address endpointAddress, uint256 endpointParent_, address endpointOwner_) external;
-    function getSigQueue(bytes32 hash_) external view returns (SignatureQueue memory);
+    function inflationOf(uint256 nodeId) external view returns (uint256);
     function totalSupply(uint256 nodeId) external view returns (uint256);
-    function executionEngineAddress() external view returns (address);
-    function rule() external;
-    function Will() external view returns (address);
-    function getUserInteractions(address user_) external view returns (uint256[][2] memory);
-    function removeSignature(bytes32 sigHash_, uint256 index_) external;
+    function getUserNodeSignals(address signalOrigin, uint256 parentNodeId)
+        external
+        view
+        returns (uint256[2][] memory);
 
-    function inParentDenomination(uint256 amt_, uint256 id_) external view returns (uint256);
-    function getFidPath(uint256 fid_) external view returns (uint256[] memory fids);
-    function burnPath(uint256 target_, uint256 amount) external;
-    function mintPath(uint256 target_, uint256 amount) external;
-    function sendSignal(uint256 targetNode_, uint256[] memory signals) external;
-    function initSelfControl() external returns (address controlingAgent);
-
-    //// Data
-    function getNodeData(uint256 n) external view returns (NodeState memory N);
+    // Data Access
+    function getNodeData(uint256 nodeId, address user) external view returns (NodeState memory);
     function getNodes(uint256[] memory nodeIds) external view returns (NodeState[] memory nodes);
     function getAllNodesForRoot(address rootAddress, address userIfAny)
         external
         view
         returns (NodeState[] memory nodes);
+
+    // Utility Functions
+    function toID(address x) external pure returns (uint256);
+    function toAddress(uint256 x) external pure returns (address);
+    function uri(uint256 id_) external view returns (string memory);
 }

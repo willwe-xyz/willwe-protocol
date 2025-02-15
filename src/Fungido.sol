@@ -542,8 +542,10 @@ contract Fungido is ERC1155, PureUtils {
         /// Active membrane identifier
         NodeData.basicInfo[6] = (inUseMembraneId[nodeId][0]).toString();
         /// Redistribution eligibility rate from parent per second in root valuation
-        NodeData.basicInfo[7] =
-            (asRootValuation(getChildParentEligibilityPerSec(nodeId, parentOf[nodeId]), parentOf[nodeId])).toString();
+        NodeData.basicInfo[7] = (
+            asRootValuation(options[keccak256(abi.encodePacked(nodeId, parentOf[nodeId]))][0], parentOf[nodeId])
+        ).toString();
+
         /// Timestamp of last redistribution
         NodeData.basicInfo[8] = inflSec[nodeId][2].toString();
         /// Balance of user
@@ -581,11 +583,6 @@ contract Fungido is ERC1155, PureUtils {
         for (uint256 i = 0; i < members[rootId].length; i++) {
             nodes[i] = getNodeData(toID(members[rootId][i]), userIfAny);
         }
-    }
-
-    function getChildParentEligibilityPerSec(uint256 childId_, uint256 parentId_) public view returns (uint256) {
-        bytes32 childParentEligibilityPerSec = keccak256(abi.encodePacked(childId_, parentId_));
-        return options[childParentEligibilityPerSec][0];
     }
 
     /// @notice Returns the array containing signal info for each child node in given originator and parent context

@@ -68,7 +68,7 @@ contract Fun is Fungido {
                 if (signals[i] == 0) continue;
                 _handleSpecialSignals(targetNode_, signals[i], i, balanceOfSender, userKey);
             } else {
-                _handleRegularSignals(targetNode_, user, signals[i], i, balanceOfSender, signals.length, children);
+                _handleRegularSignals(targetNode_, user, signals[i], i, signals.length, children);
                 sigSum += signals[i];
             }
         }
@@ -136,7 +136,6 @@ contract Fun is Fungido {
         uint256 user,
         uint256 signal,
         uint256 index,
-        uint256 balanceOfSender,
         uint256 signalsLength,
         uint256[] memory children
     ) private {
