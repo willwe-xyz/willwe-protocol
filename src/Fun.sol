@@ -24,7 +24,7 @@ contract Fun is Fungido {
     error NoTimeDelta();
     error CannotSkip();
 
-    event NewMovement(uint256 indexed nodeId, bytes32 movementHash, bytes32 descriptionHash);
+    event NewMovement(uint256 indexed nodeId, bytes32 movementHash, string description);
     event InflationRateChanged(uint256 indexed nodeId, uint256 oldInflationRate, uint256 newInflationRate);
     event MembraneChanged(uint256 indexed nodeId, uint256 previousMembrane, uint256 newMembrane);
     event Signaled(uint256 indexed nodeId, address sender, address origin);
@@ -236,20 +236,20 @@ contract Fun is Fungido {
     //// @param node identifiable atomic entity doing the moving, must be owner of the executing account
     /// @param expiresInDays deadline for expiry now plus days
     /// @param executingAccount external address acting as execution environment for movement
-    /// @param descriptionHash hash of descrptive metadata
+    /// @param description description of movement or description CID
     /// @param data calldata for execution call or executive payload
     function startMovement(
         uint8 typeOfMovement,
         uint256 node,
         uint256 expiresInDays,
         address executingAccount,
-        bytes32 descriptionHash,
+        string memory description,
         bytes memory data
     ) external returns (bytes32 movementHash) {
         movementHash = IExecution(executionAddress).startMovement(
-            _msgSender(), typeOfMovement, node, expiresInDays, executingAccount, descriptionHash, data
+            _msgSender(), typeOfMovement, node, expiresInDays, executingAccount, description, data
         );
-        emit NewMovement(node, movementHash, descriptionHash);
+        emit NewMovement(node, movementHash, description);
     }
 
     /// @notice creates an external endpoint for an agent in node context

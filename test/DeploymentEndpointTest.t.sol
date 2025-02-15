@@ -96,7 +96,7 @@ contract WillBaseEndpointTest is Test, TokenPrep, InitTest {
 
         uint256 parentOfEndpoint = firstChildren[0];
 
-        bytes32 description = keccak256("Test movement description");
+        string memory description = "Test movement description";
         bytes memory data = _getCallData();
 
         vm.startPrank(A1);
@@ -178,14 +178,14 @@ contract WillBaseEndpointTest is Test, TokenPrep, InitTest {
         bytes32 structHash = keccak256(
             abi.encode(
                 keccak256(
-                    "Movement(uint8 category,address initiatior,address exeAccount,uint256 viaNode,uint256 expiresAt,bytes32 descriptionHash,bytes executedPayload)"
+                    "Movement(uint8 category,address initiatior,address exeAccount,uint256 viaNode,uint256 expiresAt,string description,bytes executedPayload)"
                 ),
                 movement.category,
                 movement.initiatior,
                 movement.exeAccount,
                 movement.viaNode,
                 movement.expiresAt,
-                movement.descriptionHash,
+                movement.description,
                 keccak256(movement.executedPayload)
             )
         );

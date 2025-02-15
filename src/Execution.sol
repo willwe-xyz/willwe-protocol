@@ -29,7 +29,7 @@ contract Execution is EIP712, Receiver {
     bytes32 public constant EIP712_DOMAIN_TYPEHASH =
         keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)");
     bytes32 public constant MOVEMENT_TYPEHASH = keccak256(
-        "Movement(uint8 category,address initiatior,address exeAccount,uint256 viaNode,uint256 expiresAt,bytes32 descriptionHash,bytes executedPayload)"
+        "Movement(uint8 category,address initiatior,address exeAccount,uint256 viaNode,uint256 expiresAt,string description,bytes executedPayload)"
     );
 
     /// errors
@@ -105,7 +105,7 @@ contract Execution is EIP712, Receiver {
         uint256 nodeId,
         uint256 expiresInDays,
         address executingAccount,
-        bytes32 descriptionHash,
+        string memory description,
         bytes memory data
     ) external virtual returns (bytes32 movementHash) {
         if (msg.sender != address(WillWe)) revert OnlyWillWe();
@@ -113,7 +113,7 @@ contract Execution is EIP712, Receiver {
         if (!WillWe.isMember(origin, nodeId)) revert NotNodeMember();
 
         if (((typeOfMovement * nodeId * expiresInDays) == 0)) revert EmptyUnallowed();
-        if (uint256(descriptionHash) == 0) revert EXEC_NoDescription();
+        if (bytes(description).length < 8) revert EXEC_NoDescription();
 
         if (executingAccount == address(0)) {
             executingAccount = createNodeEndpoint(nodeId, typeOfMovement);
@@ -129,7 +129,7 @@ contract Execution is EIP712, Receiver {
         Movement memory M;
         M.initiatior = msg.sender;
         M.viaNode = nodeId;
-        M.descriptionHash = descriptionHash;
+        M.description = description;
         M.executedPayload = data;
         M.exeAccount = executingAccount;
         M.expiresAt = (expiresInDays * 1 days) + block.timestamp;
@@ -364,7 +364,7 @@ contract Execution is EIP712, Receiver {
                 movement.exeAccount,
                 movement.viaNode,
                 movement.expiresAt,
-                movement.descriptionHash,
+                movement.description,
                 keccak256(movement.executedPayload)
             )
         );

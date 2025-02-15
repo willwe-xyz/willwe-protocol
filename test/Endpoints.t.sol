@@ -36,7 +36,7 @@ contract Endpoints is Test, TokenPrep, InitTest {
     bytes32 constant DOMAIN_SEPARATOR_TYPEHASH =
         keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)");
     bytes32 constant MOVEMENT_TYPEHASH = keccak256(
-        "Movement(uint8 category,address initiatior,address exeAccount,uint256 viaNode,uint256 expiresAt,bytes32 descriptionHash,bytes executedPayload)"
+        "Movement(uint8 category,address initiatior,address exeAccount,uint256 viaNode,uint256 expiresAt,string description,bytes executedPayload)"
     );
 
     bytes32 DOMAIN_SEPARATOR;
@@ -151,7 +151,7 @@ contract Endpoints is Test, TokenPrep, InitTest {
         testSimpleDeposit();
         console.log("########### new movement________________");
 
-        bytes32 description = keccak256("this is a description");
+        string memory description = "this is a description";
         bytes memory data = _getCallData();
 
         vm.startPrank(A1);
@@ -173,7 +173,6 @@ contract Endpoints is Test, TokenPrep, InitTest {
         assertTrue(uint256(moveHash) > 0, "empty hash returned");
         SignatureQueue memory SQ = F.getSigQueue(moveHash);
         assertTrue(SQ.state == SQState.Initialized, "expected initialized");
-        assertTrue(SQ.Action.descriptionHash == description, "description mismatch");
         assertTrue(SQ.Action.exeAccount != address(0), "no exe account");
         assertTrue(SQ.Action.category == MovementType.EnergeticMajority, "not type 2");
 
@@ -199,38 +198,33 @@ contract Endpoints is Test, TokenPrep, InitTest {
         console.log("########### new ENDPOINT________________");
         vm.startPrank(A1);
 
-        bytes32 description = keccak256("this is a description");
+        string memory description = "this is a description";
         bytes memory data = _getCallData();
 
         bytes32 moveHash = F.startMovement(1, rootBranchID, 12, address(0), description, data);
         SignatureQueue memory SQ = F.getSigQueue(moveHash);
 
         assertTrue(SQ.state == SQState.Initialized, "expected initialized");
-        assertTrue(SQ.Action.descriptionHash == description, "description mismatch");
         assertTrue(SQ.Action.exeAccount != address(0), "no exe account");
         assertTrue(SQ.Action.category == MovementType.AgentMajority, "not type 1");
 
         console.log("###################  AGAIN with prev exe______________");
         skip(block.timestamp + 10);
-        description = keccak256("this is a description");
 
         moveHash = F.startMovement(1, rootBranchID, 12, SQ.Action.exeAccount, description, data);
         SQ = F.getSigQueue(moveHash);
 
         assertTrue(SQ.state == SQState.Initialized, "expected initialized");
-        assertTrue(SQ.Action.descriptionHash == description, "description mismatch");
         assertTrue(SQ.Action.exeAccount != address(0), "no exe account");
         assertTrue(SQ.Action.category == MovementType.AgentMajority, "not type 1");
 
         console.log("###################  Again with exe type 2______________");
         skip(block.timestamp + 10);
-        description = keccak256("this is a description");
 
         moveHash = F.startMovement(2, rootBranchID, 12, SQ.Action.exeAccount, description, data);
         SQ = F.getSigQueue(moveHash);
 
         assertTrue(SQ.state == SQState.Initialized, "expected initialized");
-        assertTrue(SQ.Action.descriptionHash == description, "description mismatch");
         assertTrue(SQ.Action.exeAccount != address(0), "no exe account");
         assertTrue(SQ.Action.category == MovementType.EnergeticMajority, "not type 2");
 
@@ -266,14 +260,14 @@ contract Endpoints is Test, TokenPrep, InitTest {
         bytes32 structHash = keccak256(
             abi.encode(
                 keccak256(
-                    "Movement(uint8 category,address initiatior,address exeAccount,uint256 viaNode,uint256 expiresAt,bytes32 descriptionHash,bytes executedPayload)"
+                    "Movement(uint8 category,address initiatior,address exeAccount,uint256 viaNode,uint256 expiresAt,string description,bytes executedPayload)"
                 ),
                 movement.category,
                 movement.initiatior,
                 movement.exeAccount,
                 movement.viaNode,
                 movement.expiresAt,
-                movement.descriptionHash,
+                movement.description,
                 keccak256(movement.executedPayload)
             )
         );
