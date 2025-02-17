@@ -14,8 +14,8 @@ struct EIP712Domain {
 
 contract EIP712 {
     // EIP712 domain separator hash
-    bytes32 internal DOMAIN_SEPARATOR;
-    bytes32 internal immutable SALT;
+    bytes32 public immutable DOMAIN_SEPARATOR;
+    bytes32 public immutable SALT;
 
     // EIP712 domain separator setup
     constructor() {
@@ -23,7 +23,7 @@ contract EIP712 {
 
         DOMAIN_SEPARATOR = hashDomain(
             EIP712Domain({
-                name: "BagBok",
+                name: "WillWe.xyz",
                 version: "1",
                 chainId: block.chainid,
                 verifyingContract: address(this),

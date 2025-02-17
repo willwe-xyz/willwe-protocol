@@ -24,7 +24,7 @@ contract Fun is Fungido {
     error NoTimeDelta();
     error CannotSkip();
 
-    event NewMovement(uint256 indexed nodeId, bytes32 movementHash, string description);
+    event NewMovement(uint256 indexed nodeId, address initiator, bytes32 movementHash, string description);
     event InflationRateChanged(uint256 indexed nodeId, uint256 oldInflationRate, uint256 newInflationRate);
     event MembraneChanged(uint256 indexed nodeId, uint256 previousMembrane, uint256 newMembrane);
     event Signaled(uint256 indexed nodeId, address sender, address origin);
@@ -248,7 +248,7 @@ contract Fun is Fungido {
         movementHash = IExecution(executionAddress).startMovement(
             _msgSender(), typeOfMovement, node, expiresInDays, executingAccount, description, data
         );
-        emit NewMovement(node, movementHash, description);
+        emit NewMovement(node,_msgSender(), movementHash, description);
     }
 
     /// @notice creates an external endpoint for an agent in node context

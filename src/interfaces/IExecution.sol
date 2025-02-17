@@ -41,7 +41,6 @@ struct SignatureQueue {
     Movement Action;
     address[] Signers;
     bytes[] Sigs;
-    bytes32 exeSig;
 }
 
 struct UserSignal {
@@ -108,4 +107,8 @@ interface IExecution {
     function removeSignature(bytes32 sigHash_, uint256 index_, address who_) external;
 
     function removeLatentAction(bytes32 actionHash_, uint256 index) external;
+
+    function DOMAIN_SEPARATOR() external view returns (bytes32);
+
+    function SALT() external view returns (bytes32);
 }

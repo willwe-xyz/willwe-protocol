@@ -247,15 +247,17 @@ contract Endpoints is Test, TokenPrep, InitTest {
     }
 
     function _signHash(uint256 signerPVK_, Movement memory movement) internal view returns (bytes memory signature) {
-        bytes32 domainSeparator = keccak256(
-            abi.encode(
-                keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"),
-                keccak256(bytes("WillWe")),
-                keccak256(bytes("1")),
-                block.chainid,
-                address(E)
-            )
-        );
+        // bytes32 domainSeparator = keccak256(
+        //     abi.encode(
+        //         keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"),
+        //         keccak256(bytes("WillWe")),
+        //         keccak256(bytes("1")),
+        //         block.chainid,
+        //         address(E)
+        //     )
+        // );
+
+        bytes32 domainSeparator = IExecution(E).DOMAIN_SEPARATOR();
 
         bytes32 structHash = keccak256(
             abi.encode(

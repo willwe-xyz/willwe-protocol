@@ -17,6 +17,8 @@ contract WillBaseEndpointTest is Test, TokenPrep, InitTest {
     address receiver;
     address ExeEndpointAddress;
 
+    bytes32 public DOMAIN_SEPARATOR;
+
     function setUp() public override {
         vm.warp(1729286400);
         vm.roll(1729286400);
@@ -70,8 +72,7 @@ contract WillBaseEndpointTest is Test, TokenPrep, InitTest {
         testToken.approve(address(F), 1 ether);
         F.mintPath(rootBranchID, 1 ether);
         vm.stopPrank();
-
-        // Set up receiver
+        DOMAIN_SEPARATOR = IExecution(E).DOMAIN_SEPARATOR();
         receiver = address(bytes20(type(uint160).max / 2));
     }
 
@@ -165,15 +166,6 @@ contract WillBaseEndpointTest is Test, TokenPrep, InitTest {
     }
 
     function _signHash(uint256 signerPVK_, Movement memory movement) internal view returns (bytes memory) {
-        bytes32 domainSeparator = keccak256(
-            abi.encode(
-                keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"),
-                keccak256(bytes("WillWe")),
-                keccak256(bytes("1")),
-                block.chainid,
-                address(E)
-            )
-        );
 
         bytes32 structHash = keccak256(
             abi.encode(
@@ -190,7 +182,7 @@ contract WillBaseEndpointTest is Test, TokenPrep, InitTest {
             )
         );
 
-        bytes32 hash = keccak256(abi.encodePacked("\x19\x01", domainSeparator, structHash));
+        bytes32 hash = keccak256(abi.encodePacked("\x19\x01", DOMAIN_SEPARATOR, structHash));
 
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(signerPVK_, hash);
         return abi.encodePacked(r, s, v);

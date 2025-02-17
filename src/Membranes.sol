@@ -16,7 +16,7 @@ contract Membranes is IMembrane {
     error Membrane__UnauthorizedWillWeSet();
 
     event WillWeSet(address willWeAddress);
-    event MembraneCreated(uint256 indexed membraneId, string CID);
+    event MembraneCreated(address creator, uint256 membraneId, string CID);
 
     /// @notice creates membrane. Used to control and define.
     /// @notice To be read and understood as: Given this membrane, of each of the tokens_[x], the user needs at least balances_[x].
@@ -42,7 +42,7 @@ contract Membranes is IMembrane {
         id = uint256(keccak256(abi.encode(M)));
         membraneById[id] = M;
 
-        emit MembraneCreated(id, meta_);
+        emit MembraneCreated(msg.sender, id, meta_);
     }
 
     function setInitWillWe() external {

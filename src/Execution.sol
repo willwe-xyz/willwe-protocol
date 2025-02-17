@@ -86,11 +86,6 @@ contract Execution is EIP712, Receiver {
 
     constructor(address WillToken_) {
         WillToken = WillToken_;
-        DOMAIN_SEPARATOR = keccak256(
-            abi.encode(
-                EIP712_DOMAIN_TYPEHASH, keccak256(bytes("WillWe")), keccak256(bytes("1")), block.chainid, address(this)
-            )
-        );
     }
 
     function setWillWe(address implementation) external {
