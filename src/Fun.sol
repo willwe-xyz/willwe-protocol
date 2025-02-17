@@ -84,7 +84,6 @@ contract Fun is Fungido {
         bytes32 userKey
     ) private {
         if (signal == 0) return;
-        // bytes32 userKey = keccak256(abi.encodePacked(targetNode_, user, signal));
         bytes32 nodeKey = keccak256(abi.encodePacked(targetNode_, signal));
 
         if (block.timestamp == options[userKey][1]) revert NoTimeDelta();

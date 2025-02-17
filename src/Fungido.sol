@@ -332,7 +332,7 @@ contract Fungido is ERC1155, PureUtils {
     /// @notice calculates and returns the value of a number of context tokens in terms of its root reserve
     /// @param target_ target node and its context token
     /// @param amount how many of to price
-    function asRootValuation(uint256 target_, uint256 amount) public view returns (uint256 rAmt) {
+    function asRootValuation(uint256 target_, uint256 amount) public view returns (uint256) {
         uint256[] memory paths = getFidPath(target_);
         uint256 x;
         for (uint256 i; i < paths.length; ++i) {
@@ -341,7 +341,7 @@ contract Fungido is ERC1155, PureUtils {
             if (parentOf[target_] == target_) break;
             amount = inParentDenomination(amount, target_);
         }
-        rAmt = amount;
+        return amount;
     }
 
     /// @notice calculates the value of a number of context tokens in terms of reserve token
@@ -543,7 +543,7 @@ contract Fungido is ERC1155, PureUtils {
         NodeData.basicInfo[6] = (inUseMembraneId[nodeId][0]).toString();
         /// Redistribution eligibility rate from parent per second in root valuation
         NodeData.basicInfo[7] = (
-            asRootValuation(options[keccak256(abi.encodePacked(nodeId, parentOf[nodeId]))][0], parentOf[nodeId])
+            asRootValuation(parentOf[nodeId], options[keccak256(abi.encodePacked(nodeId, parentOf[nodeId]))][0])
         ).toString();
 
         /// Timestamp of last redistribution
@@ -552,6 +552,9 @@ contract Fungido is ERC1155, PureUtils {
         /// basicInfo[9];
         /// Endpoint of user for node if any
         /// basicInfo[10];
+        
+        /// total supply of node token
+        NodeData.basicInfo[11] = totalSupplyOf[nodeId].toString();
 
         /// Membrane Metadata CID
         NodeData.membraneMeta = M.getMembraneById(inUseMembraneId[nodeId][0]).meta;
