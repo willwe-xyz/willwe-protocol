@@ -246,9 +246,9 @@ contract Fun is Fungido {
         bytes memory data
     ) external returns (bytes32 movementHash) {
         movementHash = IExecution(executionAddress).startMovement(
-            _msgSender(), typeOfMovement, node, expiresInDays, executingAccount, description, data
+            msg.sender, typeOfMovement, node, expiresInDays, executingAccount, description, data
         );
-        emit NewMovement(node,_msgSender(), movementHash, description);
+        emit NewMovement(node, msg.sender, movementHash, description);
     }
 
     /// @notice creates an external endpoint for an agent in node context
@@ -256,7 +256,7 @@ contract Fun is Fungido {
     /// @param nodeId_ id of context node
     /// @param owner address of agent that will control the endpoint
     function createEndpointForOwner(uint256 nodeId_, address owner) external returns (address) {
-        return IExecution(executionAddress).createEndpointForOwner(_msgSender(), nodeId_, owner);
+        return IExecution(executionAddress).createEndpointForOwner(msg.sender, nodeId_, owner);
     }
 
     /// @notice executes the signature queue identified by its hash if signing requirements
