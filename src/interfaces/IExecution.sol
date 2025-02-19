@@ -108,6 +108,8 @@ interface IExecution {
 
     function hashMessage(Movement memory movement) external pure returns (bytes32);
 
+    function getDigestToSign(Movement memory movement) external view returns (bytes32);
+
     function DOMAIN_SEPARATOR() external view returns (bytes32);
 
     function MOVEMENT_TYPEHASH() external view returns (bytes32);

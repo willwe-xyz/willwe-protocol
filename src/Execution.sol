@@ -2,6 +2,8 @@
 pragma solidity ^0.8.19;
 
 import {SignatureChecker} from "openzeppelin-contracts/contracts/utils/cryptography/SignatureChecker.sol";
+
+import {ECDSA} from "openzeppelin-contracts/contracts/utils/cryptography/ECDSA.sol";
 import {Address} from "openzeppelin-contracts/contracts/utils/Address.sol";
 import {Strings} from "openzeppelin-contracts/contracts/utils/Strings.sol";
 import {SignatureQueue, SQState, MovementType, Movement, Call, LatentMovement} from "./interfaces/IExecution.sol";
@@ -139,7 +141,7 @@ contract Execution is Receiver {
         M.expiresAt = (expiresInDays * 1 days) + block.timestamp;
         M.category = typeOfMovement == 1 ? MovementType.AgentMajority : MovementType.EnergeticMajority;
 
-        movementHash = hashMessage(M);
+        movementHash = hashMovement(M);
         latentActions[nodeId].push(movementHash);
 
         SignatureQueue memory SQ;
@@ -180,8 +182,7 @@ contract Execution is Receiver {
         if (signers.length * signatures.length == 0) revert EXEC_ZeroLen();
         if (signers.length != signatures.length) revert LenErr();
 
-        bytes32 structHash = hashMessage(SQ.Action);
-        bytes32 digest = keccak256(abi.encodePacked("\x19\x01", DOMAIN_SEPARATOR, structHash));
+        bytes32 digest = getEIP712MessageHash(queueHash);
 
         uint256 validCount;
         for (uint256 i = 0; i < signers.length; i++) {
@@ -288,8 +289,7 @@ contract Execution is Receiver {
             SQM.state = SQState.Stale;
             getSigQueueByHash[sigHash] = SQM;
         }
-        bytes32 hashedOne = hashMessage(SQM.Action);
-        if (!isQueueValid(hashedOne)) revert EXEC_SQInvalid();
+        if (!isQueueValid(sigHash)) revert EXEC_SQInvalid();
 
         SQM.state = SQState.Valid;
         getSigQueueByHash[sigHash] = SQM;
@@ -310,12 +310,12 @@ contract Execution is Receiver {
         address[] memory signers = SQM.Signers;
         bytes[] memory signatures = SQM.Sigs;
 
-        bytes32 signedHash = keccak256(abi.encodePacked("\x19\x01", DOMAIN_SEPARATOR, sigHash));
+        bytes32 digest = getEIP712MessageHash(sigHash);
 
         for (i; i < signatures.length; ++i) {
             if (signers[i] == address(0)) continue;
 
-            if (!SignatureChecker.isValidSignatureNow(signers[i], signedHash, signatures[i])) return false;
+            if (!SignatureChecker.isValidSignatureNow(signers[i], digest, signatures[i])) return false;
 
             power = (SQM.Action.category == MovementType.EnergeticMajority)
                 ? power + WillWe.balanceOf(signers[i], SQM.Action.viaNode)
@@ -363,7 +363,12 @@ contract Execution is Receiver {
         return keccak256(abi.encodePacked(block.prevrandao, block.timestamp, block.chainid, lastSalt));
     }
 
-    function hashMessage(Movement memory movement) public pure returns (bytes32) {
+    /**
+     * @dev Returns the hash of a Movement struct using EIP-712 typed data hashing
+     * @param movement The Movement struct to hash
+     * @return The hash of the movement
+     */
+    function hashMovement(Movement memory movement) public pure returns (bytes32) {
         return keccak256(
             abi.encode(
                 MOVEMENT_TYPEHASH,
@@ -372,10 +377,29 @@ contract Execution is Receiver {
                 movement.exeAccount,
                 movement.viaNode,
                 movement.expiresAt,
-                movement.description,
+                keccak256(bytes(movement.description)),
                 keccak256(movement.executedPayload)
             )
         );
     }
 
+    /**
+     * @dev Creates an EIP-712 compatible message hash from a movement hash
+     * @param movementHash The hash of the movement
+     * @return The EIP-712 message hash
+     */
+    function getEIP712MessageHash(bytes32 movementHash) public view returns (bytes32) {
+        return keccak256(abi.encodePacked("\x19\x01", DOMAIN_SEPARATOR, movementHash));
+    }
+
+    /**
+     * @dev Returns the digest to sign based on a complete Movement struct
+     * This is the function frontend should use when preparing signatures
+     * @param movement The Movement struct to sign
+     * @return The EIP-712 digest that should be signed
+     */
+    function getDigestToSign(Movement memory movement) public view returns (bytes32) {
+        bytes32 movementHash = hashMovement(movement);
+        return getEIP712MessageHash(movementHash);
+    }
 }
