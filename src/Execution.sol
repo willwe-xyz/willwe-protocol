@@ -4,18 +4,15 @@ pragma solidity ^0.8.19;
 import {SignatureChecker} from "openzeppelin-contracts/contracts/utils/cryptography/SignatureChecker.sol";
 import {Address} from "openzeppelin-contracts/contracts/utils/Address.sol";
 import {Strings} from "openzeppelin-contracts/contracts/utils/Strings.sol";
-import {ECDSA} from "openzeppelin-contracts/contracts/utils/cryptography/ECDSA.sol";
 import {SignatureQueue, SQState, MovementType, Movement, Call, LatentMovement} from "./interfaces/IExecution.sol";
 import {IFun} from "./interfaces/IFun.sol";
 import {IPowerProxy} from "./interfaces/IPowerProxy.sol";
-import {IERC1155Receiver} from "openzeppelin-contracts/contracts/token/ERC1155/IERC1155Receiver.sol";
-import {EIP712} from "./info/EIP712.sol";
 import {PowerProxy} from "./components/PowerProxy.sol";
 import {Receiver} from "solady/accounts/Receiver.sol";
 
 /// @title Execution
 /// @author parseb
-contract Execution is EIP712, Receiver {
+contract Execution is Receiver {
     using Address for address;
     using Strings for string;
 
@@ -31,6 +28,8 @@ contract Execution is EIP712, Receiver {
     bytes32 public constant MOVEMENT_TYPEHASH = keccak256(
         "Movement(uint8 category,address initiatior,address exeAccount,uint256 viaNode,uint256 expiresAt,string description,bytes executedPayload)"
     );
+
+    bytes32 public immutable DOMAIN_SEPARATOR;
 
     /// errors
     error UninitQueue();
@@ -86,6 +85,16 @@ contract Execution is EIP712, Receiver {
 
     constructor(address WillToken_) {
         WillToken = WillToken_;
+        
+        DOMAIN_SEPARATOR = keccak256(
+            abi.encode(
+                EIP712_DOMAIN_TYPEHASH,
+                keccak256(bytes("WillWe.xyz")),
+                keccak256(bytes("1")),
+                block.chainid,
+                address(this)
+            )
+        );
     }
 
     function setWillWe(address implementation) external {
@@ -269,7 +278,7 @@ contract Execution is EIP712, Receiver {
     }
 
     function spawnNodeEndpoint(address proxyOwner_, uint8 authType) private returns (address) {
-        lastSalt = keccak256(abi.encodePacked(block.prevrandao, block.timestamp, block.chainid, lastSalt));
+        lastSalt = nextSalt();
         return address(new PowerProxy{salt: lastSalt}(proxyOwner_, authType));
     }
 
@@ -279,7 +288,7 @@ contract Execution is EIP712, Receiver {
             SQM.state = SQState.Stale;
             getSigQueueByHash[sigHash] = SQM;
         }
-        bytes32 hashedOne = hashMovement(SQM.Action);
+        bytes32 hashedOne = hashMessage(SQM.Action);
         if (!isQueueValid(hashedOne)) revert EXEC_SQInvalid();
 
         SQM.state = SQState.Valid;
@@ -350,7 +359,11 @@ contract Execution is EIP712, Receiver {
         }
     }
 
-    function hashMovement(Movement memory movement) public pure returns (bytes32) {
+    function nextSalt() public view returns (bytes32) {
+        return keccak256(abi.encodePacked(block.prevrandao, block.timestamp, block.chainid, lastSalt));
+    }
+
+    function hashMessage(Movement memory movement) public pure returns (bytes32) {
         return keccak256(
             abi.encode(
                 MOVEMENT_TYPEHASH,
@@ -365,19 +378,4 @@ contract Execution is EIP712, Receiver {
         );
     }
 
-    function splitSignature(bytes memory sig) internal pure returns (uint8 v, bytes32 r, bytes32 s) {
-        require(sig.length == 65, "Invalid signature length");
-
-        assembly {
-            r := mload(add(sig, 32))
-            s := mload(add(sig, 64))
-            v := byte(0, mload(add(sig, 96)))
-        }
-
-        if (v < 27) {
-            v += 27;
-        }
-
-        require(v == 27 || v == 28, "Invalid signature 'v' value");
-    }
 }

@@ -523,7 +523,6 @@ contract Fungido is ERC1155, PureUtils {
     //////____eth_call____/////////////////////////////
 
     /// @notice returns a node's data given its identifier
-    /// @notice basicInfo: [nodeId, inflation, balanceAnchor, balanceBudget, value, membraneId, (balance of user), balanceOfUser, childParentEligibilityPerSec, lastParentRedistribution]
     /// @param nodeId node identifier
     /// @dev for eth_call
     function getNodeData(uint256 nodeId) private view returns (NodeState memory NodeData) {
@@ -552,7 +551,7 @@ contract Fungido is ERC1155, PureUtils {
         /// basicInfo[9];
         /// Endpoint of user for node if any
         /// basicInfo[10];
-        
+
         /// total supply of node token
         NodeData.basicInfo[11] = totalSupplyOf[nodeId].toString();
 

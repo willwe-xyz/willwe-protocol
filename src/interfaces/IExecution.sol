@@ -49,7 +49,7 @@ struct UserSignal {
 }
 
 struct NodeState {
-    string[12] basicInfo; // [nodeId, inflation, reserve, budget, rootValuationBudget, rootValuationReserve, membraneId, eligibilityPerSec, lastRedistributionTime, balanceOfUser [0 default], endpointOfUserForNode [address(0) defaul - no endpoint], total supply of endpoint]
+    string[12] basicInfo; // [nodeId, inflation, reserve, budget, rootValuationBudget, rootValuationReserve, membraneId, eligibilityPerSec, lastRedistributionTime, balanceOfUser [0 default], endpointOfUserForNode [address(0) defaul - no endpoint], total supply of node]
     string membraneMeta; // Membrane Metadata CID
     address[] membersOfNode; // Array of member addresses
     string[] childrenNodes; // Array of children node IDs
@@ -79,6 +79,10 @@ interface IExecution {
 
     function setWillWe(address WillWeImplementationAddress) external;
 
+    function removeSignature(bytes32 sigHash_, uint256 index_, address who_) external;
+
+    function removeLatentAction(bytes32 actionHash_, uint256 index) external;
+
     /// View
 
     function isQueueValid(bytes32 sigHash) external view returns (bool);
@@ -96,19 +100,17 @@ interface IExecution {
 
     function isValidSignature(bytes32 _hash, bytes memory _signature) external view returns (bytes4);
 
-    function hashMessage(Movement memory movement) external view returns (bytes32);
-
     function createInitWillWeEndpoint(uint256 nodeId_) external returns (address endpoint);
 
     function getLatentMovements(uint256 nodeId_) external view returns (LatentMovement[] memory latentMovements);
 
-    //// cleanup functions
+    function nextSalt() external view returns (bytes32);
 
-    function removeSignature(bytes32 sigHash_, uint256 index_, address who_) external;
-
-    function removeLatentAction(bytes32 actionHash_, uint256 index) external;
+    function hashMessage(Movement memory movement) external pure returns (bytes32);
 
     function DOMAIN_SEPARATOR() external view returns (bytes32);
 
-    function SALT() external view returns (bytes32);
+    function MOVEMENT_TYPEHASH() external view returns (bytes32);
+
+    function EIP712_DOMAIN_TYPEHASH() external view returns (bytes32);
 }

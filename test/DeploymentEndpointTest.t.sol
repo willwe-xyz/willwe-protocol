@@ -166,7 +166,6 @@ contract WillBaseEndpointTest is Test, TokenPrep, InitTest {
     }
 
     function _signHash(uint256 signerPVK_, Movement memory movement) internal view returns (bytes memory) {
-
         bytes32 structHash = keccak256(
             abi.encode(
                 keccak256(
