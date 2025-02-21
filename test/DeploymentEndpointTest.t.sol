@@ -2,7 +2,6 @@
 pragma solidity 0.8.25;
 
 import "forge-std/Test.sol";
-import {Fun} from "../src/Fun.sol";
 import {Execution} from "../src/Execution.sol";
 import {SignatureQueue, SQState, MovementType} from "../src/interfaces/IExecution.sol";
 import {IPowerProxy} from "../src/interfaces/IPowerProxy.sol";
@@ -104,7 +103,7 @@ contract WillBaseEndpointTest is Test, TokenPrep, InitTest {
 
         F.mintMembership(parentOfEndpoint);
 
-        bytes32 moveHash = F.startMovement(
+        bytes32 moveHash = IExecution(E).startMovement(
             2, // Energetic Majority
             parentOfEndpoint,
             12,
@@ -147,7 +146,7 @@ contract WillBaseEndpointTest is Test, TokenPrep, InitTest {
         signatures[1] = _signHash(A3pvk, SQ.Action);
 
         // Submit signatures
-        F.submitSignatures(moveHash, signers, signatures);
+        IExecution(E).submitSignatures(moveHash, signers, signatures);
 
         // Verify queue becomes valid
         assertTrue(F.isQueueValid(moveHash), "Queue should be valid");
@@ -156,7 +155,7 @@ contract WillBaseEndpointTest is Test, TokenPrep, InitTest {
         vm.startPrank(A1);
         F20.approve(SQ.Action.exeAccount, F20.balanceOf(A1));
         F20.transfer(SQ.Action.exeAccount, F20.balanceOf(A1));
-        F.executeQueue(moveHash);
+        IExecution(E).executeQueue(moveHash);
 
         // Verify execution
         assertTrue(F20.balanceOf(receiver) == 0.1 ether, "Transfer should be executed");
@@ -176,7 +175,7 @@ contract WillBaseEndpointTest is Test, TokenPrep, InitTest {
                 movement.exeAccount,
                 movement.viaNode,
                 movement.expiresAt,
-                movement.description,
+                keccak256(abi.encodePacked(movement.description)),
                 keccak256(movement.executedPayload)
             )
         );

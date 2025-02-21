@@ -2,8 +2,6 @@
 pragma solidity ^0.8.19;
 
 import {SignatureChecker} from "openzeppelin-contracts/contracts/utils/cryptography/SignatureChecker.sol";
-
-import {ECDSA} from "openzeppelin-contracts/contracts/utils/cryptography/ECDSA.sol";
 import {Address} from "openzeppelin-contracts/contracts/utils/Address.sol";
 import {Strings} from "openzeppelin-contracts/contracts/utils/Strings.sol";
 import {SignatureQueue, SQState, MovementType, Movement, Call, LatentMovement} from "./interfaces/IExecution.sol";
@@ -33,39 +31,37 @@ contract Execution is Receiver {
 
     bytes32 public immutable DOMAIN_SEPARATOR;
 
-    /// errors
-    error UninitQueue();
-    error ExpiredMovement();
-    error InvalidQueue();
-    error EmptyUnallowed();
-    error NotNodeMember();
-    error AlreadyInitialized();
-    error UnavailableState();
-    error ExpiredQueue();
-    error NotExeAccOwner();
-    error AlreadyHasEndpoint();
-    error NoMembersForNode();
-    error NoMovementType();
-    error AlreadySigned();
-    error LenErr();
-    error AlreadyInit();
-    error OnlyWillWe();
-    error NoSignatures();
-    error EXEC_SQInvalid();
-    error EXEC_NoType();
-    error EXEC_NoDescription();
-    error EXEC_ZeroLen();
-    error EXEC_A0sig();
-    error EXEC_OnlyMore();
-    error EXEC_OnlySigner();
-    error EXEC_exeQFail();
-    error EXEC_InProgress();
-    error EXEC_ActionIndexMismatch();
-    error EXEC_BadOwnerOrAuthType();
+    error EXE_UninitQueue();
+    error EXE_ExpiredMovement();
+    error EXE_InvalidQueue();
+    error EXE_EmptyUnallowed();
+    error EXE_NotNodeMember();
+    error EXE_AlreadyInitialized();
+    error EXE_UnavailableState();
+    error EXE_ExpiredQueue();
+    error EXE_NotExeAccOwner();
+    error EXE_AlreadyHasEndpoint();
+    error EXE_NoMembersForNode();
+    error EXE_NoMovementType();
+    error EXE_AlreadySigned();
+    error EXE_LenErr();
+    error EXE_AlreadyInit();
+    error EXE_OnlyWillWe();
+    error EXE_NoSignatures();
+    error EXE_SQInvalid();
+    error EXE_NoType();
+    error EXE_NoDescription();
+    error EXE_ZeroLen();
+    error EXE_A0sig();
+    error EXE_OnlyMore();
+    error EXE_OnlySigner();
+    error EXE_exeQFail();
+    error EXE_InProgress();
+    error EXE_ActionIndexMismatch();
+    error EXE_BadOwnerOrAuthType();
 
     /// events
-    event NewMovementCreated(bytes32 indexed movementHash, uint256 indexed nodeId);
-    event EndpointCreatedForAgent(uint256 indexed nodeId, address endpoint, address agent);
+    event NewMovementCreated(uint256 indexed nodeId, address initiator, bytes32 movementHash, string description);
     event WillWeSet(address implementation);
     event NewSignaturesSubmitted(bytes32 indexed queueHash);
     event QueueExecuted(uint256 indexed nodeId, bytes32 indexed queueHash);
@@ -87,7 +83,7 @@ contract Execution is Receiver {
 
     constructor(address WillToken_) {
         WillToken = WillToken_;
-        
+
         DOMAIN_SEPARATOR = keccak256(
             abi.encode(
                 EIP712_DOMAIN_TYPEHASH,
@@ -106,30 +102,28 @@ contract Execution is Receiver {
     }
 
     function startMovement(
-        address origin,
         uint8 typeOfMovement,
         uint256 nodeId,
         uint256 expiresInDays,
         address executingAccount,
         string memory description,
         bytes memory data
-    ) external virtual returns (bytes32 movementHash) {
-        if (msg.sender != address(WillWe)) revert OnlyWillWe();
-        if (typeOfMovement > 2 || typeOfMovement == 0) revert NoMovementType();
-        if (!WillWe.isMember(origin, nodeId)) revert NotNodeMember();
+    ) external returns (bytes32 movementHash) {
+        if (typeOfMovement > 2 || typeOfMovement == 0) revert EXE_NoMovementType();
+        if (!WillWe.isMember(msg.sender, nodeId)) revert EXE_NotNodeMember();
 
-        if (((typeOfMovement * nodeId * expiresInDays) == 0)) revert EmptyUnallowed();
-        if (bytes(description).length < 8) revert EXEC_NoDescription();
+        if (((typeOfMovement * nodeId * expiresInDays) == 0)) revert EXE_EmptyUnallowed();
+        if (bytes(description).length < 8) revert EXE_NoDescription();
 
         if (executingAccount == address(0)) {
             executingAccount = createNodeEndpoint(nodeId, typeOfMovement);
             engineOwner[executingAccount] = nodeId;
         } else {
-            if (!(engineOwner[executingAccount] == nodeId)) revert NotExeAccOwner();
+            if (!(engineOwner[executingAccount] == nodeId)) revert EXE_NotExeAccOwner();
             if (
                 IPowerProxy(executingAccount).owner() != address(this)
                     || IPowerProxy(executingAccount).allowedAuthType() != typeOfMovement
-            ) revert EXEC_BadOwnerOrAuthType();
+            ) revert EXE_BadOwnerOrAuthType();
         }
 
         Movement memory M;
@@ -148,19 +142,17 @@ contract Execution is Receiver {
         SQ.state = SQState.Initialized;
         SQ.Action = M;
 
-        if (getSigQueueByHash[movementHash].state != SQState.None) revert AlreadyInitialized();
+        if (getSigQueueByHash[movementHash].state != SQState.None) revert EXE_AlreadyInitialized();
         getSigQueueByHash[movementHash] = SQ;
 
-        emit NewMovementCreated(movementHash, nodeId);
+        emit NewMovementCreated(nodeId, msg.sender, movementHash, description);
     }
 
-    function executeQueue(bytes32 queueHash) public virtual returns (bool success) {
-        if (msg.sender != address(WillWe)) revert OnlyWillWe();
-
+    function executeQueue(bytes32 queueHash) external virtual returns (bool success) {
         SignatureQueue memory SQ = validateQueue(queueHash);
 
-        if (SQ.state != SQState.Valid) revert InvalidQueue();
-        if (SQ.Action.expiresAt <= block.timestamp) revert ExpiredMovement();
+        if (SQ.state != SQState.Valid) revert EXE_InvalidQueue();
+        if (SQ.Action.expiresAt <= block.timestamp) revert EXE_ExpiredMovement();
 
         Movement memory M = SQ.Action;
 
@@ -168,25 +160,23 @@ contract Execution is Receiver {
         getSigQueueByHash[queueHash] = SQ;
 
         (success,) = (SQ.Action.exeAccount).call(M.executedPayload);
-        if (!success) revert EXEC_exeQFail();
+        if (!success) revert EXE_exeQFail();
 
         emit QueueExecuted(SQ.Action.viaNode, queueHash);
     }
 
     function submitSignatures(bytes32 queueHash, address[] memory signers, bytes[] memory signatures) external {
-        if (msg.sender != address(WillWe)) revert OnlyWillWe();
-
         SignatureQueue memory SQ = getSigQueueByHash[queueHash];
 
-        if (signatures.length < SQ.Sigs.length) revert EXEC_OnlyMore();
-        if (signers.length * signatures.length == 0) revert EXEC_ZeroLen();
-        if (signers.length != signatures.length) revert LenErr();
+        if (signatures.length < SQ.Sigs.length) revert EXE_OnlyMore();
+        if (signers.length * signatures.length == 0) revert EXE_ZeroLen();
+        if (signers.length != signatures.length) revert EXE_LenErr();
 
         bytes32 digest = getEIP712MessageHash(queueHash);
 
         uint256 validCount;
         for (uint256 i = 0; i < signers.length; i++) {
-            if (signers[i] == address(0)) revert EXEC_A0sig();
+            if (signers[i] == address(0)) revert EXE_A0sig();
 
             if (hasEndpointOrInteraction[uint256(queueHash) - uint160(signers[i])]) {
                 continue;
@@ -228,10 +218,9 @@ contract Execution is Receiver {
     }
 
     function removeSignature(bytes32 queueHash, uint256 index, address signer) external {
-        if (msg.sender != address(WillWe)) revert OnlyWillWe();
         SignatureQueue memory SQ = getSigQueueByHash[queueHash];
 
-        if (SQ.Signers[index] != signer) revert EXEC_OnlySigner();
+        if (SQ.Signers[index] != signer) revert EXE_OnlySigner();
         delete SQ.Sigs[index];
         delete SQ.Signers[index];
         getSigQueueByHash[queueHash] = SQ;
@@ -243,8 +232,8 @@ contract Execution is Receiver {
     function removeLatentAction(bytes32 actionHash, uint256 index) external {
         SignatureQueue memory SQ = getSigQueueByHash[actionHash];
         if (SQ.Action.expiresAt > block.timestamp) SQ.state = SQState.Stale;
-        if (SQ.state == SQState.Initialized || SQ.state == SQState.Valid) revert EXEC_InProgress();
-        if (latentActions[SQ.Action.viaNode][index] != actionHash) revert EXEC_ActionIndexMismatch();
+        if (SQ.state == SQState.Initialized || SQ.state == SQState.Valid) revert EXE_InProgress();
+        if (latentActions[SQ.Action.viaNode][index] != actionHash) revert EXE_ActionIndexMismatch();
         delete latentActions[SQ.Action.viaNode][index];
         if (uint256(latentActions[SQ.Action.viaNode][0]) > index) latentActions[SQ.Action.viaNode][0] = bytes32(index);
         getSigQueueByHash[actionHash] = SQ;
@@ -256,19 +245,16 @@ contract Execution is Receiver {
         external
         returns (address endpoint)
     {
-        if (msg.sender != address(WillWe)) revert OnlyWillWe();
-        if (!WillWe.isMember(origin, nodeId)) revert NotNodeMember();
-        if (hasEndpointOrInteraction[nodeId + uint160(bytes20(owner))]) revert AlreadyHasEndpoint();
+        if (msg.sender != address(WillWe)) revert EXE_OnlyWillWe();
+        if (hasEndpointOrInteraction[nodeId + uint160(bytes20(owner))]) revert EXE_AlreadyHasEndpoint();
         hasEndpointOrInteraction[nodeId + uint160(bytes20(owner))] = true;
 
         endpoint = spawnNodeEndpoint(owner, 3);
         WillWe.localizeEndpoint(endpoint, nodeId, owner);
-
-        emit EndpointCreatedForAgent(nodeId, endpoint, owner);
     }
 
     function createInitWillWeEndpoint(uint256 nodeId_) external returns (address endpoint) {
-        if (msg.sender != address(WillWe)) revert OnlyWillWe();
+        if (msg.sender != address(WillWe)) revert EXE_OnlyWillWe();
         endpoint = createNodeEndpoint(nodeId_, 2);
     }
 
@@ -283,13 +269,13 @@ contract Execution is Receiver {
         return address(new PowerProxy{salt: lastSalt}(proxyOwner_, authType));
     }
 
-    function validateQueue(bytes32 sigHash) internal returns (SignatureQueue memory SQM) {
+    function validateQueue(bytes32 sigHash) private returns (SignatureQueue memory SQM) {
         SQM = getSigQueueByHash[sigHash];
         if (SQM.Action.expiresAt <= block.timestamp) {
             SQM.state = SQState.Stale;
             getSigQueueByHash[sigHash] = SQM;
         }
-        if (!isQueueValid(sigHash)) revert EXEC_SQInvalid();
+        if (!isQueueValid(sigHash)) revert EXE_SQInvalid();
 
         SQM.state = SQState.Valid;
         getSigQueueByHash[sigHash] = SQM;
@@ -300,7 +286,6 @@ contract Execution is Receiver {
 
         if (SQM.Action.category == MovementType.Revert) return false;
         if (SQM.state == SQState.Valid) return true;
-        if (SQM.state == SQState.Stale) return false;
         if (SQM.state != SQState.Initialized) return false;
         if (SQM.Signers.length == 0) return false;
         if (SQM.Signers.length != SQM.Sigs.length) return false;
@@ -355,7 +340,7 @@ contract Execution is Receiver {
 
         for (uint256 i = 0; i < nodeActions.length; i++) {
             SignatureQueue memory sq = getSigQueueByHash[nodeActions[i]];
-            latentMovements[i] = LatentMovement({movement: sq.Action, signatureQueue: sq});
+            latentMovements[i] = LatentMovement({movement: sq.Action, signatureQueue: sq, movementHash: nodeActions[i]});
         }
     }
 

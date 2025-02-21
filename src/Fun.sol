@@ -23,12 +23,13 @@ contract Fun is Fungido {
     error ResignalMismatch();
     error NoTimeDelta();
     error CannotSkip();
+    error NotNodeMember();
 
-    event NewMovement(uint256 indexed nodeId, address initiator, bytes32 movementHash, string description);
     event InflationRateChanged(uint256 indexed nodeId, uint256 oldInflationRate, uint256 newInflationRate);
     event MembraneChanged(uint256 indexed nodeId, uint256 previousMembrane, uint256 newMembrane);
     event Signaled(uint256 indexed nodeId, address sender, address origin);
     event ConfigSignal(uint256 indexed nodeId, bytes32 expressedOption);
+    event CreatedEndpoint(address indexed endpoint, address indexed owner, uint256 indexed nodeId);
 
     function resignal(uint256 targetNode_, uint256[] memory signals, address originator) public virtual {
         impersonatingAddress = originator;
@@ -229,47 +230,15 @@ contract Fun is Fungido {
 
     /////////// External
 
-    //// @notice instantiates a new movement
-    //// @param typeOfMovement 1 agent majority 2 value majority
-    //// @param node identifiable atomic entity doing the moving, must be owner of the executing account
-    /// @param expiresInDays deadline for expiry now plus days
-    /// @param executingAccount external address acting as execution environment for movement
-    /// @param description description of movement or description CID
-    /// @param data calldata for execution call or executive payload
-    function startMovement(
-        uint8 typeOfMovement,
-        uint256 node,
-        uint256 expiresInDays,
-        address executingAccount,
-        string memory description,
-        bytes memory data
-    ) external returns (bytes32 movementHash) {
-        movementHash = IExecution(executionAddress).startMovement(
-            msg.sender, typeOfMovement, node, expiresInDays, executingAccount, description, data
-        );
-        emit NewMovement(node, msg.sender, movementHash, description);
-    }
-
     /// @notice creates an external endpoint for an agent in node context
     /// @notice node owner can be external
     /// @param nodeId_ id of context node
     /// @param owner address of agent that will control the endpoint
-    function createEndpointForOwner(uint256 nodeId_, address owner) external returns (address) {
-        return IExecution(executionAddress).createEndpointForOwner(msg.sender, nodeId_, owner);
-    }
-
-    /// @notice executes the signature queue identified by its hash if signing requirements
-    function executeQueue(bytes32 SignatureQueueHash_) external returns (bool s) {
-        return IExecution(executionAddress).executeQueue(SignatureQueueHash_);
-    }
-
-    /// @notice submits a list of signatures to a specific movement queue
-    function submitSignatures(bytes32 sigHash, address[] memory signers, bytes[] memory signatures) external {
-        return IExecution(executionAddress).submitSignatures(sigHash, signers, signatures);
-    }
-
-    function removeSignature(bytes32 sigHash_, uint256 index_) external {
-        IExecution(executionAddress).removeSignature(sigHash_, index_, _msgSender());
+    /// @return endpointAddress address of created endpoint
+    function createEndpointForOwner(uint256 nodeId_, address owner) external returns (address endpointAddress) {
+        if (!isMember(owner, nodeId_)) revert NotNodeMember();
+        endpointAddress = IExecution(executionAddress).createEndpointForOwner(msg.sender, nodeId_, owner);
+        emit CreatedEndpoint(endpointAddress, owner, nodeId_);
     }
 
     /////////// View

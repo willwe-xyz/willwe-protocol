@@ -2,12 +2,20 @@
 pragma solidity 0.8.25;
 
 import "forge-std/Test.sol";
-import {Fun} from "../src/Fun.sol";
-import {Execution} from "../src/Execution.sol";
-import {SignatureQueue, IExecution, Movement, LatentMovement} from "../src/interfaces/IExecution.sol";
 import {TokenPrep} from "./mock/Tokens.sol";
-import {SignatureQueue, SQState, MovementType} from "../src/interfaces/IExecution.sol";
-import {Movement, Call, NodeState} from "../src/interfaces/IExecution.sol";
+import {
+    SignatureQueue,
+    SQState,
+    MovementType,
+    SignatureQueue,
+    IExecution,
+    Movement,
+    LatentMovement,
+    Movement,
+    Call,
+    NodeState
+} from "../src/interfaces/IExecution.sol";
+import {Execution} from "../src/Execution.sol";
 import {IERC20} from "openzeppelin/token/ERC20/IERC20.sol";
 import {Will} from "will/contracts/Will.sol";
 import {InitTest} from "./Init.t.sol";
@@ -156,19 +164,19 @@ contract Endpoints is Test, TokenPrep, InitTest {
 
         vm.startPrank(A1);
 
-        vm.expectRevert(Execution.NoMovementType.selector);
-        F.startMovement(0, B2, 3, address(0), description, data);
+        vm.expectRevert(Execution.EXE_NoMovementType.selector);
+        IExecution(E).startMovement(0, B2, 3, address(0), description, data);
 
-        vm.expectRevert(Execution.EmptyUnallowed.selector);
-        F.startMovement(1, B2, 0, address(0), description, data);
+        vm.expectRevert(Execution.EXE_EmptyUnallowed.selector);
+        IExecution(E).startMovement(1, B2, 0, address(0), description, data);
 
-        vm.expectRevert(Execution.NotExeAccOwner.selector);
-        F.startMovement(1, B2, 12, address(1), description, data);
+        vm.expectRevert(Execution.EXE_NotExeAccOwner.selector);
+        IExecution(E).startMovement(1, B2, 12, address(1), description, data);
 
         address[] memory members = F.allMembersOf(B2);
         assertTrue(members.length > 0, "should have members for majority");
 
-        moveHash = F.startMovement(2, B2, 12, address(0), description, data);
+        moveHash = IExecution(E).startMovement(2, B2, 12, address(0), description, data);
 
         assertTrue(uint256(moveHash) > 0, "empty hash returned");
         SignatureQueue memory SQ = F.getSigQueue(moveHash);
@@ -201,7 +209,7 @@ contract Endpoints is Test, TokenPrep, InitTest {
         string memory description = "this is a description";
         bytes memory data = _getCallData();
 
-        bytes32 moveHash = F.startMovement(1, rootBranchID, 12, address(0), description, data);
+        bytes32 moveHash = IExecution(E).startMovement(1, rootBranchID, 12, address(0), description, data);
         SignatureQueue memory SQ = F.getSigQueue(moveHash);
 
         assertTrue(SQ.state == SQState.Initialized, "expected initialized");
@@ -211,7 +219,7 @@ contract Endpoints is Test, TokenPrep, InitTest {
         console.log("###################  AGAIN with prev exe______________");
         skip(block.timestamp + 10);
 
-        moveHash = F.startMovement(1, rootBranchID, 12, SQ.Action.exeAccount, description, data);
+        moveHash = IExecution(E).startMovement(1, rootBranchID, 12, SQ.Action.exeAccount, description, data);
         SQ = F.getSigQueue(moveHash);
 
         assertTrue(SQ.state == SQState.Initialized, "expected initialized");
@@ -221,7 +229,7 @@ contract Endpoints is Test, TokenPrep, InitTest {
         console.log("###################  Again with exe type 2______________");
         skip(block.timestamp + 10);
 
-        moveHash = F.startMovement(2, rootBranchID, 12, SQ.Action.exeAccount, description, data);
+        moveHash = IExecution(E).startMovement(2, rootBranchID, 12, SQ.Action.exeAccount, description, data);
         SQ = F.getSigQueue(moveHash);
 
         assertTrue(SQ.state == SQState.Initialized, "expected initialized");
@@ -269,7 +277,7 @@ contract Endpoints is Test, TokenPrep, InitTest {
                 movement.exeAccount,
                 movement.viaNode,
                 movement.expiresAt,
-                movement.description,
+                keccak256(abi.encodePacked(movement.description)),
                 keccak256(movement.executedPayload)
             )
         );
@@ -303,19 +311,19 @@ contract Endpoints is Test, TokenPrep, InitTest {
     function testSubmitsSignatures() public returns (bytes32 move) {
         (SignatureQueue memory SQ, Movement memory M, bytes memory STX, bytes32 m) = _getStructsForHash();
         move = m;
-        assertTrue(uint256(IExecution(E).hashMessage(M)) == uint256(move), "Movement hash mismatch");
+        assertTrue(uint256(IExecution(E).hashMovement(M)) == uint256(move), "Movement hash mismatch");
 
         bytes[] memory signatures;
         address[] memory signers;
 
-        vm.expectRevert(Execution.EXEC_ZeroLen.selector);
-        F.submitSignatures(move, signers, signatures);
+        vm.expectRevert(Execution.EXE_ZeroLen.selector);
+        IExecution(E).submitSignatures(move, signers, signatures);
 
         signers = new address[](3);
         signatures = new bytes[](3);
 
-        vm.expectRevert(Execution.EXEC_A0sig.selector);
-        F.submitSignatures(move, signers, signatures);
+        vm.expectRevert(Execution.EXE_A0sig.selector);
+        IExecution(E).submitSignatures(move, signers, signatures);
 
         signers[0] = A1;
         signers[1] = A2;
@@ -350,7 +358,7 @@ contract Endpoints is Test, TokenPrep, InitTest {
         assertFalse(F.isQueueValid(move), "Queue should not be valid yet");
 
         console.log("Submitting signatures...");
-        F.submitSignatures(move, signers, signatures);
+        IExecution(E).submitSignatures(move, signers, signatures);
         console.log("Signatures submitted.");
 
         SQ = F.getSigQueue(move);
@@ -381,7 +389,7 @@ contract Endpoints is Test, TokenPrep, InitTest {
 
         uint256 snapNoBalance = vm.snapshot();
         vm.expectRevert();
-        F.executeQueue(move);
+        IExecution(E).executeQueue(move);
         assertFalse(T1.balanceOf(receiver) == 0.1 ether, "it should not have balance");
 
         vm.revertTo(snapNoBalance);
@@ -389,7 +397,7 @@ contract Endpoints is Test, TokenPrep, InitTest {
         vm.startPrank(A1);
         assertTrue(SQ.Action.exeAccount != address(0), "no assoc. exe proxy");
         F20.transfer(SQ.Action.exeAccount, F20.balanceOf(A1));
-        F.executeQueue(move);
+        IExecution(E).executeQueue(move);
         assertTrue(F20.balanceOf(receiver) == 0.1 ether, "has expected balance");
 
         SQ = F.getSigQueue(move);
@@ -415,7 +423,7 @@ contract Endpoints is Test, TokenPrep, InitTest {
         vm.startPrank(A1);
         F20.transfer(SQ.Action.exeAccount, F20.balanceOf(A1));
         vm.stopPrank();
-        F.executeQueue(move);
+        IExecution(E).executeQueue(move);
         movements = IExecution(E).getLatentMovements(viaNode);
         assertTrue(movements[0].signatureQueue.state == SQState.Executed, "expected executed");
 

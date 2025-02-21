@@ -34,6 +34,7 @@ struct Movement {
 struct LatentMovement {
     Movement movement;
     SignatureQueue signatureQueue;
+    bytes32 movementHash;
 }
 
 struct SignatureQueue {
@@ -67,10 +68,16 @@ interface IExecution {
 
     function submitSignatures(bytes32 sigHash, address[] memory signers, bytes[] memory signatures) external;
 
+    //// @notice instantiates a new movement
+    //// @param typeOfMovement 1 agent majority 2 value majority
+    //// @param nodeId identifiable atomic entity doing the moving, must be owner of the executing account
+    /// @param expiresInDays deadline for expiry now plus days
+    /// @param executingAccount external address acting as execution environment for movement
+    /// @param description description of movement or description CID
+    /// @param data calldata for execution call or executive payload
     function startMovement(
-        address origin,
         uint8 typeOfMovement,
-        uint256 node_,
+        uint256 nodeId,
         uint256 expiresInDays,
         address executingAccount,
         string memory description,
@@ -106,7 +113,7 @@ interface IExecution {
 
     function nextSalt() external view returns (bytes32);
 
-    function hashMessage(Movement memory movement) external pure returns (bytes32);
+    function hashMovement(Movement memory movement) external pure returns (bytes32);
 
     function getDigestToSign(Movement memory movement) external view returns (bytes32);
 
