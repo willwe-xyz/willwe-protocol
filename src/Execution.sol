@@ -176,7 +176,7 @@ contract Execution is Receiver {
 
         uint256 validCount;
         for (uint256 i = 0; i < signers.length; i++) {
-            if (signers[i] == address(0)) revert EXE_A0sig();
+            if (signers[i] == address(0)) continue;
 
             if (hasEndpointOrInteraction[uint256(queueHash) - uint160(signers[i])]) {
                 continue;
