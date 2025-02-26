@@ -113,7 +113,7 @@ contract WillBaseEndpointTest is Test, TokenPrep, InitTest {
         );
 
         // Verify movement was created correctly
-        SignatureQueue memory SQ = F.getSigQueue(moveHash);
+        SignatureQueue memory SQ = IExecution(E).getSigQueue(moveHash);
 
         assertTrue(SQ.state == SQState.Initialized, "Movement should be initialized");
         assertTrue(SQ.Action.exeAccount == endpoint, "Incorrect execution account");
@@ -149,7 +149,7 @@ contract WillBaseEndpointTest is Test, TokenPrep, InitTest {
         IExecution(E).submitSignatures(moveHash, signers, signatures);
 
         // Verify queue becomes valid
-        assertTrue(F.isQueueValid(moveHash), "Queue should be valid");
+        assertTrue(IExecution(E).isQueueValid(moveHash), "Queue should be valid");
         assertTrue(F20.balanceOf(receiver) == 0, "Receiver has balance");
         // Execute the queue
         vm.startPrank(A1);
@@ -159,7 +159,7 @@ contract WillBaseEndpointTest is Test, TokenPrep, InitTest {
 
         // Verify execution
         assertTrue(F20.balanceOf(receiver) == 0.1 ether, "Transfer should be executed");
-        assertTrue(F.getSigQueue(moveHash).state == SQState.Executed, "Movement should be executed");
+        assertTrue(IExecution(E).getSigQueue(moveHash).state == SQState.Executed, "Movement should be executed");
 
         assertTrue(F20.balanceOf(receiver) > 0, "Receiver was not givern a balance");
     }

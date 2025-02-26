@@ -190,11 +190,12 @@ contract SignalInflationTests is InitTest, TokenPrep {
         // Fund B1 from rootBranchID balance
         fundParentNode(A1, B1, 100 ether);
         vm.startPrank(A1);
-
+        assertTrue(F.balanceOf(A1, B1) > 0.1 ether, "Expected A1 to have influence");
         uint256[] memory signals = new uint256[](4);
         signals[2] = 6000; // 60% to B11
         signals[3] = 4000; // 40% to B12
         F.sendSignal(B1, signals);
+
 
         uint256[2][] memory userNodeSignals = F.getUserNodeSignals(A1, B1);
 

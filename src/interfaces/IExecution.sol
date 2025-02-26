@@ -117,6 +117,8 @@ interface IExecution {
 
     function getDigestToSign(Movement memory movement) external view returns (bytes32);
 
+    function getEIP712MessageHash(bytes32 movementHash) external view returns (bytes32);
+
     function DOMAIN_SEPARATOR() external view returns (bytes32);
 
     function MOVEMENT_TYPEHASH() external view returns (bytes32);

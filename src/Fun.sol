@@ -2,7 +2,8 @@
 pragma solidity >=0.8.3;
 
 import {Fungido} from "./Fungido.sol";
-import {IExecution, SignatureQueue, Call} from "./interfaces/IExecution.sol";
+import {IExecution} from "./interfaces/IExecution.sol";
+
 /////////////////////////////////////////
 /// @title Fun
 /// @author parseb
@@ -127,9 +128,36 @@ contract Fun is Fungido {
         if (options[nodeKey][0] * 2 > totalSupplyOf[targetNode_]) {
             mintInflation(targetNode_);
             emit InflationRateChanged(targetNode_, inflSec[targetNode_][0], signal * 1 gwei);
+            _handleInflationUpdate(targetNode_, inflSec[targetNode_][0], signal * 1 gwei);
             inflSec[targetNode_] = [signal * 1 gwei, block.timestamp, block.timestamp];
+
         }
     }
+
+    function _handleInflationUpdate(
+    uint256 nodeId,
+    uint256 oldRate,
+    uint256 newRate
+) private {    
+    uint256[] memory children = childrenOf[nodeId];
+    if (children.length == 0) return;
+    
+    for (uint256 i = 0; i < children.length; i++) {
+        bytes32 childParentEligibility = keccak256(abi.encodePacked(children[i], nodeId));
+        uint256 currentEligibility = options[childParentEligibility][0];
+        
+        if (currentEligibility > 0) {
+            redistribute(children[i]);
+            uint256 newEligibility = (currentEligibility * newRate) / oldRate;
+            options[childParentEligibility][0] = newEligibility;
+        }
+        
+    }
+    
+    inflSec[nodeId] = [newRate, block.timestamp, block.timestamp];
+    
+    emit InflationRateChanged(nodeId, oldRate, newRate);
+}
 
     function _handleRegularSignals(
         uint256 targetNode_,
@@ -243,17 +271,6 @@ contract Fun is Fungido {
 
     /////////// View
 
-    function getSigQueue(bytes32 hash_) public view returns (SignatureQueue memory) {
-        return IExecution(executionAddress).getSigQueue(hash_);
-    }
-
-    function isQueueValid(bytes32 sigHash) public view returns (bool) {
-        return IExecution(executionAddress).isQueueValid(sigHash);
-    }
-
-    function isValidSignature(bytes32 _hash, bytes memory _signature) external view returns (bytes4) {
-        return IExecution(executionAddress).isValidSignature(_hash, _signature);
-    }
 
     function calculateUserTargetedPreferenceAmount(uint256 childId, uint256 parentId, uint256 signal, address user)
         public
@@ -262,11 +279,10 @@ contract Fun is Fungido {
     {
         if (parentOf[childId] != parentId) revert UnregisteredFungible();
 
-        uint256 totalSupplyParent = totalSupplyOf[parentId];
+        uint256 totalSupplyParent = balanceOf(toAddress(parentId), parentOf[parentId]);
         uint256 balanceOfSenderParent = balanceOf(user, parentId);
         uint256 parentInflationRate = inflSec[parentId][0];
         if (balanceOfSenderParent <= 1 gwei) return 0;
-
         uint256 newContribution = (balanceOfSenderParent * signal * parentInflationRate) / (totalSupplyParent * 100_00);
 
         return newContribution;
