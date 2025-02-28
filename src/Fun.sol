@@ -9,6 +9,7 @@ import {IExecution} from "./interfaces/IExecution.sol";
 /// @author parseb
 ///////////////////////////////////////////////
 
+
 contract Fun is Fungido {
     constructor(address ExeAddr, address Membranes_) Fungido(ExeAddr, Membranes_) {
         executionAddress = ExeAddr;
@@ -141,18 +142,23 @@ contract Fun is Fungido {
 ) private {    
     uint256[] memory children = childrenOf[nodeId];
     if (children.length == 0) return;
-    
+    uint256 oldTotalEligibilitySum;
     for (uint256 i = 0; i < children.length; i++) {
         bytes32 childParentEligibility = keccak256(abi.encodePacked(children[i], nodeId));
         uint256 currentEligibility = options[childParentEligibility][0];
+        oldTotalEligibilitySum += currentEligibility;
         
-        if (currentEligibility > 0) {
+        if (currentEligibility > 1 gwei) {
             redistribute(children[i]);
             uint256 newEligibility = (currentEligibility * newRate) / oldRate;
             options[childParentEligibility][0] = newEligibility;
         }
-        
-    }
+    } 
+
+        if ( (oldTotalEligibilitySum > 1 ) && (oldTotalEligibilitySum / 100000) < (inflSec[nodeId][0] / 100000)) {
+            uint256 surplusAmount = balanceOf(toAddress(nodeId), nodeId) - balanceOf(toAddress(nodeId), parentOf[nodeId]);
+            _burn(toAddress(nodeId), nodeId, surplusAmount);
+        }
     
     inflSec[nodeId] = [newRate, block.timestamp, block.timestamp];
     
