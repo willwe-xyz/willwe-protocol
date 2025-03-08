@@ -12,7 +12,7 @@ import {TokenPrep} from "./mock/Tokens.sol";
 
 contract WillBaseEndpointTest is Test, TokenPrep, InitTest {
     IERC20 testToken;
-    uint256 rootBranchID;
+    uint256 rootNodeID;
     address receiver;
     address ExeEndpointAddress;
 
@@ -35,19 +35,19 @@ contract WillBaseEndpointTest is Test, TokenPrep, InitTest {
         testToken.transfer(A3, 10 ether);
         vm.stopPrank();
 
-        // Create root branch
+        // Create root Node
         vm.startPrank(A1);
-        rootBranchID = F.spawnBranch(uint256(uint160(address(testToken))));
+        rootNodeID = F.spawnNode(uint256(uint160(address(testToken))));
         vm.stopPrank();
 
         uint256 parentOfEndpoint = F.getParentOf(F.toID(ExeEndpointAddress));
 
         // Add additional members
         vm.prank(A2);
-        F.mintMembership(rootBranchID);
+        F.mintMembership(rootNodeID);
 
         vm.prank(A3);
-        F.mintMembership(rootBranchID);
+        F.mintMembership(rootNodeID);
 
         deal(A1, 6 ether);
         deal(A2, 6 ether);
@@ -56,20 +56,20 @@ contract WillBaseEndpointTest is Test, TokenPrep, InitTest {
         // Mint tokens for members
         vm.startPrank(A1);
         testToken.approve(address(F), 1 ether);
-        F.mintPath(rootBranchID, 1 ether);
+        F.mintPath(rootNodeID, 1 ether);
         F20.mintFromETH{value: 5 ether}();
 
         vm.stopPrank();
 
         vm.startPrank(A2);
         testToken.approve(address(F), 1 ether);
-        F.mintPath(rootBranchID, 1 ether);
+        F.mintPath(rootNodeID, 1 ether);
         F20.mintFromETH{value: 5 ether}();
         vm.stopPrank();
 
         vm.startPrank(A3);
         testToken.approve(address(F), 1 ether);
-        F.mintPath(rootBranchID, 1 ether);
+        F.mintPath(rootNodeID, 1 ether);
         vm.stopPrank();
         DOMAIN_SEPARATOR = IExecution(E).DOMAIN_SEPARATOR();
         receiver = address(bytes20(type(uint160).max / 2));

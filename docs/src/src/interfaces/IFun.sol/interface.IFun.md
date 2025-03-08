@@ -6,25 +6,25 @@ IERC1155, [IExecution](/src/interfaces/IExecution.sol/interface.IExecution.md)
 
 
 ## Functions
-### spawnRootBranch
+### spawnRootNode
 
 
 ```solidity
-function spawnRootBranch(address fungible20_) external returns (uint256 fID);
+function spawnRootNode(address fungible20_) external returns (uint256 fID);
 ```
 
-### spawnBranch
+### spawnNode
 
 
 ```solidity
-function spawnBranch(uint256 fid_) external returns (uint256 newID);
+function spawnNode(uint256 fid_) external returns (uint256 newID);
 ```
 
-### spawnBranchWithMembrane
+### spawnNodeWithMembrane
 
 
 ```solidity
-function spawnBranchWithMembrane(uint256 fid_, uint256 membraneID_) external returns (uint256 newID);
+function spawnNodeWithMembrane(uint256 fid_, uint256 membraneID_) external returns (uint256 newID);
 ```
 
 ### mintMembership

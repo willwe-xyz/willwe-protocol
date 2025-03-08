@@ -129,10 +129,10 @@
 //         returns (uint256 rootNode1, uint256 rootNode2, uint256 rootNode3, uint256 rootNode4)
 //     {
 //         console.log("#####3 createRootNodes ####");
-//         rootNode1 = willwe.spawnRootBranch(address(weth));
-//         rootNode2 = willwe.spawnRootBranch(address(mkr));
-//         rootNode3 = willwe.spawnRootBranch(address(dogCoinMax));
-//         rootNode4 = willwe.spawnRootBranch(address(xVentures));
+//         rootNode1 = willwe.spawnRootNode(address(weth));
+//         rootNode2 = willwe.spawnRootNode(address(mkr));
+//         rootNode3 = willwe.spawnRootNode(address(dogCoinMax));
+//         rootNode4 = willwe.spawnRootNode(address(xVentures));
 //     }
 
 //     function approveTokensForDeposits(address deployer) internal {
@@ -163,15 +163,15 @@
 //         console.log("Deployer DCM balance:", dogCoinMax.balanceOf(deployer));
 //         console.log("Deployer XV balance:", xVentures.balanceOf(deployer));
 
-//         uint256 Node1b = willwe.spawnBranch(rootNode1);
-//         uint256 Node2b = willwe.spawnBranch(rootNode2);
-//         uint256 Node3b = willwe.spawnBranch(rootNode3);
-//         uint256 Node4b = willwe.spawnBranch(rootNode4);
+//         uint256 Node1b = willwe.spawnNode(rootNode1);
+//         uint256 Node2b = willwe.spawnNode(rootNode2);
+//         uint256 Node3b = willwe.spawnNode(rootNode3);
+//         uint256 Node4b = willwe.spawnNode(rootNode4);
 
-//         uint256 Node1a = willwe.spawnBranch(Node1b);
-//         uint256 Node2a = willwe.spawnBranch(Node2b);
-//         uint256 Node3a = willwe.spawnBranch(Node3b);
-//         uint256 Node4a = willwe.spawnBranch(Node4b);
+//         uint256 Node1a = willwe.spawnNode(Node1b);
+//         uint256 Node2a = willwe.spawnNode(Node2b);
+//         uint256 Node3a = willwe.spawnNode(Node3b);
+//         uint256 Node4a = willwe.spawnNode(Node4b);
 
 //         console.log("mint path 1a--- 10keth");
 //         willwe.mintPath(Node1a, 10_000 ether);

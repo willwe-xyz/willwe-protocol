@@ -100,17 +100,17 @@
 
 //             uint256 bal1 = fruitToken.balanceOf(deployer);
 //             console.log("bal at spawn", bal1);
-//             uint256 rootBranch = willwe.spawnRootBranch(tokenAddress);
-//             uint256 subBranch1 = willwe.spawnBranch(rootBranch);
-//             // uint256 subSubBranch2 = willwe.spawnBranch(subBranch1);
+//             uint256 rootNode = willwe.spawnRootNode(tokenAddress);
+//             uint256 subNode1 = willwe.spawnNode(rootNode);
+//             // uint256 subSubNode2 = willwe.spawnNode(subNode1);
 //             fruitToken.approve(address(willwe), type(uint256).max);
 
-//             console.log(rootBranch);
+//             console.log(rootNode);
 
-//             willwe.mint(rootBranch, bal1 / 2);
+//             willwe.mint(rootNode, bal1 / 2);
 //             // vm.sleep(2000);
-//             // willwe.mint(  subBranch1, bal1 / 20 );
-//             // willwe.mintPath(subSubBranch, bal1 / 3 );
+//             // willwe.mint(  subNode1, bal1 / 20 );
+//             // willwe.mintPath(subSubNode, bal1 / 3 );
 
 //             // console.log(string(abi.encodePacked("Setup completed for ", fruitNames[i], " Token")));
 //         }

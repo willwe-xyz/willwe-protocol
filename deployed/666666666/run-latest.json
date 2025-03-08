@@ -120,7 +120,7 @@
       "transactionType": "CALL",
       "contractName": "BagBok",
       "contractAddress": "0xb66d700dd73624741b53cab585c53cd5d8f97fc4",
-      "function": "spawnRootBranch(address)",
+      "function": "spawnRootNode(address)",
       "arguments": [
         "0xCcc91AdffD6beebab13d7c004A0C61fd66c81F0A"
       ],
@@ -143,7 +143,7 @@
       "transactionType": "CALL",
       "contractName": "BagBok",
       "contractAddress": "0xb66d700dd73624741b53cab585c53cd5d8f97fc4",
-      "function": "spawnBranch(uint256)",
+      "function": "spawnNode(uint256)",
       "arguments": [
         "1169118908172225068032924210941312709067140505354"
       ],

@@ -72,8 +72,8 @@ pragma solidity ^0.8.18;
 //         console.log(" ");
 //         console.log("###############################");
 
-//         uint256 govNodeParent = FunFun.spawnRootBranch(address(F20));
-//         uint256 govNode = FunFun.spawnBranch(govNodeParent);
+//         uint256 govNodeParent = FunFun.spawnRootNode(address(F20));
+//         uint256 govNode = FunFun.spawnNode(govNodeParent);
 //         E.setFoundationAgent(govNode);
 
 //         address FA = E.FoundationAgent();

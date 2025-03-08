@@ -19,7 +19,7 @@ contract InflationTest is Test, TokenPrep, InitTest {
 
     uint256 B1;
     uint256 B2;
-    uint256 Branch2ID;
+    uint256 Node2ID;
 
     function setUp() public override {
         super.setUp();
@@ -28,7 +28,7 @@ contract InflationTest is Test, TokenPrep, InitTest {
         vm.label(address(T20), "T20");
 
         vm.prank(A1);
-        B1 = F.spawnRootBranch(address(T20));
+        B1 = F.spawnRootNode(address(T20));
 
         vm.prank(A1);
         T20.approve(address(F), 10 ether);
@@ -37,7 +37,7 @@ contract InflationTest is Test, TokenPrep, InitTest {
         F.mint(B1, 2 ether);
 
         vm.prank(A1);
-        B1 = F.spawnBranch(B1);
+        B1 = F.spawnNode(B1);
     }
 
     function testBasicInflation() public {
@@ -104,7 +104,7 @@ contract InflationTest is Test, TokenPrep, InitTest {
 
         F.mint(root, b1);
 
-        uint256 root2 = F.spawnBranch(root);
+        uint256 root2 = F.spawnNode(root);
         F.mint(root2, b1);
         vm.warp(block.timestamp + 100000);
 
@@ -113,7 +113,7 @@ contract InflationTest is Test, TokenPrep, InitTest {
         assertTrue(F.balanceOf(A100, root) == 0, "has root balance after push 0");
         assertTrue(F.balanceOf(A100, root2) > 1, "has balance after push 1");
 
-        uint256 root3 = F.spawnBranch(root2);
+        uint256 root3 = F.spawnNode(root2);
         F.mint(root3, b2);
 
         assertTrue(F.balanceOf(A100, root2) == 0, "has balance after push 2");

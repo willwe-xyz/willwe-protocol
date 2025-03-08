@@ -74,7 +74,7 @@
 //         // W_W.mintMembership(n1);
 //         // assertTrue(W_W.isMember(parseb_eth, node), 'expected member');
 //         // assertTrue(W_W.isMember(parseb_eth, n1), 'expected member 2');
-//         W_W.spawnRootBranch(address(1210283800312505576802985017589078370463982878496));
+//         W_W.spawnRootNode(address(1210283800312505576802985017589078370463982878496));
 //         W_W.mintMembership(1210283800312505576802985017589078370463982878496);
 
 //         W20.approve(address(W_W), 11_000_000 ether);

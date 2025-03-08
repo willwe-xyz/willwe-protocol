@@ -19,7 +19,7 @@ contract InflationTest is Test, TokenPrep, InitTest {
 
     uint256 B1;
     uint256 B2;
-    uint256 Branch2ID;
+    uint256 Node2ID;
     uint256 B11;
     uint256 B22;
     uint256 B21;
@@ -31,22 +31,22 @@ contract InflationTest is Test, TokenPrep, InitTest {
         vm.label(address(T20), "T20");
 
         vm.prank(A1);
-        B1 = F.spawnRootBranch(address(T20));
+        B1 = F.spawnRootNode(address(T20));
         vm.label(address(uint160(B1)), "B1root");
 
         vm.prank(A1);
         T20.approve(address(F), 10 ether);
 
         vm.prank(A1);
-        B11 = F.spawnBranch(B1);
+        B11 = F.spawnNode(B1);
         vm.label(address(uint160(B2)), "B2root");
 
         vm.prank(A1);
-        B22 = F.spawnBranch(B11);
+        B22 = F.spawnNode(B11);
         vm.label(address(uint160(B2)), "B22node");
 
         vm.prank(A1);
-        B21 = F.spawnBranch(B11);
+        B21 = F.spawnNode(B11);
         vm.label(address(uint160(B21)), "B21node");
 
         vm.prank(A1);

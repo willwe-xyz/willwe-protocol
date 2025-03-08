@@ -18,11 +18,11 @@ Experimental. Do not use.
 constructor(address Execution, address Membrane) Fun(Execution, Membrane);
 ```
 
-### spawnBranch
+### spawnNode
 
 
 ```solidity
-function spawnBranch(uint256 fid_) public virtual override returns (uint256 newID);
+function spawnNode(uint256 fid_) public virtual override returns (uint256 newID);
 ```
 
 ### mintMembership
@@ -54,39 +54,39 @@ function mintInflation(uint256 node) public virtual override returns (uint256 am
 ```
 
 ## Events
-### BranchSpawned
+### NodeSpawned
 
 ```solidity
-event BranchSpawned(uint256 indexed parentId, uint256 indexed newBranchId, address indexed creator);
+event NodeSpawned(uint256 indexed parentId, uint256 indexed newNodeId, address indexed creator);
 ```
 
 ### MembershipMinted
 
 ```solidity
-event MembershipMinted(uint256 indexed branchId, address indexed member);
+event MembershipMinted(uint256 indexed NodeId, address indexed member);
 ```
 
 ### TokensMinted
 
 ```solidity
-event TokensMinted(uint256 indexed branchId, address indexed minter, uint256 amount);
+event TokensMinted(uint256 indexed NodeId, address indexed minter, uint256 amount);
 ```
 
 ### TokensBurned
 
 ```solidity
-event TokensBurned(uint256 indexed branchId, address indexed burner, uint256 amount);
+event TokensBurned(uint256 indexed NodeId, address indexed burner, uint256 amount);
 ```
 
 ### InflationMinted
 
 ```solidity
-event InflationMinted(uint256 indexed branchId, uint256 amount);
+event InflationMinted(uint256 indexed NodeId, uint256 amount);
 ```
 
 ### SignalSent
 
 ```solidity
-event SignalSent(uint256 indexed branchId, address indexed sender, uint256[] signals);
+event SignalSent(uint256 indexed NodeId, address indexed sender, uint256[] signals);
 ```
 

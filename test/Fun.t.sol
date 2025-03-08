@@ -20,7 +20,7 @@ import "forge-std/console.sol";
 contract FunTests is Test, TokenPrep, InitTest {
     IERC20 T1;
     IERC20 T2;
-    uint256 public rootBranchID;
+    uint256 public rootNodeID;
 
     uint256 B1;
     uint256 B2;
@@ -51,31 +51,31 @@ contract FunTests is Test, TokenPrep, InitTest {
         T1.approve(address(F), type(uint256).max);
 
         vm.startPrank(A1);
-        rootBranchID = F.spawnRootBranch(address(T1));
+        rootNodeID = F.spawnRootNode(address(T1));
 
-        B1 = F.spawnBranch(rootBranchID);
+        B1 = F.spawnNode(rootNodeID);
         vm.label(address(uint160(B1)), "B1");
 
-        B11 = F.spawnBranch(B1);
+        B11 = F.spawnNode(B1);
         vm.label(address(uint160(B11)), "B11");
-        B12 = F.spawnBranch(B1);
+        B12 = F.spawnNode(B1);
         vm.label(address(uint160(B12)), "B12");
 
-        B2 = F.spawnBranch(rootBranchID);
+        B2 = F.spawnNode(rootNodeID);
         vm.label(address(uint160(B2)), "B2");
-        B22 = F.spawnBranch(B2);
+        B22 = F.spawnNode(B2);
         vm.label(address(uint160(B22)), "B22");
-        B12 = F.spawnBranch(B1);
+        B12 = F.spawnNode(B1);
         vm.label(address(uint160(B12)), "B12");
 
-        B2 = F.spawnBranch(rootBranchID);
+        B2 = F.spawnNode(rootNodeID);
         vm.label(address(uint160(B2)), "B2");
-        B22 = F.spawnBranch(B2);
+        B22 = F.spawnNode(B2);
         vm.label(address(uint160(B22)), "B22");
 
         console.log("T1 ERC20 (u160) value setup --- ", uint160(address(T1)));
 
-        console.log("RootBranch value setup --- ", rootBranchID);
+        console.log("RootNode value setup --- ", rootNodeID);
 
         console.log("B1 value setup --- ", B1);
         console.log("B2 value setup --- ", B2);
@@ -105,8 +105,8 @@ contract FunTests is Test, TokenPrep, InitTest {
         uint256 funBalance = T1.balanceOf(address(A1));
 
         vm.prank(A1);
-        F.mint(rootBranchID, 10 ether);
-        assertTrue(F.balanceOf(A1, rootBranchID) == 10 ether, "expected balance 10 eth");
+        F.mint(rootNodeID, 10 ether);
+        assertTrue(F.balanceOf(A1, rootNodeID) == 10 ether, "expected balance 10 eth");
 
         vm.prank(A1);
         F.mint(B1, 2 ether);
@@ -157,10 +157,10 @@ contract FunTests is Test, TokenPrep, InitTest {
 
         vm.startPrank(A1);
 
-        F.mint(rootBranchID, 10 ether);
-        assertTrue(F.balanceOf(A1, rootBranchID) == 10 ether, "expected balance 10 eth");
-        uint256 rootInflation = F.inflationOf(rootBranchID);
-        console.log("default inflation rate rootBranch :  - ", rootInflation);
+        F.mint(rootNodeID, 10 ether);
+        assertTrue(F.balanceOf(A1, rootNodeID) == 10 ether, "expected balance 10 eth");
+        uint256 rootInflation = F.inflationOf(rootNodeID);
+        console.log("default inflation rate rootNode :  - ", rootInflation);
 
         F.mint(B1, 2 ether);
         uint256 B1inflation = F.inflationOf(B1);
@@ -189,7 +189,7 @@ contract FunTests is Test, TokenPrep, InitTest {
         vm.prank(A2);
         T1.approve(address(F), type(uint256).max / 2);
         vm.prank(A2);
-        F.mint(rootBranchID, 10 ether);
+        F.mint(rootNodeID, 10 ether);
 
         vm.startPrank(A1);
         uint256[] memory childrenOf = F.getChildrenOf(B1);
@@ -274,7 +274,7 @@ contract FunTests is Test, TokenPrep, InitTest {
         uint256[] memory fids = F.getFidPath(B22);
         assertTrue(fids.length == 2, "fid has len");
         assertTrue(fids[0] == F.getParentOf(fids[0]), "first id not root");
-        assertTrue(fids[0] == rootBranchID, "expecte root");
+        assertTrue(fids[0] == rootNodeID, "expecte root");
         assertTrue(fids[1] == B2, "expected parent");
     }
 
@@ -308,7 +308,7 @@ contract FunTests is Test, TokenPrep, InitTest {
 
         // Get the path from root to B12
         uint256[] memory path = new uint256[](3);
-        path[0] = rootBranchID;
+        path[0] = rootNodeID;
         path[1] = B1;
         path[2] = B12;
 
@@ -339,7 +339,7 @@ contract FunTests is Test, TokenPrep, InitTest {
 
         // Verify the path
         assertTrue(F.getParentOf(B12) == B1, "B1 should be parent of B12");
-        assertTrue(F.getParentOf(B1) == rootBranchID, "rootBranchID should be parent of B1");
+        assertTrue(F.getParentOf(B1) == rootNodeID, "rootNodeID should be parent of B1");
 
         // Check balances of B11 and B12 after path redistribution
         uint256 b11FinalBalance = F.balanceOf(address(uint160(B11)), B1);

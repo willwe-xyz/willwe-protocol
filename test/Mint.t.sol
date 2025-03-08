@@ -18,7 +18,7 @@ contract MintTest is Test, TokenPrep, InitTest {
 
     uint256 B1;
     uint256 B2;
-    uint256 Branch2ID;
+    uint256 Node2ID;
 
     function setUp() public override {
         super.setUp();
@@ -32,7 +32,7 @@ contract MintTest is Test, TokenPrep, InitTest {
         T20tid = uint160(bytes20(T20addr));
 
         vm.prank(address(A1));
-        B1 = F.spawnRootBranch(T20addr);
+        B1 = F.spawnRootNode(T20addr);
     }
 
     function testInitCheck() public {
@@ -92,7 +92,7 @@ contract MintTest is Test, TokenPrep, InitTest {
         assertTrue(bal1 == 2 ether, "Qty. mint missmatch");
         uint256 rootBal = F.totalSupply(F.toID(T20addr));
 
-        B2 = F.spawnBranch(B1);
+        B2 = F.spawnNode(B1);
         vm.label(F.toAddress(B2), "B2fid");
         assertTrue(F.getParentOf(B2) == B1, "not parent-son");
         assertTrue(F.totalSupply(B2) == 0, "some pre minted");
@@ -166,17 +166,17 @@ contract MintTest is Test, TokenPrep, InitTest {
         T20.approve(address(F), 4 ether);
         F.mint(B1, 4 ether);
 
-        uint256 branch2 = F.spawnBranch(B1);
-        F.mint(branch2, 1 ether);
+        uint256 Node2 = F.spawnNode(B1);
+        F.mint(Node2, 1 ether);
 
-        uint256 branch3 = F.spawnBranch(branch2);
-        F.mint(branch3, 1 ether);
+        uint256 Node3 = F.spawnNode(Node2);
+        F.mint(Node3, 1 ether);
 
-        uint256 B02 = F.spawnBranch(B1);
-        uint256 branch202 = F.spawnBranch(B02);
+        uint256 B02 = F.spawnNode(B1);
+        uint256 Node202 = F.spawnNode(B02);
 
         F.mint(B02, 2 ether);
-        F.mint(branch202, 1 ether);
+        F.mint(Node202, 1 ether);
 
         uint256 balance1 = T20.balanceOf(A1);
         uint256 totalInternalPre = F.totalSupply(B1);

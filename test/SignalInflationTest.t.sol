@@ -15,7 +15,7 @@ import {Strings} from "openzeppelin-contracts/contracts/utils/Strings.sol";
 
 contract SignalInflationTests is InitTest, TokenPrep {
     IERC20 T1;
-    uint256 rootBranchID;
+    uint256 rootNodeID;
     uint256 B1;
     uint256 B2;
     uint256 B11;
@@ -55,19 +55,19 @@ contract SignalInflationTests is InitTest, TokenPrep {
         vm.prank(A2);
         T1.approve(address(F), type(uint256).max);
 
-        // Create branches under the root branch
+        // Create Nodees under the root Node
         vm.startPrank(A1); // Start with root
-        rootBranchID = F.spawnRootBranch(address(T1));
-        B1 = F.spawnBranch(rootBranchID);
-        B2 = F.spawnBranch(rootBranchID);
-        B11 = F.spawnBranch(B1);
-        B12 = F.spawnBranch(B1);
-        B21 = F.spawnBranch(B2);
-        B22 = F.spawnBranch(B2);
+        rootNodeID = F.spawnRootNode(address(T1));
+        B1 = F.spawnNode(rootNodeID);
+        B2 = F.spawnNode(rootNodeID);
+        B11 = F.spawnNode(B1);
+        B12 = F.spawnNode(B1);
+        B21 = F.spawnNode(B2);
+        B22 = F.spawnNode(B2);
         vm.stopPrank(); // End with root
 
-        // Ensure branches are correctly created
-        console.log("rootBranchID:", rootBranchID);
+        // Ensure Nodees are correctly created
+        console.log("rootNodeID:", rootNodeID);
         console.log("B1:", B1);
         console.log("B2:", B2);
         console.log("B11:", B11);
@@ -84,15 +84,15 @@ contract SignalInflationTests is InitTest, TokenPrep {
     }
 
     function testSignalInflationRateChanges() public {
-        fundParentNode(A1, rootBranchID, 100 ether);
-        console.log("Balance of A1 after funding rootBranchID:", T1.balanceOf(A1));
+        fundParentNode(A1, rootNodeID, 100 ether);
+        console.log("Balance of A1 after funding rootNodeID:", T1.balanceOf(A1));
 
         fundParentNode(A1, B1, 100 ether);
         console.log("Balance of A1 after funding B1 with 100 ether:", T1.balanceOf(A1));
         vm.startPrank(A1);
-        // Fund rootBranchID with external ERC20 balance
+        // Fund rootNodeID with external ERC20 balance
 
-        // Fund B1 from rootBranchID balance
+        // Fund B1 from rootNodeID balance
 
         uint256[] memory signals = new uint256[](2);
         signals[1] = 5000; // Signal 0.05% inflation
@@ -109,11 +109,11 @@ contract SignalInflationTests is InitTest, TokenPrep {
     }
 
     function testMaximumSignalPercentageEnforcement() public {
-        // Fund rootBranchID with external ERC20 balance
-        fundParentNode(A1, rootBranchID, 100 ether);
-        console.log("Balance of A1 after funding rootBranchID:", T1.balanceOf(A1));
+        // Fund rootNodeID with external ERC20 balance
+        fundParentNode(A1, rootNodeID, 100 ether);
+        console.log("Balance of A1 after funding rootNodeID:", T1.balanceOf(A1));
 
-        // Fund B1 from rootBranchID balance
+        // Fund B1 from rootNodeID balance
         fundParentNode(A1, B1, 100 ether);
         console.log("Balance of A1 after funding B1 with 100 ether:", T1.balanceOf(A1));
         vm.startPrank(A1);
@@ -144,10 +144,10 @@ contract SignalInflationTests is InitTest, TokenPrep {
     }
 
     function testSignalAndRedistribution() public {
-        // Fund rootBranchID with external ERC20 balance
-        fundParentNode(A1, rootBranchID, 100 ether);
+        // Fund rootNodeID with external ERC20 balance
+        fundParentNode(A1, rootNodeID, 100 ether);
 
-        // Fund B1 from rootBranchID balance
+        // Fund B1 from rootNodeID balance
         fundParentNode(A1, B1, 100 ether);
         vm.startPrank(A1);
 
@@ -184,10 +184,10 @@ contract SignalInflationTests is InitTest, TokenPrep {
     }
 
     function testGetUserNodeSignals() public {
-        // Fund rootBranchID with external ERC20 balance
-        fundParentNode(A1, rootBranchID, 100 ether);
+        // Fund rootNodeID with external ERC20 balance
+        fundParentNode(A1, rootNodeID, 100 ether);
 
-        // Fund B1 from rootBranchID balance
+        // Fund B1 from rootNodeID balance
         fundParentNode(A1, B1, 100 ether);
         vm.startPrank(A1);
         assertTrue(F.balanceOf(A1, B1) > 0.1 ether, "Expected A1 to have influence");
@@ -195,7 +195,6 @@ contract SignalInflationTests is InitTest, TokenPrep {
         signals[2] = 6000; // 60% to B11
         signals[3] = 4000; // 40% to B12
         F.sendSignal(B1, signals);
-
 
         uint256[2][] memory userNodeSignals = F.getUserNodeSignals(A1, B1);
 
@@ -212,10 +211,10 @@ contract SignalInflationTests is InitTest, TokenPrep {
     }
 
     function testGetNodeDataWithUserSignals() public {
-        // Fund rootBranchID with external ERC20 balance
-        fundParentNode(A1, rootBranchID, 100 ether);
+        // Fund rootNodeID with external ERC20 balance
+        fundParentNode(A1, rootNodeID, 100 ether);
 
-        // Fund B1 from rootBranchID balance
+        // Fund B1 from rootNodeID balance
         fundParentNode(A1, B1, 100 ether);
         vm.startPrank(A1);
 
@@ -229,14 +228,14 @@ contract SignalInflationTests is InitTest, TokenPrep {
         // Check if the basic info is correct
         assertEq(nodeData.basicInfo[0], uint256(uint160(B1)).toString(), "node id issue");
         assertEq(nodeData.basicInfo[1], F.inflationOf(B1).toString(), "inflation issue");
-        assertEq(nodeData.basicInfo[2], F.balanceOf(address(uint160(B1)), rootBranchID).toString(), "balance 111");
+        assertEq(nodeData.basicInfo[2], F.balanceOf(address(uint160(B1)), rootNodeID).toString(), "balance 111");
         assertEq(nodeData.basicInfo[3], F.balanceOf(address(uint160(B1)), B1).toString(), "balance 222");
         assertEq(
             nodeData.basicInfo[4], F.asRootValuation(B1, F.balanceOf(address(uint160(B1)), B1)).toString(), "root val"
         );
         assertEq(
             nodeData.basicInfo[5],
-            F.asRootValuation(B1, F.balanceOf(address(uint160(B1)), rootBranchID)).toString(),
+            F.asRootValuation(B1, F.balanceOf(address(uint160(B1)), rootNodeID)).toString(),
             "root val 22"
         );
         assertEq(nodeData.basicInfo[6], F.getMembraneOf(B1).toString(), "membrane issue");

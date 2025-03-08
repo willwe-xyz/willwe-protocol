@@ -20,7 +20,7 @@ contract MembraneTests is Test, InitTest {
     X20 X20token;
     ERC721 X721;
 
-    uint256 rootBranch;
+    uint256 rootNode;
     uint256 B1;
     uint256 B2;
 
@@ -33,11 +33,11 @@ contract MembraneTests is Test, InitTest {
         vm.label(address(X721), "X721");
 
         vm.prank(A1);
-        rootBranch = F.spawnRootBranch(address(X20token));
+        rootNode = F.spawnRootNode(address(X20token));
         vm.prank(A1);
-        B1 = F.spawnBranch(rootBranch);
+        B1 = F.spawnNode(rootNode);
         vm.prank(A1);
-        B2 = F.spawnBranch(rootBranch);
+        B2 = F.spawnNode(rootNode);
 
         vm.prank(address(this));
         X20token.transfer(A1, 10 ether);
@@ -99,7 +99,7 @@ contract MembraneTests is Test, InitTest {
         X20token.approve(address(F), 100 ether);
 
         vm.prank(A1);
-        F.mint(rootBranch, 1 ether);
+        F.mint(rootNode, 1 ether);
 
         vm.prank(A1);
         F.mint(B1, 1 ether);

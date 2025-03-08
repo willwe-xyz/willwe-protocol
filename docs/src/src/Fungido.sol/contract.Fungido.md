@@ -206,9 +206,9 @@ function setControl(address newController) external;
 function initSelfControl() external returns (address);
 ```
 
-### spawnRootBranch
+### spawnRootNode
 
-spawns core branch for a token
+spawns core Node for a token
 
 acts as port for token value
 
@@ -216,7 +216,7 @@ nests all token specific contexts
 
 
 ```solidity
-function spawnRootBranch(address fungible20_) public virtual returns (uint256 fID);
+function spawnRootNode(address fungible20_) public virtual returns (uint256 fID);
 ```
 **Parameters**
 
@@ -225,7 +225,7 @@ function spawnRootBranch(address fungible20_) public virtual returns (uint256 fI
 |`fungible20_`|`address`|address of ERC20 token|
 
 
-### spawnBranch
+### spawnNode
 
 creates new context nested under a parent node id
 
@@ -233,7 +233,7 @@ agent spawning a new underlink needs to be a member in containing context
 
 
 ```solidity
-function spawnBranch(uint256 fid_) public virtual returns (uint256 newID);
+function spawnNode(uint256 fid_) public virtual returns (uint256 newID);
 ```
 **Parameters**
 
@@ -242,13 +242,13 @@ function spawnBranch(uint256 fid_) public virtual returns (uint256 newID);
 |`fid_`|`uint256`|context node id|
 
 
-### spawnBranchWithMembrane
+### spawnNodeWithMembrane
 
-spawns branch with an enforceable membership mechanism and creates new membrane
+spawns Node with an enforceable membership mechanism and creates new membrane
 
 
 ```solidity
-function spawnBranchWithMembrane(
+function spawnNodeWithMembrane(
     uint256 fid_,
     address[] memory tokens_,
     uint256[] memory balances_,
@@ -264,7 +264,7 @@ function spawnBranchWithMembrane(
 |`tokens_`|`address[]`|array of token addresses for membrane conditions|
 |`balances_`|`uint256[]`|array of required balances for each token|
 |`meta_`|`string`|metadata string (e.g. IPFS hash) for membrane details|
-|`inflationRate_`|`uint256`|rate for new branch token shares in gwei per second|
+|`inflationRate_`|`uint256`|rate for new Node token shares in gwei per second|
 
 
 ### mintMembership
@@ -700,16 +700,16 @@ function getNodeDataWithUserSignals(uint256 nodeId, address user) public view re
 event SelfControlAtAddress(address AgencyLocus);
 ```
 
-### NewRootBranch
+### NewRootNode
 
 ```solidity
-event NewRootBranch(uint256 indexed rootBranchId);
+event NewRootNode(uint256 indexed rootNodeId);
 ```
 
-### NewBranch
+### NewNode
 
 ```solidity
-event NewBranch(uint256 indexed newId, uint256 indexed parentId, address indexed creator);
+event NewNode(uint256 indexed newId, uint256 indexed parentId, address indexed creator);
 ```
 
 ## Errors
@@ -737,10 +737,10 @@ error StableRoot();
 error AlreadyMember();
 ```
 
-### BranchNotFound
+### NodeNotFound
 
 ```solidity
-error BranchNotFound();
+error NodeNotFound();
 ```
 
 ### Unqualified
@@ -785,10 +785,10 @@ error EOA();
 error RootExists();
 ```
 
-### BranchAlreadyExists
+### NodeAlreadyExists
 
 ```solidity
-error BranchAlreadyExists();
+error NodeAlreadyExists();
 ```
 
 ### UnsupportedTransfer

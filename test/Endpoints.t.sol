@@ -21,7 +21,7 @@ contract Endpoints is Test, TokenPrep, InitTest {
     IERC20 T1;
     IERC20 T2;
 
-    uint256 rootBranchID;
+    uint256 rootNodeID;
 
     uint256 B1;
     uint256 B2;
@@ -66,21 +66,21 @@ contract Endpoints is Test, TokenPrep, InitTest {
         T2.approve(address(F), type(uint256).max);
 
         vm.startPrank(A1);
-        rootBranchID = F.spawnBranch(uint160(address(T1)));
+        rootNodeID = F.spawnNode(uint160(address(T1)));
 
-        B1 = F.spawnBranch(rootBranchID);
-        B11 = F.spawnBranch(B1);
-        B12 = F.spawnBranch(B1);
+        B1 = F.spawnNode(rootNodeID);
+        B11 = F.spawnNode(B1);
+        B12 = F.spawnNode(B1);
 
-        B2 = F.spawnBranch(rootBranchID);
+        B2 = F.spawnNode(rootNodeID);
 
         vm.stopPrank();
 
         vm.prank(A2);
-        F.mintMembership(rootBranchID);
+        F.mintMembership(rootNodeID);
 
         vm.prank(A3);
-        F.mintMembership(rootBranchID);
+        F.mintMembership(rootNodeID);
 
         vm.startPrank(address(1));
 
@@ -102,18 +102,18 @@ contract Endpoints is Test, TokenPrep, InitTest {
         T1.transfer(A1, 1 ether + 1);
 
         assertTrue(B1 > 1);
-        assertTrue(F.balanceOf(A1, rootBranchID) == 0, "unexpected balance");
+        assertTrue(F.balanceOf(A1, rootNodeID) == 0, "unexpected balance");
 
         uint256 before = T1.balanceOf(A1);
 
         vm.prank(A1);
-        F.mintPath(rootBranchID, 1 ether);
+        F.mintPath(rootNodeID, 1 ether);
 
         vm.prank(address(1));
         T1.transfer(address(F), 10 ether);
 
         vm.prank(A1);
-        F.burn(rootBranchID, 1 ether);
+        F.burn(rootNodeID, 1 ether);
 
         uint256 aaafter = T1.balanceOf(A1);
         console.log(before, aaafter, before - aaafter);
@@ -131,18 +131,18 @@ contract Endpoints is Test, TokenPrep, InitTest {
         T1.transfer(A3, 6 ether);
 
         vm.startPrank(A1);
-        F.mintPath(rootBranchID, 1 ether);
-        console.log("balance A1 rootBranchID", F.balanceOf(A1, rootBranchID));
+        F.mintPath(rootNodeID, 1 ether);
+        console.log("balance A1 rootNodeID", F.balanceOf(A1, rootNodeID));
         F.mintPath(B1, 0.9 ether);
         vm.stopPrank();
 
         vm.startPrank(A2);
-        F.mintPath(rootBranchID, 1 ether);
+        F.mintPath(rootNodeID, 1 ether);
         F.mintPath(B1, 1 ether);
         vm.stopPrank();
 
         vm.startPrank(A3);
-        F.mintPath(rootBranchID, 2 ether);
+        F.mintPath(rootNodeID, 2 ether);
         F.mintPath(B1, 1.2 ether);
         vm.stopPrank();
     }
@@ -201,7 +201,7 @@ contract Endpoints is Test, TokenPrep, InitTest {
         string memory description = "this is a description";
         bytes memory data = _getCallData();
 
-        bytes32 moveHash = IExecution(E).startMovement(1, rootBranchID, 12, address(0), description, data);
+        bytes32 moveHash = IExecution(E).startMovement(1, rootNodeID, 12, address(0), description, data);
         SignatureQueue memory SQ = IExecution(E).getSigQueue(moveHash);
 
         assertTrue(SQ.state == SQState.Initialized, "expected initialized");
@@ -212,7 +212,7 @@ contract Endpoints is Test, TokenPrep, InitTest {
         skip(block.timestamp + 10);
         description = "this is a description";
 
-        moveHash = IExecution(E).startMovement(1, rootBranchID, 12, SQ.Action.exeAccount, description, data);
+        moveHash = IExecution(E).startMovement(1, rootNodeID, 12, SQ.Action.exeAccount, description, data);
         SQ = IExecution(E).getSigQueue(moveHash);
 
         assertTrue(SQ.state == SQState.Initialized, "expected initialized");
@@ -223,7 +223,7 @@ contract Endpoints is Test, TokenPrep, InitTest {
         skip(block.timestamp + 10);
         description = "this is a description";
 
-        moveHash = IExecution(E).startMovement(2, rootBranchID, 12, SQ.Action.exeAccount, description, data);
+        moveHash = IExecution(E).startMovement(2, rootNodeID, 12, SQ.Action.exeAccount, description, data);
         SQ = IExecution(E).getSigQueue(moveHash);
 
         assertTrue(SQ.state == SQState.Initialized, "expected initialized");
@@ -236,14 +236,14 @@ contract Endpoints is Test, TokenPrep, InitTest {
     function testCreatesSoloEndpoint() public {
         vm.startPrank(A1);
 
-        address endpoint = F.createEndpointForOwner(rootBranchID, A1);
+        address endpoint = F.createEndpointForOwner(rootNodeID, A1);
 
         uint256 membershipID = F.membershipID(F.toID(endpoint));
         vm.label(A1, "A1User");
 
-        NodeState memory N = F.getNodeData(rootBranchID, A1);
+        NodeState memory N = F.getNodeData(rootNodeID, A1);
         assertEq(N.basicInfo[10], Strings.toHexString(endpoint), "expected endpoint in node data w user");
-        assertEq(F.allMembersOf((F.toID(A1) + rootBranchID))[0], endpoint, "expected endpoint");
+        assertEq(F.allMembersOf((F.toID(A1) + rootNodeID))[0], endpoint, "expected endpoint");
 
         vm.stopPrank();
     }
@@ -274,8 +274,6 @@ contract Endpoints is Test, TokenPrep, InitTest {
             )
         );
 
-
-
         bytes32 hash = IExecution(E).hashMovement(movement);
 
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(signerPVK_, hash);
@@ -302,7 +300,7 @@ contract Endpoints is Test, TokenPrep, InitTest {
         T1.transfer(M.exeAccount, 3 ether);
     }
 
-    function simpleSignHash(uint256 pvk , bytes32 hash) public returns (bytes memory signature) {
+    function simpleSignHash(uint256 pvk, bytes32 hash) public returns (bytes memory signature) {
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(pvk, hash);
         signature = abi.encodePacked(r, s, v);
     }
@@ -322,53 +320,56 @@ contract Endpoints is Test, TokenPrep, InitTest {
 
         // Create valid signatures - use helper function to reduce stack variables
         (address[] memory signers, bytes[] memory signatures) = _getSignaturesForMovement(M, move);
-        
+
         // Submit signatures
         console.log("Submitting signatures...");
         IExecution(E).submitSignatures(move, signers, signatures);
         console.log("Signatures submitted");
-        
+
         // Verify after submission
         SQ = IExecution(E).getSigQueue(move);
         console.log("Queue signers length after submission:", SQ.Signers.length);
-        
+
         // For simplicity and to avoid stack too deep errors, we'll just assert we have signatures
         assertTrue(SQ.Signers.length >= 3, "No signatures stored");
-        
+
         return move;
     }
 
     // Helper function to create signatures and reduce variables in the main test
-    function _getSignaturesForMovement(Movement memory M, bytes32 moveHash) internal returns (address[] memory signers, bytes[] memory signatures) {
+    function _getSignaturesForMovement(Movement memory M, bytes32 moveHash)
+        internal
+        returns (address[] memory signers, bytes[] memory signatures)
+    {
         // Create valid signatures
         signers = new address[](3);
         signatures = new bytes[](3);
-        
+
         signers[0] = A1;
         signers[1] = A2;
         signers[2] = A3;
 
         // Get the correct digest
         bytes32 digest = IExecution(E).getDigestToSign(M);
-        
+
         console.log("Digest to sign:", vm.toString(digest));
         console.log("Movement hash:", vm.toString(moveHash));
-        
+
         // Sign with each key - use direct signatures from the private keys to the digest
         (uint8 v1, bytes32 r1, bytes32 s1) = vm.sign(A1pvk, digest);
         signatures[0] = abi.encodePacked(r1, s1, v1);
-        
+
         (uint8 v2, bytes32 r2, bytes32 s2) = vm.sign(A2pvk, digest);
         signatures[1] = abi.encodePacked(r2, s2, v2);
-        
+
         (uint8 v3, bytes32 r3, bytes32 s3) = vm.sign(A3pvk, digest);
         signatures[2] = abi.encodePacked(r3, s3, v3);
-        
+
         // Log signature lengths for debugging
-        for (uint i = 0; i < signatures.length; i++) {
+        for (uint256 i = 0; i < signatures.length; i++) {
             console.log("Signature", i, "length:", signatures[i].length);
         }
-        
+
         return (signers, signatures);
     }
 
@@ -427,9 +428,9 @@ contract Endpoints is Test, TokenPrep, InitTest {
     function testSpawnFromEndpoint() public {
         vm.startPrank(A1);
 
-        address endpoint = F.createEndpointForOwner(rootBranchID, A1);
+        address endpoint = F.createEndpointForOwner(rootNodeID, A1);
         vm.expectRevert();
-        F.spawnBranch(uint256(uint160(endpoint)));
+        F.spawnNode(uint256(uint160(endpoint)));
 
         vm.expectRevert();
         F.mintMembership(uint256(uint160(endpoint)));
@@ -442,25 +443,25 @@ contract Endpoints is Test, TokenPrep, InitTest {
             vm.prank(A2);
             F.mintMembership(B2);
         }
-        
+
         if (!F.isMember(A3, B2)) {
             vm.prank(A3);
             F.mintMembership(B2);
         }
-        
+
         // Ensure each member has a path and some tokens
         vm.startPrank(A1);
         if (F.balanceOf(A1, B2) == 0) {
             F.mintPath(B2, 1 ether);
         }
         vm.stopPrank();
-        
+
         vm.startPrank(A2);
         if (F.balanceOf(A2, B2) == 0) {
             F.mintPath(B2, 1 ether);
         }
         vm.stopPrank();
-        
+
         vm.startPrank(A3);
         if (F.balanceOf(A3, B2) == 0) {
             F.mintPath(B2, 1 ether);

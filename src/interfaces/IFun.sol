@@ -5,10 +5,10 @@ import {IERC1155} from "openzeppelin-contracts/contracts/token/ERC1155/IERC1155.
 import {IExecution, SignatureQueue, NodeState, Movement} from "./IExecution.sol";
 
 interface IFun is IERC1155, IExecution {
-    // Root and Branch Management
-    function spawnRootBranch(address fungible20_) external returns (uint256 fID);
-    function spawnBranch(uint256 fid_) external returns (uint256 newID);
-    function spawnBranchWithMembrane(
+    // Root and Node Management
+    function spawnRootNode(address fungible20_) external returns (uint256 fID);
+    function spawnNode(uint256 fid_) external returns (uint256 newID);
+    function spawnNodeWithMembrane(
         uint256 fid_,
         address[] memory tokens_,
         uint256[] memory balances_,

@@ -66,8 +66,8 @@ contract DeployOptimism is Script, TokenPrep, AliasPicker {
         console.log(" ");
         console.log("###############################");
 
-        uint256 govNodeParent = FunFun.spawnRootBranch(address(F20));
-        uint256 govNode = FunFun.spawnBranch(govNodeParent);
+        uint256 govNodeParent = FunFun.spawnRootNode(address(F20));
+        uint256 govNode = FunFun.spawnNode(govNodeParent);
         // E.setFoundingAgent(govNode);
 
         address FA = FunFun.initSelfControl();

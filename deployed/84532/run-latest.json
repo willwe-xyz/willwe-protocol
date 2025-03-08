@@ -123,7 +123,7 @@
       "transactionType": "CALL",
       "contractName": "WillWe",
       "contractAddress": "0xd6c1fc16d2a24d364291473cf8e4af51b94925ec",
-      "function": "spawnRootBranch(address)",
+      "function": "spawnRootNode(address)",
       "arguments": [
         "0x6b584Cfefd5bc1636D02BCb0854b6971dE66e142"
       ],
@@ -146,7 +146,7 @@
       "transactionType": "CALL",
       "contractName": "WillWe",
       "contractAddress": "0xd6c1fc16d2a24d364291473cf8e4af51b94925ec",
-      "function": "spawnBranch(uint256)",
+      "function": "spawnNode(uint256)",
       "arguments": [
         "612831185357844639956605555072606624116638146882"
       ],

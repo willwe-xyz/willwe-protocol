@@ -9,7 +9,6 @@ import {IExecution} from "./interfaces/IExecution.sol";
 /// @author parseb
 ///////////////////////////////////////////////
 
-
 contract Fun is Fungido {
     constructor(address ExeAddr, address Membranes_) Fungido(ExeAddr, Membranes_) {
         executionAddress = ExeAddr;
@@ -29,14 +28,18 @@ contract Fun is Fungido {
 
     event InflationRateChanged(uint256 indexed nodeId, uint256 oldInflationRate, uint256 newInflationRate);
     event MembraneChanged(uint256 indexed nodeId, uint256 previousMembrane, uint256 newMembrane);
-    event Signaled(uint256 indexed nodeId, address sender, address origin);
     event ConfigSignal(uint256 indexed nodeId, bytes32 expressedOption);
     event CreatedEndpoint(address indexed endpoint, address indexed owner, uint256 indexed nodeId);
+    event Resignaled(address indexed sender, uint256 indexed nodeId, address origin);
+    event MembraneSignal(uint256 indexed nodeId, address indexed origin, uint256 membraneId);
+    event InflationSignal(uint256 indexed nodeId, address indexed origin, uint256 inflationRate);
+    event UserNodeSignal(uint256 indexed nodeId, address indexed user, uint256[] signals);
 
     function resignal(uint256 targetNode_, uint256[] memory signals, address originator) public virtual {
         impersonatingAddress = originator;
         sendSignal(targetNode_, signals);
         delete impersonatingAddress;
+        emit Resignaled(msg.sender, targetNode_, originator);
     }
 
     function _msgSender() internal view override returns (address) {
@@ -59,24 +62,26 @@ contract Fun is Fungido {
         uint256[] memory children = childrenOf[targetNode_];
 
         uint256 sigSum;
-
-        for (uint256 i; i < signals.length; ++i) {
-            bytes32 userKey = keccak256(abi.encodePacked(targetNode_, user, signals[i]));
-
-            if (impersonatingAddress != address(0) && isMember && options[userKey][0] != signals[i]) {
+        uint256 i = impersonatingAddress != address(0) ? 2 : 0;
+        for (i; i < signals.length; ++i) {
+            uint256 signalValue = signals[i];
+            bytes32 userKey = keccak256(abi.encodePacked(targetNode_, user, signalValue));
+            if (impersonatingAddress != address(0) && isMember && options[userKey][0] != signalValue) {
                 revert ResignalMismatch();
             }
-            if ((!isMember) && signals[i] > 0) revert ResignalMismatch();
+            if ((!isMember) && signalValue > 0) revert ResignalMismatch();
             if (i <= 1) {
-                if (signals[i] == 0) continue;
-                _handleSpecialSignals(targetNode_, signals[i], i, balanceOfSender, userKey);
+                if (signalValue == 0) continue;
+                if (i == 0) emit InflationSignal(targetNode_, _msgSender(), signalValue);
+                if (i == 1) emit MembraneSignal(targetNode_, _msgSender(), signalValue);
+                _handleSpecialSignals(targetNode_, signalValue, i, balanceOfSender, userKey);
             } else {
-                _handleRegularSignals(targetNode_, user, signals[i], i, signals.length, children);
-                sigSum += signals[i];
+                _handleRegularSignals(targetNode_, user, signalValue, i, signals.length, children);
+                sigSum += signalValue;
             }
         }
         if (sigSum != 0 && sigSum != 100_00) revert IncompleteSign();
-        emit Signaled(targetNode_, address(uint160(user)), msg.sender);
+        emit UserNodeSignal(targetNode_, toAddress(user), signals);
     }
 
     function _handleSpecialSignals(
@@ -131,39 +136,35 @@ contract Fun is Fungido {
             emit InflationRateChanged(targetNode_, inflSec[targetNode_][0], signal * 1 gwei);
             _handleInflationUpdate(targetNode_, inflSec[targetNode_][0], signal * 1 gwei);
             inflSec[targetNode_] = [signal * 1 gwei, block.timestamp, block.timestamp];
-
         }
     }
 
-    function _handleInflationUpdate(
-    uint256 nodeId,
-    uint256 oldRate,
-    uint256 newRate
-) private {    
-    uint256[] memory children = childrenOf[nodeId];
-    if (children.length == 0) return;
-    uint256 oldTotalEligibilitySum;
-    for (uint256 i = 0; i < children.length; i++) {
-        bytes32 childParentEligibility = keccak256(abi.encodePacked(children[i], nodeId));
-        uint256 currentEligibility = options[childParentEligibility][0];
-        oldTotalEligibilitySum += currentEligibility;
-        
-        if (currentEligibility > 1 gwei) {
-            redistribute(children[i]);
-            uint256 newEligibility = (currentEligibility * newRate) / oldRate;
-            options[childParentEligibility][0] = newEligibility;
-        }
-    } 
+    function _handleInflationUpdate(uint256 nodeId, uint256 oldRate, uint256 newRate) private {
+        uint256[] memory children = childrenOf[nodeId];
+        if (children.length == 0) return;
+        uint256 oldTotalEligibilitySum;
+        for (uint256 i = 0; i < children.length; i++) {
+            bytes32 childParentEligibility = keccak256(abi.encodePacked(children[i], nodeId));
+            uint256 currentEligibility = options[childParentEligibility][0];
+            oldTotalEligibilitySum += currentEligibility;
 
-        if ( (oldTotalEligibilitySum > 1 ) && (oldTotalEligibilitySum / 100000) < (inflSec[nodeId][0] / 100000)) {
-            uint256 surplusAmount = balanceOf(toAddress(nodeId), nodeId) - balanceOf(toAddress(nodeId), parentOf[nodeId]);
+            if (currentEligibility > 1 gwei) {
+                redistribute(children[i]);
+                uint256 newEligibility = (currentEligibility * newRate) / oldRate;
+                options[childParentEligibility][0] = newEligibility;
+            }
+        }
+
+        if ((oldTotalEligibilitySum > 1) && (oldTotalEligibilitySum / 100000) < (inflSec[nodeId][0] / 100000)) {
+            uint256 surplusAmount =
+                balanceOf(toAddress(nodeId), nodeId) - balanceOf(toAddress(nodeId), parentOf[nodeId]);
             _burn(toAddress(nodeId), nodeId, surplusAmount);
         }
-    
-    inflSec[nodeId] = [newRate, block.timestamp, block.timestamp];
-    
-    emit InflationRateChanged(nodeId, oldRate, newRate);
-}
+
+        inflSec[nodeId] = [newRate, block.timestamp, block.timestamp];
+
+        emit InflationRateChanged(nodeId, oldRate, newRate);
+    }
 
     function _handleRegularSignals(
         uint256 targetNode_,
@@ -276,7 +277,6 @@ contract Fun is Fungido {
     }
 
     /////////// View
-
 
     function calculateUserTargetedPreferenceAmount(uint256 childId, uint256 parentId, uint256 signal, address user)
         public
