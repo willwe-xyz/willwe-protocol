@@ -1,0 +1,220 @@
+type Query {
+  # Node queries
+  node(id: ID!): Node
+  nodes(first: Int, skip: Int): [Node!]!
+  
+  # Membrane queries
+  membrane(id: ID!): Membrane
+  membranes(first: Int, skip: Int): [Membrane!]!
+  
+  # Movement queries
+  movement(id: ID!): Movement
+  movements(first: Int, skip: Int): [Movement!]!
+  
+  # Membership queries
+  membership(id: ID!): Membership
+  memberships(first: Int, skip: Int): [Membership!]!
+  
+  # Event queries
+  event(id: ID!): Event
+  events(first: Int, skip: Int): [Event!]!
+  
+  # SignatureQueue queries
+  signatureQueue(id: ID!): SignatureQueue
+  signatureQueues(first: Int, skip: Int): [SignatureQueue!]!
+}
+
+enum Network {
+  MAINNET
+  SEPOLIA
+  OPTIMISM
+  OPTIMISM_SEPOLIA
+  BASE
+  BASE_SEPOLIA
+  TAIKO
+}
+
+enum EventType {
+  REDISTRIBUTION
+  REDISTRIBUTION_SIGNAL
+  MEMBRANE_SIGNAL
+  MINT
+  BURN
+  TRANSFER
+  APPROVAL
+  APPROVAL_FOR_ALL
+  CONFIG_SIGNAL
+  INFLATION_MINTED
+  INFLATION_RATE_CHANGED
+  CROSSCHAIN_TRANSFER
+}
+
+enum EndpointType {
+  USER_OWNED
+  MOVEMENT
+}
+
+enum MovementType {
+  REVERT
+  AGENT_MAJORITY
+  ENERGETIC_MAJORITY
+}
+
+enum SQState {
+  NONE
+  INITIALIZED
+  VALID
+  EXECUTED
+  STALE
+}
+
+type Node {
+  nodeId: ID!
+  inflation: String!
+  reserve: String!
+  budget: String!
+  rootValuationBudget: String!
+  rootValuationReserve: String!
+  membraneId: String!
+  eligibilityPerSec: String!
+  lastRedistributionTime: String!
+  totalSupply: String!
+  membraneMeta: String!
+  membersOfNode: [Membership!]!
+  childrenNodes: [Node!]!
+  movementEndpoints: [Endpoint!]!
+  rootPath: [Node!]!
+  signals: [String!]!
+  createdAt: BigInt!
+  updatedAt: BigInt!
+  createdBlockNumber: BigInt!
+  network: Network!
+  
+  # Relations
+  membrane: Membrane
+  redistributionPreferences: [RedistributionPreference!]!
+  inflationSignals: [InflationSignal!]!
+  membraneSignals: [MembraneSignal!]!
+  signatures: [Signature!]!
+  movements: [Movement!]!
+  signatureQueues: [SignatureQueue!]!
+  events: [Event!]!
+}
+
+type Membrane {
+  id: ID!
+  membraneId: BigInt!
+  creator: String!
+  metadataCID: String!
+  data: String!
+  tokens: [String!]!
+  balances: [String!]!
+  createdAt: BigInt!
+  createdBlockNumber: BigInt!
+  network: Network!
+}
+
+type Membership {
+  id: ID!
+  nodeId: String!
+  who: String!
+  when: BigInt!
+  isValid: Boolean!
+}
+
+type Event {
+  id: ID!
+  nodeId: String!
+  who: String!
+  eventName: String!
+  eventType: EventType!
+  when: BigInt!
+  createdBlockNumber: BigInt!
+  network: Network!
+}
+
+type RedistributionPreference {
+  id: ID!
+  nodeId: String!
+  signalOrigin: String!
+  sender: String!
+  preferences: [String!]!
+  when: BigInt!
+  createdBlockNumber: BigInt!
+  network: Network!
+}
+
+type MembraneSignal {
+  id: ID!
+  nodeId: String!
+  who: String!
+  signalOrigin: String!
+  membraneId: String!
+}
+
+type InflationSignal {
+  id: ID!
+  nodeId: String!
+  who: String!
+  signalOrigin: String!
+  inflationValue: String!
+}
+
+type Signature {
+  id: ID!
+  nodeId: String!
+  signer: String!
+  signature: String!
+  signatureQueueHash: String!
+  submitted: Boolean!
+  when: BigInt!
+  network: Network!
+}
+
+type Movement {
+  id: ID!
+  nodeId: String!
+  category: MovementType!
+  initiator: String!
+  exeAccount: String!
+  viaNode: BigInt!
+  expiresAt: BigInt!
+  description: String!
+  executedPayload: String!
+  createdBlockNumber: BigInt!
+  network: Network!
+}
+
+type SignatureQueue {
+  id: ID!
+  state: SQState!
+  movementId: String!
+  signers: [String!]!
+  signatures: [String!]!
+  createdBlockNumber: BigInt!
+  network: Network!
+  
+  # Relations
+  movement: Movement
+}
+
+type Endpoint {
+  id: ID!
+  nodeId: BigInt!
+  endpointId: BigInt!
+  owner: String!
+  endpointType: EndpointType!
+  endpointAddress: String!
+  createdAt: BigInt!
+  createdBlockNumber: BigInt!
+  network: Network!
+}
+
+type WillTokenPrice {
+  id: ID!
+  price: BigInt!
+  createdBlockNumber: BigInt!
+  network: Network!
+}
+
+scalar BigInt

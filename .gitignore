@@ -18,9 +18,11 @@ yarn.lock
 pyvenv.cfg
 
 # broadcasts
-!broadcast
-broadcast/*
+# !broadcast
+# broadcast/*
 broadcast/*/31337/
+broadcast/
+
 
 ./frontend/.env
 ./frontend/.next
@@ -35,3 +37,13 @@ OP_SEPOLIA_logs.txt
 misc.txt
 
 .vscode/settings.json
+/ponder/.env.local
+/ponder/.env.development
+/ponder/.env.production
+/ponder/.env.test
+/ponder/.next
+/ponder/out
+/ponder/node_modules
+/ponder/.env
+.history/
+/ponder/.ponder

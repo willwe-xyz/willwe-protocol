@@ -107,8 +107,6 @@ contract Fungido is ERC1155, PureUtils {
     event Minted(address indexed fromAddressOrNode, uint256 indexed nodeId, uint256 amount);
     event SharesGenerated(uint256 indexed nodeId, uint256 amount);
 
-
-
     ////////////////////////////////////////////////
     //////________MODIFIER________/////////////////
 
@@ -411,8 +409,8 @@ contract Fungido is ERC1155, PureUtils {
                 if (
                     !(
                         (msg.sig != this.mintMembership.selector) || (msg.sig != this.membershipEnforce.selector)
-                            || (msg.sig != this.spawnRootNode.selector)
-                            || (msg.sig != this.spawnNodeWithMembrane.selector) || (msg.sig != this.spawnNode.selector)
+                            || (msg.sig != this.spawnRootNode.selector) || (msg.sig != this.spawnNodeWithMembrane.selector)
+                            || (msg.sig != this.spawnNode.selector)
                     )
                 ) revert MembershipOp();
 

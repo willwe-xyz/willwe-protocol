@@ -25,6 +25,7 @@ contract Fun is Fungido {
     error NoTimeDelta();
     error CannotSkip();
     error NotNodeMember();
+    error UnsoundMembership();
 
     event InflationRateChanged(uint256 indexed nodeId, uint256 oldInflationRate, uint256 newInflationRate);
     event MembraneChanged(uint256 indexed nodeId, uint256 previousMembrane, uint256 newMembrane);
@@ -117,6 +118,8 @@ contract Fun is Fungido {
         if (signal < type(uint160).max || bytes(M.getMembraneById(signal).meta).length == 0) revert MembraneNotFound();
         _updateSignalOption(targetNode_, userKey, nodeKey, signal, balanceOfSender);
         if (options[nodeKey][0] * 2 > totalSupplyOf[targetNode_]) {
+            (bool s,) = M.integrityCheck(targetNode_);
+            if (!s) revert UnsoundMembership();
             mintInflation(targetNode_);
             emit MembraneChanged(targetNode_, inUseMembraneId[targetNode_][0], signal);
             inUseMembraneId[targetNode_] = [signal, block.timestamp];
@@ -132,6 +135,8 @@ contract Fun is Fungido {
     ) private {
         _updateSignalOption(targetNode_, userKey, nodeKey, signal, balanceOfSender);
         if (options[nodeKey][0] * 2 > totalSupplyOf[targetNode_]) {
+            (bool s,) = M.integrityCheck(targetNode_);
+            if (!s) revert UnsoundMembership();
             mintInflation(targetNode_);
             emit InflationRateChanged(targetNode_, inflSec[targetNode_][0], signal * 1 gwei);
             _handleInflationUpdate(targetNode_, inflSec[targetNode_][0], signal * 1 gwei);

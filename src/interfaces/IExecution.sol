@@ -15,12 +15,6 @@ enum MovementType {
     EnergeticMajority
 }
 
-struct Call {
-    address target;
-    bytes callData;
-    uint256 value;
-}
-
 struct Movement {
     MovementType category;
     address initiatior;
@@ -48,7 +42,11 @@ struct UserSignal {
     string[2][] MembraneInflation;
     string[] lastRedistSignal;
 }
-
+struct Call {
+    address target;
+    bytes callData;
+    uint256 value;
+}
 struct NodeState {
     string[12] basicInfo; // [nodeId, inflation, reserve, budget, rootValuationBudget, rootValuationReserve, membraneId, eligibilityPerSec, lastRedistributionTime, balanceOfUser [0 default], endpointOfUserForNode [address(0) defaul - no endpoint], total supply of node]
     string membraneMeta; // Membrane Metadata CID

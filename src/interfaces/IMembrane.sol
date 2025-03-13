@@ -27,6 +27,9 @@ interface IMembrane {
     /// @param membraneID_: conditions
     function gCheck(address who_, uint256 membraneID_) external view returns (bool s);
 
+    /// @notice checks if all members of a node respect the conditions of the in use membrane
+    function integrityCheck(uint256 nodeId) external view returns (bool s, uint256 i);
+
     function getMembraneById(uint256 id_) external view returns (Membrane memory);
 
     function setInitWillWe() external;
