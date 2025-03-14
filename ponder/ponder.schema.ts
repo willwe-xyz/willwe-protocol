@@ -168,7 +168,8 @@ export const membranes = onchainTable("membranes", (t) => ({
 
 
 export const WillTokenPrices = onchainTable("WillTokenPrice", (t) => ({
-  id: t.timestamp().primaryKey(),
+  id: t.text().primaryKey(), 
+  timestamp: t.timestamp(), 
   price: t.numeric('0'),
   createdBlockNumber: t.numeric(),
   network: t.text(),
