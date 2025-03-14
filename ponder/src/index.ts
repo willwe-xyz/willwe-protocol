@@ -10,9 +10,6 @@ import * as WillHandlers from './Will';
 // Import syncFoundry to ensure it runs (import only, the function runs on import)
 import './syncFoundry';
 
-// Log database operations for debugging
-console.log("Enabling database operation logs");
-ponder.debug.enabled = true;
 
 // For OP Sepolia (chainId 11155420)
 ponder.on("WillWe_11155420:NewRootNode", WillWeHandlers.handleNewRootNode);
