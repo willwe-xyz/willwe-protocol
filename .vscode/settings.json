@@ -1,0 +1,11 @@
+{
+    "wake.compiler.solc.remappings": [
+        "openzeppelin-contracts/token/=lib/openzeppelin-contracts/contracts/token/",
+        "openzeppelin-contracts/contracts=lib/openzeppelin-contracts/contracts/",
+        "@solady/=lib/solady/src/",
+        "src/vendor/interfaces/=lib/optimism/packages/contracts-bedrock/src/vendor/interfaces/",
+        "will/contracts/=lib/will/packages/contracts/src/",
+        "@contracts-bedrock=lib/will/packages/contracts/lib/optimism/packages/contracts-bedrock/src/",
+        "@solady-v0.0.245/=lib/will/packages/contracts/lib/optimism/packages/contracts-bedrock/lib/solady-v0.0.245/src/"
+    ]
+}

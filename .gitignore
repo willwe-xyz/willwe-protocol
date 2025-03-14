@@ -36,14 +36,12 @@ BASE_SEPOLIA_logs.txt
 OP_SEPOLIA_logs.txt
 misc.txt
 
-.vscode/settings.json
 /ponder/.env.local
 /ponder/.env.development
 /ponder/.env.production
 /ponder/.env.test
 /ponder/.next
-/ponder/out
-/ponder/node_modules
+/ponder/out/
+/ponder/node_modules/
 /ponder/.env
-.history/
 /ponder/.ponder

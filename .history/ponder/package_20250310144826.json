@@ -1,0 +1,19 @@
+{
+  "name": "willwe-ponder",
+  "private": true,
+  "version": "0.0.1",
+  "scripts": {
+    "dev": "ponder dev",
+    "start": "ponder start",
+    "codegen": "ponder codegen",
+    "sync": "node src/syncFoundry.js"
+  },
+  "dependencies": {
+    "@ponder/core": "^0.3.2",
+    "viem": "^1.19.11"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.3",
+    "ts-node": "^10.9.2"
+  }
+}
