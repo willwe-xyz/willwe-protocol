@@ -1,7 +1,11 @@
 # directories
 cache
 node_modules
-out
+out/*
+!out/WillWe.sol/
+!out/Execution.sol/
+!out/Membranes.sol/
+!out/Will.sol/
 source
 bin/
 lib64
@@ -17,12 +21,13 @@ lcov.info
 yarn.lock
 pyvenv.cfg
 
-# broadcasts
-# !broadcast
-# broadcast/*
-broadcast/*/31337/
-broadcast/
-
+# ignore all files in the broadcast directory except the ones listed
+!broadcast/*/WillWe.sol
+!broadcast/*/Execution.sol
+!broadcast/*/Membranes.sol
+!broadcast/*/Will.sol
+!broadcast/*/*/run-latest.json
+broadcast
 
 ./frontend/.env
 ./frontend/.next
@@ -45,3 +50,4 @@ misc.txt
 /ponder/node_modules/
 /ponder/.env
 /ponder/.ponder
+

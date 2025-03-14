@@ -25,6 +25,14 @@ struct Movement {
     bytes executedPayload;
 }
 
+struct SignatureQueue {
+    SQState state;
+    Movement Action;
+    address[] Signers;
+    bytes[] Sigs;
+}
+
+
 struct LatentMovement {
     Movement movement;
     SignatureQueue signatureQueue;
