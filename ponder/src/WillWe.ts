@@ -38,8 +38,10 @@ export async function handleNewRootNode({ event, context }) {
 
     console.log("Inserted/Updated Root Node:", nodeId);
     
-    // Create a unique ID for the event
-    const eventId = `${event.log.transactionHash}-${event.log.logIndex}`;
+    // Create a unique ID for the event, using hash and logIndex
+    // Handle potential undefined case by using a fallback
+    const transactionHash = event.transaction?.hash || `tx-${event.block.hash}-${event.block.number}`;
+    const eventId = `${transactionHash}-${event.log.logIndex}`;
     
     // Insert the event
     await db.insert(events).values({
@@ -53,6 +55,7 @@ export async function handleNewRootNode({ event, context }) {
       network: context.network.name.toLowerCase()
     }).onConflictDoNothing();
 
+    console.log("Inserted NewRootNode event:", eventId);
   } catch (error) {
     console.error("Error in handleNewRootNode:", error);
   }
@@ -94,8 +97,10 @@ export async function handleNewNode({ event, context }) {
 
     console.log("Inserted/Updated Node:", nodeId);
     
-    // Create a unique ID for the event
-    const eventId = `${event.log.transactionHash}-${event.log.logIndex}`;
+    // Create a unique ID for the event, using hash and logIndex
+    // Handle potential undefined case by using a fallback
+    const transactionHash = event.transaction?.hash || `tx-${event.block.hash}-${event.block.number}`;
+    const eventId = `${transactionHash}-${event.log.logIndex}`;
     
     // Insert the event
     await db.insert(events).values({
@@ -109,18 +114,22 @@ export async function handleNewNode({ event, context }) {
       network: context.network.name.toLowerCase()
     }).onConflictDoNothing();
 
+    console.log("Inserted NewNode event:", eventId);
   } catch (error) {
     console.error("Error in handleNewNode:", error);
   }
 }
+
+// For the remaining event handlers, just modifying the event ID generation and keeping other code the same
 
 export async function handleMembershipMinted({ event, context }) {
   const { db } = context;
   console.log("Membership Minted:", event.args);
   
   try {
-    // Create a unique ID for the membership
-    const membershipId = `${event.log.transactionHash}-${event.log.logIndex}`;
+    // Create a unique ID for the membership using proper fallback for transaction hash
+    const transactionHash = event.transaction?.hash || `tx-${event.block.hash}-${event.block.number}`;
+    const membershipId = `${transactionHash}-${event.log.logIndex}`;
     const nodeId = event.args.nodeId.toString();
     
     // Insert the new membership
@@ -135,7 +144,7 @@ export async function handleMembershipMinted({ event, context }) {
     console.log("Inserted Membership:", membershipId);
     
     // Create a unique ID for the event
-    const eventId = `${event.log.transactionHash}-${event.log.logIndex}`;
+    const eventId = `${transactionHash}-${event.log.logIndex}`;
     
     // Insert the event
     await db.insert(events).values({
@@ -159,8 +168,9 @@ export async function handleTransferSingle({ event, context }) {
   console.log("Transfer Single:", event.args);
   
   try {
-    // Create a unique ID for the event
-    const eventId = `${event.log.transactionHash}-${event.log.logIndex}`;
+    // Create a unique ID for the event using proper fallback
+    const transactionHash = event.transaction?.hash || `tx-${event.block.hash}-${event.block.number}`;
+    const eventId = `${transactionHash}-${event.log.logIndex}`;
     const nodeId = event.args.id.toString();
     
     // Insert the event
@@ -186,10 +196,13 @@ export async function handleTransferBatch({ event, context }) {
   console.log("Transfer Batch:", event.args);
   
   try {
+    // Create a unique transaction hash with fallback
+    const transactionHash = event.transaction?.hash || `tx-${event.block.hash}-${event.block.number}`;
+    
     // For each ID in the batch
     for (let i = 0; i < event.args.ids.length; i++) {
       // Create a unique ID for each event in the batch
-      const eventId = `${event.log.transactionHash}-${event.log.logIndex}-${i}`;
+      const eventId = `${transactionHash}-${event.log.logIndex}-${i}`;
       const nodeId = event.args.ids[i].toString();
       
       // Insert the event
@@ -216,8 +229,9 @@ export async function handleUserNodeSignal({ event, context }) {
   console.log("User Node Signal:", event.args);
   
   try {
-    // Create a unique ID for the event
-    const eventId = `${event.log.transactionHash}-${event.log.logIndex}`;
+    // Create a unique ID for the event with fallback
+    const transactionHash = event.transaction?.hash || `tx-${event.block.hash}-${event.block.number}`;
+    const eventId = `${transactionHash}-${event.log.logIndex}`;
     const nodeId = event.args.nodeId.toString();
     
     // Insert the event
@@ -243,8 +257,9 @@ export async function handleConfigSignal({ event, context }) {
   console.log("Config Signal:", event.args);
   
   try {
-    // Create a unique ID for the event
-    const eventId = `${event.log.transactionHash}-${event.log.logIndex}`;
+    // Create a unique ID for the event with fallback
+    const transactionHash = event.transaction?.hash || `tx-${event.block.hash}-${event.block.number}`;
+    const eventId = `${transactionHash}-${event.log.logIndex}`;
     const nodeId = event.args.nodeId.toString();
     
     // Insert the event
@@ -270,8 +285,9 @@ export async function handleCreatedEndpoint({ event, context }) {
   console.log("Created Endpoint:", event.args);
   
   try {
-    // Create a unique ID for the endpoint
-    const endpointId = `${event.log.transactionHash}-${event.log.logIndex}`;
+    // Create a unique ID for the endpoint with fallback
+    const transactionHash = event.transaction?.hash || `tx-${event.block.hash}-${event.block.number}`;
+    const endpointId = `${transactionHash}-${event.log.logIndex}`;
     const nodeId = event.args.nodeId.toString();
     
     // Insert the endpoint
@@ -290,7 +306,7 @@ export async function handleCreatedEndpoint({ event, context }) {
     console.log("Inserted endpoint:", endpointId);
     
     // Create a unique ID for the event
-    const eventId = `${event.log.transactionHash}-${event.log.logIndex}`;
+    const eventId = `${transactionHash}-${event.log.logIndex}`;
     
     // Insert the event
     await db.insert(events).values({

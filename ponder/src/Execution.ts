@@ -28,8 +28,9 @@ export const handleNewMovementCreated = async ({ event, context }) => {
 
     console.log("Inserted Movement:", movementId);
     
-    // Create a unique ID for the event
-    const eventId = `${event.log.transactionHash}-${event.log.logIndex}`;
+    // Create a unique ID for the event with fallback
+    const transactionHash = event.transaction?.hash || `tx-${event.block.hash}-${event.block.number}`;
+    const eventId = `${transactionHash}-${event.log.logIndex}`;
     
     // Insert the event
     await db.insert(events).values({
@@ -70,8 +71,9 @@ export const handleQueueExecuted = async ({ event, context }) => {
       console.log(`Queue ${queueId} not found, cannot update state`);
     }
     
-    // Create a unique ID for the event
-    const eventId = `${event.log.transactionHash}-${event.log.logIndex}`;
+    // Create a unique ID for the event with fallback
+    const transactionHash = event.transaction?.hash || `tx-${event.block.hash}-${event.block.number}`;
+    const eventId = `${transactionHash}-${event.log.logIndex}`;
     
     // Insert the event
     await db.insert(events).values({
@@ -118,8 +120,9 @@ export const handleNewSignaturesSubmitted = async ({ event, context }) => {
       console.log("Created new signature queue:", queueId);
     }
     
-    // Create a unique ID for the signature
-    const signatureId = `${event.log.transactionHash}-${event.log.logIndex}`;
+    // Create a unique ID for the signature with fallback
+    const transactionHash = event.transaction?.hash || `tx-${event.block.hash}-${event.block.number}`;
+    const signatureId = `${transactionHash}-${event.log.logIndex}`;
     
     // Add new signature
     await db.insert(signatures).values({
@@ -136,7 +139,7 @@ export const handleNewSignaturesSubmitted = async ({ event, context }) => {
     console.log("Inserted signature:", signatureId);
     
     // Create a unique ID for the event
-    const eventId = `${event.log.transactionHash}-${event.log.logIndex}`;
+    const eventId = `${transactionHash}-${event.log.logIndex}`;
     
     // Insert the event
     await db.insert(events).values({
@@ -165,6 +168,10 @@ export const handleSignatureRemoved = async ({ event, context }) => {
     const nodeId = event.args.nodeId.toString();
     const signer = event.args.signer;
     
+    // Create a unique ID for the event with fallback
+    const transactionHash = event.transaction?.hash || `tx-${event.block.hash}-${event.block.number}`;
+    const eventId = `${transactionHash}-${event.log.logIndex}`;
+    
     // Find signatures matching this queue and signer
     const signatures = await db.select().from(signatures)
       .where('signatureQueueHash', '=', queueId)
@@ -178,9 +185,6 @@ export const handleSignatureRemoved = async ({ event, context }) => {
     }
     
     console.log(`Updated ${signatures.length} signatures to submitted=false`);
-    
-    // Create a unique ID for the event
-    const eventId = `${event.log.transactionHash}-${event.log.logIndex}`;
     
     // Insert the event
     await db.insert(events).values({
@@ -205,8 +209,9 @@ export const handleWillWeSet = async ({ event, context }) => {
   console.log("WillWe Set:", event.args);
   
   try {
-    // Create a unique ID for the event
-    const eventId = `${event.log.transactionHash}-${event.log.logIndex}`;
+    // Create a unique ID for the event with fallback
+    const transactionHash = event.transaction?.hash || `tx-${event.block.hash}-${event.block.number}`;
+    const eventId = `${transactionHash}-${event.log.logIndex}`;
     
     // Insert the event
     await db.insert(events).values({

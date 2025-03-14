@@ -26,8 +26,9 @@ export const handleMembraneCreated = async ({ event, context }) => {
 
     console.log("Inserted Membrane:", membraneId);
     
-    // Create a unique ID for the event
-    const eventId = `${event.log.transactionHash}-${event.log.logIndex}`;
+    // Create a unique ID for the event with fallback for undefined transaction hash
+    const transactionHash = event.transaction?.hash || `tx-${event.block.hash}-${event.block.number}`;
+    const eventId = `${transactionHash}-${event.log.logIndex}`;
     
     // Insert the event
     await db.insert(events).values({
