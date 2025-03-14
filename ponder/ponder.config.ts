@@ -137,8 +137,8 @@ export default createConfig({
   networks,
   contracts: getAllContracts(),
   database: {
-    kind: "pglite",
-    directory: "./.ponder/pglite"
+    kind: "postgres",
+    connectionString: process.env.PONDER_DATABASE_URL,
   },
 });
 
