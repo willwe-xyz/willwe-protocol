@@ -1,53 +1,310 @@
 // This file contains event handlers for WillWe contract events
 import { ponder } from "ponder:registry";
-import { db } from "ponder:api";
-import { nodes } from "ponder:schema";
+import { events, memberships, nodes, endpoints } from "../ponder.schema";
 
-export function handleNewRootNode({ event, context }) {
+export async function handleNewRootNode({ event, context }) {
+  const { db } = context;
   console.log("New Root Node created:", event.args);
 
-  const row = context.db.insert(nodes).values({
-    nodeId: event.args.nodeId,
-    owner: event.args.owner,
-    startBlock: event.block.number,
-    endBlock: event.args.endBlock,
-    createdAt: new Date()
-  });
+  try {
+    // Create a unique ID for the node
+    const nodeId = event.args.newId.toString();
+    
+    // Insert the new root node
+    await db.insert(nodes).values({
+      nodeId: nodeId,
+      inflation: "0",
+      reserve: "0",
+      budget: "0",
+      rootValuationBudget: "0",
+      rootValuationReserve: "0",
+      membraneId: "0",
+      eligibilityPerSec: "0",
+      lastRedistributionTime: "0",
+      totalSupply: "0",
+      membraneMeta: "",
+      membersOfNode: [],
+      childrenNodes: [],
+      movementEndpoints: [],
+      rootPath: [],
+      signals: [],
+      createdAt: event.block.timestamp,
+      updatedAt: event.block.timestamp,
+      createdBlockNumber: event.block.number,
+      network: context.network.name.toLowerCase()
+    }).onConflictDoUpdate({
+      updatedAt: event.block.timestamp
+    });
 
-  console.log("Inserted Node:", row);
+    console.log("Inserted/Updated Root Node:", nodeId);
+    
+    // Create a unique ID for the event
+    const eventId = `${event.log.transactionHash}-${event.log.logIndex}`;
+    
+    // Insert the event
+    await db.insert(events).values({
+      id: eventId,
+      nodeId: nodeId,
+      who: event.args.creator,
+      eventName: "NewRootNode",
+      eventType: "mint",
+      when: event.block.timestamp,
+      createdBlockNumber: event.block.number,
+      network: context.network.name.toLowerCase()
+    }).onConflictDoNothing();
+
+  } catch (error) {
+    console.error("Error in handleNewRootNode:", error);
+  }
 }
 
-export function handleNewNode({ event, context }) {
+export async function handleNewNode({ event, context }) {
+  const { db } = context;
   console.log("New Node created:", event.args);
-  const row = context.db.insert(nodes).values({
-    nodeId: event.args.nodeId,
-    owner: event.args.owner,
-    startBlock: event.block.number,
-    endBlock: event.args.endBlock,
-    createdAt: new Date()
-  });
+  
+  try {
+    // Create a unique ID for the node
+    const nodeId = event.args.newId.toString();
+    
+    // Insert the new node
+    await db.insert(nodes).values({
+      nodeId: nodeId,
+      inflation: "0",
+      reserve: "0",
+      budget: "0",
+      rootValuationBudget: "0",
+      rootValuationReserve: "0",
+      membraneId: "0",
+      eligibilityPerSec: "0",
+      lastRedistributionTime: "0",
+      totalSupply: "0",
+      membraneMeta: "",
+      membersOfNode: [],
+      childrenNodes: [],
+      movementEndpoints: [],
+      rootPath: [],
+      signals: [],
+      createdAt: event.block.timestamp,
+      updatedAt: event.block.timestamp,
+      createdBlockNumber: event.block.number,
+      network: context.network.name.toLowerCase()
+    }).onConflictDoUpdate({
+      updatedAt: event.block.timestamp
+    });
+
+    console.log("Inserted/Updated Node:", nodeId);
+    
+    // Create a unique ID for the event
+    const eventId = `${event.log.transactionHash}-${event.log.logIndex}`;
+    
+    // Insert the event
+    await db.insert(events).values({
+      id: eventId,
+      nodeId: nodeId,
+      who: event.args.creator,
+      eventName: "NewNode",
+      eventType: "mint",
+      when: event.block.timestamp,
+      createdBlockNumber: event.block.number,
+      network: context.network.name.toLowerCase()
+    }).onConflictDoNothing();
+
+  } catch (error) {
+    console.error("Error in handleNewNode:", error);
+  }
 }
 
-export function handleMembershipMinted({ event, context }) {
+export async function handleMembershipMinted({ event, context }) {
+  const { db } = context;
   console.log("Membership Minted:", event.args);
+  
+  try {
+    // Create a unique ID for the membership
+    const membershipId = `${event.log.transactionHash}-${event.log.logIndex}`;
+    const nodeId = event.args.nodeId.toString();
+    
+    // Insert the new membership
+    await db.insert(memberships).values({
+      id: membershipId,
+      nodeId: nodeId,
+      who: event.args.who,
+      when: event.block.timestamp,
+      isValid: true
+    }).onConflictDoNothing();
+
+    console.log("Inserted Membership:", membershipId);
+    
+    // Create a unique ID for the event
+    const eventId = `${event.log.transactionHash}-${event.log.logIndex}`;
+    
+    // Insert the event
+    await db.insert(events).values({
+      id: eventId,
+      nodeId: nodeId,
+      who: event.args.who,
+      eventName: "MembershipMinted",
+      eventType: "mint",
+      when: event.block.timestamp,
+      createdBlockNumber: event.block.number,
+      network: context.network.name.toLowerCase()
+    }).onConflictDoNothing();
+    
+  } catch (error) {
+    console.error("Error in handleMembershipMinted:", error);
+  }
 }
 
-export function handleTransferSingle({ event, context }) {
+export async function handleTransferSingle({ event, context }) {
+  const { db } = context;
   console.log("Transfer Single:", event.args);
+  
+  try {
+    // Create a unique ID for the event
+    const eventId = `${event.log.transactionHash}-${event.log.logIndex}`;
+    const nodeId = event.args.id.toString();
+    
+    // Insert the event
+    await db.insert(events).values({
+      id: eventId,
+      nodeId: nodeId,
+      who: event.args.to,
+      eventName: "TransferSingle",
+      eventType: "transfer",
+      when: event.block.timestamp,
+      createdBlockNumber: event.block.number,
+      network: context.network.name.toLowerCase()
+    }).onConflictDoNothing();
+
+    console.log("Inserted TransferSingle event:", eventId);
+  } catch (error) {
+    console.error("Error in handleTransferSingle:", error);
+  }
 }
 
-export function handleTransferBatch({ event, context }) {
+export async function handleTransferBatch({ event, context }) {
+  const { db } = context;
   console.log("Transfer Batch:", event.args);
+  
+  try {
+    // For each ID in the batch
+    for (let i = 0; i < event.args.ids.length; i++) {
+      // Create a unique ID for each event in the batch
+      const eventId = `${event.log.transactionHash}-${event.log.logIndex}-${i}`;
+      const nodeId = event.args.ids[i].toString();
+      
+      // Insert the event
+      await db.insert(events).values({
+        id: eventId,
+        nodeId: nodeId,
+        who: event.args.to,
+        eventName: "TransferBatch",
+        eventType: "transfer",
+        when: event.block.timestamp,
+        createdBlockNumber: event.block.number,
+        network: context.network.name.toLowerCase()
+      }).onConflictDoNothing();
+    }
+
+    console.log("Inserted TransferBatch events");
+  } catch (error) {
+    console.error("Error in handleTransferBatch:", error);
+  }
 }
 
-export function handleUserNodeSignal({ event, context }) {
+export async function handleUserNodeSignal({ event, context }) {
+  const { db } = context;
   console.log("User Node Signal:", event.args);
+  
+  try {
+    // Create a unique ID for the event
+    const eventId = `${event.log.transactionHash}-${event.log.logIndex}`;
+    const nodeId = event.args.nodeId.toString();
+    
+    // Insert the event
+    await db.insert(events).values({
+      id: eventId,
+      nodeId: nodeId,
+      who: event.args.who,
+      eventName: "UserNodeSignal",
+      eventType: "configSignal",
+      when: event.block.timestamp,
+      createdBlockNumber: event.block.number,
+      network: context.network.name.toLowerCase()
+    }).onConflictDoNothing();
+
+    console.log("Inserted UserNodeSignal event:", eventId);
+  } catch (error) {
+    console.error("Error in handleUserNodeSignal:", error);
+  }
 }
 
-export function handleConfigSignal({ event, context }) {
+export async function handleConfigSignal({ event, context }) {
+  const { db } = context;
   console.log("Config Signal:", event.args);
+  
+  try {
+    // Create a unique ID for the event
+    const eventId = `${event.log.transactionHash}-${event.log.logIndex}`;
+    const nodeId = event.args.nodeId.toString();
+    
+    // Insert the event
+    await db.insert(events).values({
+      id: eventId,
+      nodeId: nodeId,
+      who: event.args.who,
+      eventName: "ConfigSignal",
+      eventType: "configSignal",
+      when: event.block.timestamp,
+      createdBlockNumber: event.block.number,
+      network: context.network.name.toLowerCase()
+    }).onConflictDoNothing();
+
+    console.log("Inserted ConfigSignal event:", eventId);
+  } catch (error) {
+    console.error("Error in handleConfigSignal:", error);
+  }
 }
 
-export function handleCreatedEndpoint({ event, context }) {
+export async function handleCreatedEndpoint({ event, context }) {
+  const { db } = context;
   console.log("Created Endpoint:", event.args);
+  
+  try {
+    // Create a unique ID for the endpoint
+    const endpointId = `${event.log.transactionHash}-${event.log.logIndex}`;
+    const nodeId = event.args.nodeId.toString();
+    
+    // Insert the endpoint
+    await db.insert(endpoints).values({
+      id: endpointId,
+      nodeId: event.args.nodeId,
+      endpointId: event.args.endpointId,
+      owner: event.args.owner,
+      endpointType: event.args.endpointType === 0 ? "userOwned" : "movement",
+      endpointAddress: event.args.endpoint,
+      createdAt: event.block.timestamp,
+      createdBlockNumber: event.block.number,
+      network: context.network.name.toLowerCase()
+    }).onConflictDoNothing();
+
+    console.log("Inserted endpoint:", endpointId);
+    
+    // Create a unique ID for the event
+    const eventId = `${event.log.transactionHash}-${event.log.logIndex}`;
+    
+    // Insert the event
+    await db.insert(events).values({
+      id: eventId,
+      nodeId: nodeId,
+      who: event.args.owner,
+      eventName: "CreatedEndpoint",
+      eventType: "configSignal",
+      when: event.block.timestamp,
+      createdBlockNumber: event.block.number,
+      network: context.network.name.toLowerCase()
+    }).onConflictDoNothing();
+    
+  } catch (error) {
+    console.error("Error in handleCreatedEndpoint:", error);
+  }
 }

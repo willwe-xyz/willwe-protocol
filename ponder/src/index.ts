@@ -5,9 +5,14 @@ import { ABIs, deployments } from "../abis/abi";
 import * as WillWeHandlers from './WillWe';
 import * as ExecutionHandlers from './Execution';
 import * as MembranesHandlers from './Membrane';
+import * as WillHandlers from './Will';
 
 // Import syncFoundry to ensure it runs (import only, the function runs on import)
 import './syncFoundry';
+
+// Log database operations for debugging
+console.log("Enabling database operation logs");
+ponder.debug.enabled = true;
 
 // For OP Sepolia (chainId 11155420)
 ponder.on("WillWe_11155420:NewRootNode", WillWeHandlers.handleNewRootNode);
@@ -29,6 +34,9 @@ ponder.on("Execution_11155420:WillWeSet", ExecutionHandlers.handleWillWeSet);
 // Membrane handlers for OP Sepolia
 ponder.on("Membrane_11155420:MembraneCreated", MembranesHandlers.handleMembraneCreated);
 
+// Will Token Price handlers
+// Note: Enable this once you have the PriceUpdate event in your contract
+// ponder.on("Will_11155420:PriceUpdate", WillHandlers.handlePriceUpdate);
 
 // Log which events are being indexed
 console.log("Registering event handlers for WillWe and Execution contracts on OP Sepolia");
