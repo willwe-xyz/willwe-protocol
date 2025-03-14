@@ -122,6 +122,9 @@ export const getAllContracts = () => {
         };
       }
     }
+
+    console.log(`Contracts for chain ${chainId} (${chain?.name}):`, contracts);
+
   }
   
   return contracts;
@@ -138,7 +141,6 @@ export default createConfig({
   contracts: getAllContracts(),
   database: {
     kind: "postgres",
-    connectionString: process.env.PONDER_DATABASE_URL,
   },
 });
 
