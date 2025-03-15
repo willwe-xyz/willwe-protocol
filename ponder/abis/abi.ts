@@ -5,16 +5,16 @@ type ABIKP = { [key: string]: Abi };
 
 export const deployments: Deployments = {
   "Will": {
-    "11155420": "0x1b7407c31385aa1cfaf0bff2ee83211d030e6204"
+    "11155420": "0x5654f05d67446400d799c30930f5325d51fdd223"
   },
   "Membranes": {
-    "11155420": "0x21c8cece4afa94ab9ffb0899534c2837c548c52a"
+    "11155420": "0x3a04ae1ae1961558c96e3bef64945bc88bb8f302"
   },
   "Execution": {
-    "11155420": "0xf800debf2f9d40a31559d8b072b8ebcb521e7417"
+    "11155420": "0xaa06764b39abcdca4a3fc801d05b88ff8cecdc32"
   },
   "WillWe": {
-    "11155420": "0x70497a8886586f7d63812fb58fc1d1d23da036f8"
+    "11155420": "0x6698fb299b268d03630597bd45e8a7754bb7dc01"
   }
 };
 
@@ -2308,6 +2308,30 @@ export const ABIs: ABIKP = {
               ]
             }
           ]
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "getChangePrevalence",
+      "inputs": [
+        {
+          "name": "nodeId_",
+          "type": "uint256",
+          "internalType": "uint256"
+        },
+        {
+          "name": "signal_",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256",
+          "internalType": "uint256"
         }
       ],
       "stateMutability": "view"

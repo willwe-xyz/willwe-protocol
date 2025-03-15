@@ -21,6 +21,13 @@ ponder.on("WillWe_11155420:UserNodeSignal", WillWeHandlers.handleUserNodeSignal)
 ponder.on("WillWe_11155420:ConfigSignal", WillWeHandlers.handleConfigSignal);
 ponder.on("WillWe_11155420:CreatedEndpoint", WillWeHandlers.handleCreatedEndpoint);
 
+// New event handlers for additional WillWe events
+ponder.on("WillWe_11155420:MembraneChanged", WillWeHandlers.handleMembraneChanged);
+ponder.on("WillWe_11155420:InflationRateChanged", WillWeHandlers.handleInflationRateChanged);
+ponder.on("WillWe_11155420:SharesGenerated", WillWeHandlers.handleSharesGenerated);
+ponder.on("WillWe_11155420:Minted", WillWeHandlers.handleMinted);
+ponder.on("WillWe_11155420:Burned", WillWeHandlers.handleBurned);
+
 // Execution handlers for OP Sepolia
 ponder.on("Execution_11155420:NewMovementCreated", ExecutionHandlers.handleNewMovementCreated);
 ponder.on("Execution_11155420:QueueExecuted", ExecutionHandlers.handleQueueExecuted);

@@ -150,7 +150,7 @@ contract WillWeDeploy2 is Script {
 
     function run() public {
         console.log("\n=== Starting deployment process ===");
-        uint256 runPVK = uint256(vm.envUint("WILLWE_DEV_0PVK"));
+        uint256 runPVK = uint256(vm.envUint("PARSEB_306"));
         address deployer = vm.addr(runPVK);
         console.log("Deployer address:", deployer);
 

@@ -6,7 +6,6 @@ import {ERC1155} from "solady/tokens/ERC1155.sol";
 import {IERC20} from "openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 
 import "./interfaces/IExecution.sol";
-import {IWill} from "will/contracts/interfaces/IWill.sol";
 import {NodeState} from "./interfaces/IExecution.sol";
 import {Strings} from "openzeppelin-contracts/contracts/utils/Strings.sol";
 import {PureUtils} from "./components/PureUtils.sol";
@@ -106,7 +105,8 @@ contract Fungido is ERC1155, PureUtils {
     event Burned(address indexed fromAddressOrNode, uint256 indexed nodeId, uint256 amount);
     event Minted(address indexed fromAddressOrNode, uint256 indexed nodeId, uint256 amount);
     event SharesGenerated(uint256 indexed nodeId, uint256 amount);
-
+    event InflationRateChanged(uint256 indexed nodeId, uint256 oldInflationRate, uint256 newInflationRate);
+    event MembraneChanged(uint256 indexed nodeId, uint256 previousMembrane, uint256 newMembrane);
     ////////////////////////////////////////////////
     //////________MODIFIER________/////////////////
 
@@ -190,6 +190,8 @@ contract Fungido is ERC1155, PureUtils {
         inUseMembraneId[newID][0] = membraneID;
         inUseMembraneId[newID][1] = block.timestamp;
         inflSec[newID][0] = inflationRate_ == 0 ? 1_000 gwei : inflationRate_ * 1 gwei;
+        emit MembraneChanged(newID, 0, membraneID);
+        emit InflationRateChanged(newID, 0, inflSec[newID][0]);
     }
 
     /// @notice mints membership to calling address if it satisfies membership conditions

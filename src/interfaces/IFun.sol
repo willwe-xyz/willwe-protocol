@@ -73,6 +73,7 @@ interface IFun is IERC1155, IExecution {
         external
         view
         returns (NodeState[] memory nodes);
+    function getChangePrevalence(uint256 nodeId_, uint256 signal_) external view returns (uint256);
 
     // Utility Functions
     function toID(address x) external pure returns (uint256);

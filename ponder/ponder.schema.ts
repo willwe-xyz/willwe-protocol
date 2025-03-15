@@ -4,6 +4,7 @@ import { zeroAddress } from "viem"
 export const Network = onchainEnum("network", ["mainnet", "rinkeby", "ropsten", "kovan", "goerli", "localhost"]);
 export const EventType = onchainEnum("eventType", ["redistribution", "redistributionSignal", "membraneSignal", "mint", "burn", "transfer", "approval", "approvalForAll", "configSignal", "inflationMinted", "inflationRateChanged", "crosschainTransfer"]);
 export const EndpointType = onchainEnum("endpointType", ["userOwned", "movement"]);
+export const SignalType = onchainEnum("signalType", ["membrane", "inflation", "redistribution"]);
 
 export const events = onchainTable("events", (t) => ({
   id: t.text().primaryKey(),
@@ -58,6 +59,20 @@ export const inflationSignals = onchainTable("inflationSignals", (t) => ({
   inflationValue: t.text(),
 }))
 
+export const nodeSignals = onchainTable("nodeSignals", (t) => ({
+  id: t.text().primaryKey(),
+  nodeId: t.text(),
+  who: t.text(),
+  signalType: SignalType("signalType"),
+  signalValue: t.text(),
+  currentPrevalence: t.text(), // Total support for this signal
+  when: t.numeric(),
+  network: t.text(),
+}), (table) => ({
+  nodeIdx: index().on(table.nodeId),
+  whox: index().on(table.who),
+  signalTypeIdx: index().on(table.signalType)
+}));
 
 export const signatures = onchainTable("signatures", (t) => ({
   id: t.text().primaryKey(),
@@ -134,6 +149,7 @@ export const nodesRelations = relations(nodes, ({ many, one }) => ({
   redistributionPreferences: many(redistributionPreference),
   inflationSignals: many(inflationSignals),
   membraneSignals: many(membraneSignals),
+  signals: many(nodeSignals),
   signatures: many(signatures),
   movements: many(movements),
   signatureQueues: many(signatureQueues),

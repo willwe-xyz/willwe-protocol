@@ -27,8 +27,6 @@ contract Fun is Fungido {
     error NotNodeMember();
     error UnsoundMembership();
 
-    event InflationRateChanged(uint256 indexed nodeId, uint256 oldInflationRate, uint256 newInflationRate);
-    event MembraneChanged(uint256 indexed nodeId, uint256 previousMembrane, uint256 newMembrane);
     event ConfigSignal(uint256 indexed nodeId, bytes32 expressedOption);
     event CreatedEndpoint(address indexed endpoint, address indexed owner, uint256 indexed nodeId);
     event Resignaled(address indexed sender, uint256 indexed nodeId, address origin);
@@ -81,7 +79,7 @@ contract Fun is Fungido {
                 sigSum += signalValue;
             }
         }
-        if (sigSum != 0 && sigSum != 100_00) revert IncompleteSign();
+        if (signals.length >= 3 && sigSum != 0 && sigSum != 100_00) revert IncompleteSign();
         emit UserNodeSignal(targetNode_, toAddress(user), signals);
     }
 
@@ -297,5 +295,10 @@ contract Fun is Fungido {
         uint256 newContribution = (balanceOfSenderParent * signal * parentInflationRate) / (totalSupplyParent * 100_00);
 
         return newContribution;
+    }
+
+    function getChangePrevalence(uint256 nodeId_, uint256 signal_) public view returns (uint256) {
+        bytes32 nodeKey = keccak256(abi.encodePacked(nodeId_, signal_));
+        return options[nodeKey][0];
     }
 }
