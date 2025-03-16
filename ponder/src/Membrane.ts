@@ -9,20 +9,34 @@ const createEventId = (event) => {
 };
 
 // Helper function to safely insert an event
-const saveEvent = async ({ db, event, nodeId, who, eventName, eventType }) => {
+const saveEvent = async ({ db, event, nodeId, who, eventName, eventType, network }) => {
   try {
+    if (!db || !event || !event.block) {
+      console.error(`Missing required parameters for saveEvent: db=${!!db}, event=${!!event}, block=${!!(event && event.block)}`);
+      return false;
+    }
+
     const eventId = createEventId(event);
-    const network = event.context ? event.context.network?.name?.toLowerCase() : "optimismsepolia";
+    
+    // Get network info with proper fallbacks - ensure we have valid values
+    const networkName = (network?.name || event.context?.network?.name || "optimismsepolia").toLowerCase();
+    const networkId = (network?.id || event.context?.network?.id || "11155420").toString();
+    
+    // Ensure nodeId is a string
+    const safeNodeId = (nodeId || "0").toString();
+    // Ensure who is a string
+    const safeWho = (who || event.transaction?.from || "unknown").toString();
     
     await db.insert(events).values({
       id: eventId,
-      nodeId: nodeId.toString(),
-      who: who,
-      eventName: eventName,
-      eventType: eventType,
+      nodeId: safeNodeId,
+      who: safeWho,
+      eventName: eventName || "Unknown",
+      eventType: eventType || "configSignal",
       when: event.block.timestamp,
       createdBlockNumber: event.block.number,
-      network: network
+      networkId: networkId,
+      network: networkName
     }).onConflictDoNothing();
     
     console.log(`Inserted ${eventName} event:`, eventId);
@@ -40,7 +54,9 @@ export const handleMembraneCreated = async ({ event, context }) => {
   try {
     // Create a unique ID for the membrane
     const membraneId = `${event.args.membraneId.toString()}-${event.block.hash}`;
-    const network = context.network?.name?.toLowerCase() || "optimismsepolia";
+    const network = context.network || { name: "optimismsepolia", id: "11155420" };
+    const networkId = network.id.toString();
+    const networkName = network.name.toLowerCase();
     
     // Insert the membrane
     await db.insert(membranes).values({ 
@@ -53,7 +69,8 @@ export const handleMembraneCreated = async ({ event, context }) => {
       balances: [], // Empty array as default
       createdAt: event.block.timestamp, // Use block timestamp
       createdBlockNumber: event.block.number,
-      network: network
+      network: networkName,
+      networkId: networkId
     }).onConflictDoNothing();
 
     console.log("Inserted Membrane:", membraneId);
@@ -65,11 +82,11 @@ export const handleMembraneCreated = async ({ event, context }) => {
       nodeId: "0", // Default nodeId since membranes aren't directly tied to nodes initially
       who: event.args.creator,
       eventName: "MembraneCreated",
-      eventType: "membraneSignal"
+      eventType: "membraneSignal",
+      network: network
     });
     
     // Save a record in nodeSignals for tracking membrane creation
-    // This will be useful when displaying a history of membrane activities
     await db.insert(nodeSignals).values({
       id: `${createEventId(event)}-membrane-creation`,
       nodeId: "0", // No specific node at creation time
@@ -78,7 +95,8 @@ export const handleMembraneCreated = async ({ event, context }) => {
       signalValue: event.args.membraneId.toString(),
       currentPrevalence: "0", // Not applicable for creation
       when: event.block.timestamp,
-      network: network
+      network: networkName,
+      networkId: networkId
     }).onConflictDoNothing();
     
     console.log(`Saved membrane creation signal from ${event.args.creator}`);
@@ -93,13 +111,15 @@ export const handleWillWeSet = async ({ event, context }) => {
   
   try {
     // Save the event using the helper function
+    const network = context.network || { name: "optimismsepolia", id: "11155420" };
     await saveEvent({
       db,
       event,
       nodeId: "0", // Default nodeId
       who: event.args.willWeAddress || event.transaction.from,
       eventName: "WillWeSet",
-      eventType: "configSignal"
+      eventType: "configSignal",
+      network: network
     });
     
     console.log(`Recorded WillWeSet event for address ${event.args.willWeAddress || event.transaction.from}`);

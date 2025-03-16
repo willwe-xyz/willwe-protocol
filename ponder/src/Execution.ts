@@ -1,61 +1,42 @@
 // This file exports event handlers for Execution contract events
 import { ponder } from "ponder:registry";
 import { events, movements, signatureQueues, signatures, nodeSignals } from "../ponder.schema";
-
-// Helper function to create a unique event ID
-const createEventId = (event) => {
-  const transactionHash = event.transaction?.hash || `tx-${event.block.hash}-${event.block.number}`;
-  return `${transactionHash}-${event.log.logIndex}`;
-};
-
-// Helper function to safely insert an event
-const saveEvent = async ({ db, event, nodeId, who, eventName, eventType }) => {
-  try {
-    const eventId = createEventId(event);
-    const network = event.context ? event.context.network?.name?.toLowerCase() : "optimismsepolia";
-    
-    await db.insert(events).values({
-      id: eventId,
-      nodeId: nodeId.toString(),
-      who: who,
-      eventName: eventName,
-      eventType: eventType,
-      when: event.block.timestamp,
-      createdBlockNumber: event.block.number,
-      network: network
-    }).onConflictDoNothing();
-    
-    console.log(`Inserted ${eventName} event:`, eventId);
-    return true;
-  } catch (error) {
-    console.error(`Error saving ${eventName} event:`, error);
-    return false;
-  }
-};
+import { createEventId, saveEvent, getDefaultNetwork } from "./common";
 
 export const handleNewMovementCreated = async ({ event, context }) => {
   const { db } = context;
   console.log("New Movement Created:", event.args);
 
   try {
+    if (!event?.args?.nodeId) {
+      console.error("Missing required nodeId in event args");
+      return;
+    }
+
     // Create a unique ID for the movement
-    const movementId = event.args.movementId.toString();
-    const nodeId = event.args.nodeId.toString();
-    const network = context.network?.name?.toLowerCase() || "optimismsepolia";
+    const movementId = (event.args.movementHash?.toString() || 
+                        event.args.movementId?.toString() || 
+                        `mov-${createEventId(event)}`);
     
-    // Insert the movement
+    const nodeId = event.args.nodeId.toString();
+    const network = context.network || getDefaultNetwork();
+    const networkId = network.id.toString();
+    const networkName = network.name.toLowerCase();
+    
+    // Insert the movement with safe defaults for missing fields
     await db.insert(movements).values({
       id: movementId,
       nodeId: nodeId,
       category: event.args.category === 0 ? "Revert" : event.args.category === 1 ? "AgentMajority" : "EnergeticMajority",
-      initiator: event.args.initiator,
-      exeAccount: event.args.exeAccount,
-      viaNode: event.args.viaNode,
-      expiresAt: event.args.expiresAt,
+      initiator: event.args.initiator || event.transaction?.from || "unknown",
+      exeAccount: event.args.exeAccount || event.args.initiator || event.transaction?.from || "unknown",
+      viaNode: event.args.viaNode || 0,
+      expiresAt: event.args.expiresAt || BigInt(event.block.timestamp) + BigInt(7 * 24 * 60 * 60), // 1 week default
       description: event.args.description || "",
       executedPayload: event.args.executedPayload || "",
       createdBlockNumber: event.block.number,
-      network: network
+      network: networkName,
+      networkId: networkId
     }).onConflictDoNothing();
 
     console.log("Inserted Movement:", movementId);
@@ -65,24 +46,26 @@ export const handleNewMovementCreated = async ({ event, context }) => {
       db,
       event,
       nodeId,
-      who: event.args.initiator,
+      who: event.args.initiator || event.transaction?.from,
       eventName: "NewMovementCreated",
-      eventType: "configSignal"
+      eventType: "configSignal",
+      network: network
     });
     
     // Also record as a node signal for historical tracking
     await db.insert(nodeSignals).values({
       id: `${createEventId(event)}-movement-created`,
       nodeId: nodeId,
-      who: event.args.initiator,
+      who: event.args.initiator || event.transaction?.from || "unknown",
       signalType: "redistribution", // Closest signal type for governance actions
       signalValue: movementId,
       currentPrevalence: "0", // Not applicable for movements
       when: event.block.timestamp,
-      network: network
+      network: networkName,
+      networkId: networkId
     }).onConflictDoNothing();
     
-    console.log(`Saved movement creation signal from ${event.args.initiator}`);
+    console.log(`Saved movement creation signal from ${event.args.initiator || "unknown"}`);
   } catch (error) {
     console.error("Error in handleNewMovementCreated:", error);
   }
@@ -95,7 +78,9 @@ export const handleQueueExecuted = async ({ event, context }) => {
   try {
     const queueId = event.args.queueId.toString();
     const nodeId = event.args.nodeId.toString();
-    const network = context.network?.name?.toLowerCase() || "optimismsepolia";
+    const network = context.network || getDefaultNetwork();
+    const networkId = network.id.toString();
+    const networkName = network.name.toLowerCase();
     
     // Find the queue first to see if it exists
     const existingQueue = await db.find(signatureQueues, { id: queueId });
@@ -117,7 +102,8 @@ export const handleQueueExecuted = async ({ event, context }) => {
       nodeId,
       who: event.args.executor,
       eventName: "QueueExecuted",
-      eventType: "configSignal"
+      eventType: "configSignal",
+      network: network
     });
     
     // Record execution as a node signal
@@ -129,7 +115,8 @@ export const handleQueueExecuted = async ({ event, context }) => {
       signalValue: queueId,
       currentPrevalence: "0", // Not applicable for queue execution
       when: event.block.timestamp,
-      network: network
+      network: networkName,
+      networkId: networkId
     }).onConflictDoNothing();
     
     console.log(`Saved queue execution signal from ${event.args.executor}`);
@@ -146,7 +133,9 @@ export const handleNewSignaturesSubmitted = async ({ event, context }) => {
     const queueId = event.args.queueId.toString();
     const movementId = event.args.movementId.toString();
     const nodeId = event.args.nodeId.toString();
-    const network = context.network?.name?.toLowerCase() || "optimismsepolia";
+    const network = context.network || getDefaultNetwork();
+    const networkId = network.id.toString();
+    const networkName = network.name.toLowerCase();
     
     // Check if queue exists
     const existingQueue = await db.find(signatureQueues, { id: queueId });
@@ -160,7 +149,8 @@ export const handleNewSignaturesSubmitted = async ({ event, context }) => {
         signers: [],
         signatures: [],
         createdBlockNumber: event.block.number,
-        network: network
+        network: networkName,
+        networkId: networkId
       }).onConflictDoNothing();
       
       console.log("Created new signature queue:", queueId);
@@ -178,7 +168,8 @@ export const handleNewSignaturesSubmitted = async ({ event, context }) => {
       signatureQueueHash: queueId,
       submitted: true,
       when: event.block.timestamp,
-      network: network
+      network: networkName,
+      networkId: networkId
     }).onConflictDoNothing();
     
     console.log("Inserted signature:", signatureId);
@@ -190,7 +181,8 @@ export const handleNewSignaturesSubmitted = async ({ event, context }) => {
       nodeId,
       who: event.args.signer,
       eventName: "NewSignaturesSubmitted",
-      eventType: "configSignal"
+      eventType: "configSignal",
+      network: network
     });
     
     // Record signature as a node signal
@@ -202,7 +194,8 @@ export const handleNewSignaturesSubmitted = async ({ event, context }) => {
       signalValue: queueId,
       currentPrevalence: "0", // Not applicable for signature submission
       when: event.block.timestamp,
-      network: network
+      network: networkName,
+      networkId: networkId
     }).onConflictDoNothing();
     
     console.log(`Saved signature submission signal from ${event.args.signer}`);
@@ -219,7 +212,9 @@ export const handleSignatureRemoved = async ({ event, context }) => {
     const queueId = event.args.queueId.toString();
     const nodeId = event.args.nodeId.toString();
     const signer = event.args.signer;
-    const network = context.network?.name?.toLowerCase() || "optimismsepolia";
+    const network = context.network || getDefaultNetwork();
+    const networkId = network.id.toString();
+    const networkName = network.name.toLowerCase();
     
     // Find signatures matching this queue and signer
     const matchingSignatures = await db.select().from(signatures)
@@ -242,7 +237,8 @@ export const handleSignatureRemoved = async ({ event, context }) => {
       nodeId,
       who: signer,
       eventName: "SignatureRemoved",
-      eventType: "configSignal"
+      eventType: "configSignal",
+      network: network
     });
     
     // Record signature removal as a node signal
@@ -254,7 +250,8 @@ export const handleSignatureRemoved = async ({ event, context }) => {
       signalValue: queueId,
       currentPrevalence: "0", // Not applicable for signature removal
       when: event.block.timestamp,
-      network: network
+      network: networkName,
+      networkId: networkId
     }).onConflictDoNothing();
     
     console.log(`Saved signature removal signal from ${signer}`);
@@ -268,6 +265,8 @@ export const handleWillWeSet = async ({ event, context }) => {
   console.log("WillWe Set:", event.args);
   
   try {
+    const network = context.network || getDefaultNetwork();
+    
     // Use the helper function to save the event
     await saveEvent({
       db,
@@ -275,7 +274,8 @@ export const handleWillWeSet = async ({ event, context }) => {
       nodeId: "0", // Default nodeId
       who: event.args.setter || event.transaction.from,
       eventName: "WillWeSet",
-      eventType: "configSignal"
+      eventType: "configSignal",
+      network: network
     });
     
     console.log(`Recorded WillWeSet event from ${event.args.setter || event.transaction.from}`);

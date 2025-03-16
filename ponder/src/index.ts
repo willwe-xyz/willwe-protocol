@@ -16,7 +16,6 @@ ponder.on("WillWe_11155420:NewRootNode", WillWeHandlers.handleNewRootNode);
 ponder.on("WillWe_11155420:NewNode", WillWeHandlers.handleNewNode);
 ponder.on("WillWe_11155420:MembershipMinted", WillWeHandlers.handleMembershipMinted);
 ponder.on("WillWe_11155420:TransferSingle", WillWeHandlers.handleTransferSingle);
-ponder.on("WillWe_11155420:TransferBatch", WillWeHandlers.handleTransferBatch);
 ponder.on("WillWe_11155420:UserNodeSignal", WillWeHandlers.handleUserNodeSignal);
 ponder.on("WillWe_11155420:ConfigSignal", WillWeHandlers.handleConfigSignal);
 ponder.on("WillWe_11155420:CreatedEndpoint", WillWeHandlers.handleCreatedEndpoint);

@@ -1,30 +1,74 @@
 // This file exports event handlers for WillWe contract events
-import { ponder } from "ponder:registry";
-import { events, memberships, nodes, endpoints, nodeSignals } from "../ponder.schema";
-import { createPublicClient, http } from "viem";
+import { ponder, type Event, type Context } from "ponder:registry";
+import { events, memberships, nodes, endpoints, nodeSignals, EventType } from "../ponder.schema";
+import { createPublicClient, formatEther, http } from "viem";
 import { supportedChains } from "../ponder.config";
+import { NodeState } from "./types";
+import { ABIs, deployments } from "../abis/abi";
+import viem from "viem";
+
 
 // Helper function to create a unique event ID
-const createEventId = (event) => {
+interface EventWithTransaction {
+  transaction?: {
+    hash: string;
+  };
+  block: {
+    hash: string;
+    number: number;
+  };
+  log: {
+    logIndex: number | string;
+  };
+}
+
+const createEventId = (event: EventWithTransaction): string => {
   const transactionHash = event.transaction?.hash || `tx-${event.block.hash}-${event.block.number}`;
   return `${transactionHash}-${event.log.logIndex}`;
 };
 
+
+const getNodeData = async (nodeId, context) => {{
+  const client = context.client || getPublicClient(context.network.name);
+  console.log(deployments["WillWe"]["11155420"], context.client, nodeId);
+  const nodeData = await client.readContract({
+    address: deployments["WillWe"]["11155420"],
+    abi: ABIs["WillWe"],
+    functionName: "getNodeData",
+    args: [nodeId, "0x0000000000000000000000000000000000000000"]
+  });
+  return nodeData;
+}}
+
 // Helper function to safely insert an event
-const saveEvent = async ({ db, event, nodeId, who, eventName, eventType }) => {
+const saveEvent = async ({ db, event, nodeId, who, eventName, eventType, network }) => {
   try {
+    if (!db || !event || !event.block) {
+      console.error(`Missing required parameters for saveEvent: db=${!!db}, event=${!!event}, block=${!!(event && event.block)}`);
+      return false;
+    }
+
     const eventId = createEventId(event);
-    const network = event.context ? event.context.network?.name?.toLowerCase() : "optimismsepolia";
+    
+    // Get network info with proper fallbacks - ensure we have valid values
+    const networkName = (network?.name || event.context?.network?.name || "optimismsepolia").toLowerCase();
+    const networkId = (network?.id || event.context?.network?.id || "11155420").toString();
+    
+    // Ensure nodeId is a string
+    const safeNodeId = (nodeId || "0").toString();
+    // Ensure who is a string
+    const safeWho = (who || event.transaction?.from || "unknown").toString();
     
     await db.insert(events).values({
       id: eventId,
-      nodeId: nodeId.toString(),
-      who: who,
-      eventName: eventName,
-      eventType: eventType,
+      nodeId: safeNodeId,
+      who: safeWho,
+      eventName: eventName || "Unknown",
+      eventType: eventType || "configSignal",
       when: event.block.timestamp,
       createdBlockNumber: event.block.number,
-      network: network
+      networkId: networkId,
+      network: networkName
     }).onConflictDoNothing();
     
     console.log(`Inserted ${eventName} event:`, eventId);
@@ -64,9 +108,9 @@ const getPublicClient = (network) => {
 };
 
 // Helper function to get signal prevalence from contract
-const getSignalPrevalence = async (nodeId, signalValue, contractAddress, network) => {
+const getSignalPrevalence = async (nodeId, signalValue, contractAddress, network, context) => {
   try {
-    const client = getPublicClient(network);
+    const client = context.client || getPublicClient(network);
     
     if (!client) {
       console.error("Failed to create client for network:", network);
@@ -95,6 +139,47 @@ const getSignalPrevalence = async (nodeId, signalValue, contractAddress, network
   } catch (error) {
     console.error("Error getting signal prevalence:", error);
     return "0";
+  }
+};
+
+// Helper function to ensure a node exists before updating it
+const ensureNodeExists = async (db, nodeId, timestamp, networkName, networkId) => {
+  try {
+    // Check if node exists
+    const existingNode = await db.find(nodes, { nodeId });
+    
+    if (!existingNode) {
+      console.log(`Node ${nodeId} not found, creating basic record first`);
+      // Create a basic node record if it doesn't exist
+      await db.insert(nodes).values({
+        nodeId: nodeId,
+        inflation: "0",
+        reserve: "0",
+        budget: "0",
+        rootValuationBudget: "0",
+        rootValuationReserve: "0",
+        membraneId: "0",
+        eligibilityPerSec: "0",
+        lastRedistributionTime: "0",
+        totalSupply: "0",
+        membraneMeta: "",
+        membersOfNode: [],
+        childrenNodes: [],
+        movementEndpoints: [],
+        rootPath: [],
+        signals: [],
+        createdAt: timestamp,
+        updatedAt: timestamp,
+        createdBlockNumber: 0, // We don't have this info in this context
+        network: networkName,
+        networkId: networkId
+      });
+      return true;
+    }
+    return false;
+  } catch (error) {
+    console.error(`Error ensuring node ${nodeId} exists:`, error);
+    return false;
   }
 };
 
@@ -141,7 +226,8 @@ export async function handleNewRootNode({ event, context }) {
       nodeId,
       who: event.args.creator || event.transaction.from,
       eventName: "NewRootNode",
-      eventType: "mint"
+      eventType: EventType("newRoot"),
+      network: context.network
     });
   } catch (error) {
     console.error("Error in handleNewRootNode:", error);
@@ -149,35 +235,55 @@ export async function handleNewRootNode({ event, context }) {
 }
 
 export async function handleNewNode({ event, context }) {
-  const { db } = context;
+  const { db, client } = context;
   console.log("New Node created:", event.args);
+
+  const nodeData : NodeState = await getNodeData(event.args.newId.toString(), context);
+
   
   try {
     // Create a unique ID for the node
     const nodeId = event.args.newId.toString();
+    const inflation = nodeData.basicInfo[1];
+    const reserve = nodeData.basicInfo[2];
+    const budget = nodeData.basicInfo[3];
+    const rootValuationBudget = nodeData.basicInfo[4];
+    const rootValuationReserve = nodeData.basicInfo[5];
+    const membraneId = nodeData.basicInfo[6];
+    const eligibilityPerSec = nodeData.basicInfo[7];
+    const lastRedistributionTime = nodeData.basicInfo[8];
+    const totalSupply = nodeData.basicInfo[11];
+    const membraneMeta = nodeData.membraneMeta;
+    const membersOfNode = nodeData.membersOfNode;
+    const childrenNodes = nodeData.childrenNodes;
+    const movementEndpoints = nodeData.movementEndpoints;
+    const rootPath = nodeData.rootPath;
+    const signals = nodeData.signals;
+    const networkId = context.network.id.toString();
     
     // Insert the new node
     await db.insert(nodes).values({
       nodeId: nodeId,
-      inflation: "0",
-      reserve: "0",
-      budget: "0",
-      rootValuationBudget: "0",
-      rootValuationReserve: "0",
-      membraneId: "0",
-      eligibilityPerSec: "0",
-      lastRedistributionTime: "0",
-      totalSupply: "0",
-      membraneMeta: "",
-      membersOfNode: [],
-      childrenNodes: [],
-      movementEndpoints: [],
-      rootPath: [],
-      signals: [],
+      inflation: inflation,
+      reserve: reserve,
+      budget: budget,
+      rootValuationBudget: rootValuationBudget,
+      rootValuationReserve: rootValuationReserve,
+      membraneId: membraneId,
+      eligibilityPerSec: eligibilityPerSec,
+      lastRedistributionTime: lastRedistributionTime,
+      totalSupply: totalSupply,
+      membraneMeta: membraneMeta,
+      membersOfNode: membersOfNode,
+      childrenNodes: childrenNodes,
+      movementEndpoints: movementEndpoints,
+      rootPath: rootPath,
+      signals: signals,
       createdAt: event.block.timestamp,
       updatedAt: event.block.timestamp,
       createdBlockNumber: event.block.number,
-      network: context.network.name.toLowerCase()
+      network: context.network.name.toLowerCase(),
+      networkId: context.network.id
     }).onConflictDoUpdate({
       updatedAt: event.block.timestamp
     });
@@ -191,7 +297,8 @@ export async function handleNewNode({ event, context }) {
       nodeId,
       who: event.args.creator,
       eventName: "NewNode",
-      eventType: "mint"
+      eventType: "mint",
+      network: context.network
     });
   } catch (error) {
     console.error("Error in handleNewNode:", error);
@@ -225,7 +332,8 @@ export async function handleMembershipMinted({ event, context }) {
       nodeId,
       who: event.args.who,
       eventName: "MembershipMinted",
-      eventType: "mint"
+      eventType: "mint",
+      network: context.network
     });
   } catch (error) {
     console.error("Error in handleMembershipMinted:", error);
@@ -238,50 +346,25 @@ export async function handleTransferSingle({ event, context }) {
   
   try {
     const nodeId = event.args.id.toString();
+    const network = context.network || { name: "optimismsepolia", id: "11155420" };
     
-    // Use the helper function to save the event
+    let eventTypeName = event.args.from == "0x0000000000000000000000000000000000000000" ? "mint" : "transfer";
+    if  (eventTypeName === "transfer" && event.args.to === "0x0000000000000000000000000000000000000000") eventTypeName = "burn";
+
     await saveEvent({
       db,
       event,
       nodeId,
       who: event.args.to,
       eventName: "TransferSingle",
-      eventType: "transfer"
+      eventType: eventTypeName,
+      network: network
     });
   } catch (error) {
     console.error("Error in handleTransferSingle:", error);
   }
 }
 
-export async function handleTransferBatch({ event, context }) {
-  const { db } = context;
-  console.log("Transfer Batch:", event.args);
-  
-  try {
-    // For each ID in the batch
-    for (let i = 0; i < event.args.ids.length; i++) {
-      const nodeId = event.args.ids[i].toString();
-      
-      // Use the helper function to save the event
-      await saveEvent({
-        db,
-        event: {
-          ...event,
-          log: {
-            ...event.log,
-            logIndex: event.log.logIndex + `-${i}` // Make unique IDs for each item in batch
-          }
-        },
-        nodeId,
-        who: event.args.to,
-        eventName: "TransferBatch",
-        eventType: "transfer"
-      });
-    }
-  } catch (error) {
-    console.error("Error in handleTransferBatch:", error);
-  }
-}
 
 export async function handleUserNodeSignal({ event, context }) {
   const { db } = context;
@@ -299,7 +382,8 @@ export async function handleUserNodeSignal({ event, context }) {
       nodeId,
       who: user,
       eventName: "UserNodeSignal",
-      eventType: "configSignal"
+      eventType: "configSignal",
+      network: context.network
     });
     
     // Process the signals array
@@ -312,6 +396,7 @@ export async function handleUserNodeSignal({ event, context }) {
       const membraneSignal = signals[0]?.toString();
       if (membraneSignal && membraneSignal !== "0") {
         const membranePrevalence = await getSignalPrevalence(
+          context,
           nodeId, 
           membraneSignal, 
           contractAddress, 
@@ -337,6 +422,7 @@ export async function handleUserNodeSignal({ event, context }) {
       const inflationSignal = signals[1]?.toString();
       if (inflationSignal && inflationSignal !== "0") {
         const inflationPrevalence = await getSignalPrevalence(
+          context,
           nodeId, 
           inflationSignal, 
           contractAddress, 
@@ -361,7 +447,14 @@ export async function handleUserNodeSignal({ event, context }) {
       // Check if there are redistribution preferences (rest of the array)
       if (signals.length > 2) {
         const redistributionSignals = signals.slice(2);
-        
+        const client = context.client || getPublicClient(network);
+        const balanceOfUser = await client.readContract({
+          address: contractAddress,
+          abi: ABIs["WillWe"],
+          functionName: "balanceOf",
+          args: [user, nodeId]
+        });
+
         // Save as nodeSignal with array of redistributionSignals
         await db.insert(nodeSignals).values({
           id: `${createEventId(event)}-redistribution`,
@@ -369,7 +462,7 @@ export async function handleUserNodeSignal({ event, context }) {
           who: user,
           signalType: "redistribution",
           signalValue: JSON.stringify(redistributionSignals),
-          currentPrevalence: "0", // Not applicable for redistribution
+          currentPrevalence: formatEther(balanceOfUser).toString(),
           when: event.block.timestamp,
           network: context.network.name.toLowerCase()
         }).onConflictDoNothing();
@@ -417,6 +510,7 @@ export async function handleCreatedEndpoint({ event, context }) {
     // Create a unique ID for the endpoint with fallback
     const endpointId = createEventId(event);
     const nodeId = event.args.nodeId.toString();
+    const network = context.network || { name: "optimismsepolia", id: "11155420" };
     
     // Insert the endpoint
     await db.insert(endpoints).values({
@@ -428,7 +522,8 @@ export async function handleCreatedEndpoint({ event, context }) {
       endpointAddress: event.args.endpoint,
       createdAt: event.block.timestamp,
       createdBlockNumber: event.block.number,
-      network: context.network.name.toLowerCase()
+      network: network.name.toLowerCase(),
+      networkId: network.id.toString()
     }).onConflictDoNothing();
 
     console.log("Inserted endpoint:", endpointId);
@@ -440,7 +535,8 @@ export async function handleCreatedEndpoint({ event, context }) {
       nodeId,
       who: event.args.owner,
       eventName: "CreatedEndpoint",
-      eventType: "configSignal"
+      eventType: "configSignal",
+      network: network
     });
   } catch (error) {
     console.error("Error in handleCreatedEndpoint:", error);
@@ -455,8 +551,13 @@ export async function handleMembraneChanged({ event, context }) {
     const nodeId = event.args.nodeId.toString();
     const newMembraneId = event.args.newMembrane.toString();
     const previousMembraneId = event.args.previousMembrane.toString();
+    const network = context.network?.name?.toLowerCase() || "optimismsepolia";
+    const networkId = context.network?.id?.toString() || "11155420"; // optimismSepolia id
     
-    // Update the node's membrane ID - using correct update syntax for Ponder
+    // Ensure the node exists before updating
+    await ensureNodeExists(db, nodeId, event.block.timestamp, network, networkId);
+    
+    // Update the node's membrane ID
     await db.update(nodes, { nodeId: nodeId })
       .set({ 
         membraneId: newMembraneId,
@@ -474,7 +575,6 @@ export async function handleMembraneChanged({ event, context }) {
     });
     
     // Save a signal record for historical tracking
-    // This captures the successful membrane change (not just a signal)
     await db.insert(nodeSignals).values({
       id: `${createEventId(event)}-membrane-change`,
       nodeId: nodeId,
@@ -483,7 +583,8 @@ export async function handleMembraneChanged({ event, context }) {
       signalValue: newMembraneId,
       currentPrevalence: "0", // The change has been applied, so prevalence is reset
       when: event.block.timestamp,
-      network: context.network?.name?.toLowerCase() || "optimismsepolia"
+      network: network,
+      networkId: networkId
     }).onConflictDoNothing();
     
     console.log(`Recorded membrane change for node ${nodeId}: ${previousMembraneId} -> ${newMembraneId}`);
@@ -500,8 +601,13 @@ export async function handleInflationRateChanged({ event, context }) {
     const nodeId = event.args.nodeId.toString();
     const newInflationRate = event.args.newInflationRate.toString();
     const oldInflationRate = event.args.oldInflationRate.toString();
+    const network = context.network?.name?.toLowerCase() || "optimismsepolia";
+    const networkId = context.network?.id?.toString() || "11155420"; // optimismSepolia id
     
-    // Update the node's inflation rate - using correct update syntax for Ponder
+    // Ensure the node exists before updating
+    await ensureNodeExists(db, nodeId, event.block.timestamp, network, networkId);
+    
+    // Update the node's inflation rate
     await db.update(nodes, { nodeId: nodeId })
       .set({ 
         inflation: newInflationRate,
@@ -519,7 +625,6 @@ export async function handleInflationRateChanged({ event, context }) {
     });
     
     // Save a signal record for historical tracking
-    // This captures the successful inflation rate change (not just a signal)
     await db.insert(nodeSignals).values({
       id: `${createEventId(event)}-inflation-change`,
       nodeId: nodeId,
@@ -528,7 +633,8 @@ export async function handleInflationRateChanged({ event, context }) {
       signalValue: newInflationRate,
       currentPrevalence: "0", // The change has been applied, so prevalence is reset
       when: event.block.timestamp,
-      network: context.network?.name?.toLowerCase() || "optimismsepolia"
+      network: network,
+      networkId: networkId 
     }).onConflictDoNothing();
     
     console.log(`Recorded inflation rate change for node ${nodeId}: ${oldInflationRate} -> ${newInflationRate}`);
@@ -543,8 +649,14 @@ export async function handleSharesGenerated({ event, context }) {
   
   try {
     const nodeId = event.args.nodeId.toString();
+    const network = context.network || { name: "optimismsepolia", id: "11155420" };
+    const networkId = network.id.toString();
+    const networkName = network.name.toLowerCase();
     
-    // Update the node with correct update syntax for Ponder
+    // Ensure the node exists before updating
+    await ensureNodeExists(db, nodeId, event.block.timestamp, networkName, networkId);
+    
+    // Update the node
     await db.update(nodes, { nodeId: nodeId })
       .set({ 
         lastRedistributionTime: event.block.timestamp.toString(),
@@ -558,7 +670,8 @@ export async function handleSharesGenerated({ event, context }) {
       nodeId,
       who: event.transaction.from,
       eventName: "SharesGenerated",
-      eventType: "inflationMinted"
+      eventType: "inflationMinted",
+      network: network
     });
   } catch (error) {
     console.error("Error in handleSharesGenerated:", error);
@@ -571,10 +684,17 @@ export async function handleMinted({ event, context }) {
   
   try {
     const nodeId = event.args.nodeId.toString();
+    const network = context.network || { name: "optimismsepolia", id: "11155420" };
+    const networkId = network.id.toString();
+    const networkName = network.name.toLowerCase();
     
-    // Update the node's total supply using correct db methods
+    // Ensure the node exists before updating
+    await ensureNodeExists(db, nodeId, event.block.timestamp, networkName, networkId);
+    
+    // Get current node data
     const node = await db.find(nodes, { nodeId: nodeId });
-      
+    
+    // Update the node's total supply
     if (node) {
       const currentSupply = BigInt(node.totalSupply || '0');
       const newAmount = BigInt(event.args.amount.toString());
@@ -594,7 +714,8 @@ export async function handleMinted({ event, context }) {
       nodeId,
       who: event.args.fromAddressOrNode,
       eventName: "Minted",
-      eventType: "mint"
+      eventType: "mint",
+      network: network
     });
   } catch (error) {
     console.error("Error in handleMinted:", error);
@@ -607,10 +728,16 @@ export async function handleBurned({ event, context }) {
   
   try {
     const nodeId = event.args.nodeId.toString();
+    const network = context.network?.name?.toLowerCase() || "optimismsepolia";
+    const networkId = context.network?.id?.toString() || "11155420"; // optimismSepolia id
     
-    // Update the node's total supply using correct db methods
+    // Ensure the node exists before updating
+    await ensureNodeExists(db, nodeId, event.block.timestamp, network, networkId);
+    
+    // Get current node data
     const node = await db.find(nodes, { nodeId: nodeId });
-      
+    
+    // Update the node's total supply
     if (node) {
       const currentSupply = BigInt(node.totalSupply || '0');
       const burnAmount = BigInt(event.args.amount.toString());

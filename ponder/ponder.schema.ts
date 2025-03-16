@@ -2,7 +2,7 @@ import { onchainTable, onchainEnum, relations, index } from "ponder";
 import { zeroAddress } from "viem"  
 
 export const Network = onchainEnum("network", ["mainnet", "rinkeby", "ropsten", "kovan", "goerli", "localhost"]);
-export const EventType = onchainEnum("eventType", ["redistribution", "redistributionSignal", "membraneSignal", "mint", "burn", "transfer", "approval", "approvalForAll", "configSignal", "inflationMinted", "inflationRateChanged", "crosschainTransfer"]);
+export const EventType = onchainEnum("eventType", ["redistribution", "redistributionSignal", "membraneSignal", "mint", "burn", "transfer", "approval", "approvalForAll", "configSignal", "inflationMinted", "inflationRateChanged", "crosschainTransfer", "newNode", "newRoot"]);
 export const EndpointType = onchainEnum("endpointType", ["userOwned", "movement"]);
 export const SignalType = onchainEnum("signalType", ["membrane", "inflation", "redistribution"]);
 
@@ -15,6 +15,7 @@ export const events = onchainTable("events", (t) => ({
   when: t.numeric(),
   createdBlockNumber: t.numeric(),
   network: t.text(),
+  networkId: t.text(),
 }), (table) => ({
   nodeIdx: index().on(table.nodeId),
   whox: index().on(table.who)
@@ -41,6 +42,7 @@ export const redistributionPreference = onchainTable("redistributionEvents", (t)
   when: t.numeric(),
   createdBlockNumber: t.numeric(),
   network: t.text(),
+  networkId: t.text(),
 }));
 
 export const membraneSignals = onchainTable("membraneSignals", (t) => ({
@@ -68,6 +70,7 @@ export const nodeSignals = onchainTable("nodeSignals", (t) => ({
   currentPrevalence: t.text(), // Total support for this signal
   when: t.numeric(),
   network: t.text(),
+  networkId: t.text(),
 }), (table) => ({
   nodeIdx: index().on(table.nodeId),
   whox: index().on(table.who),
@@ -83,6 +86,7 @@ export const signatures = onchainTable("signatures", (t) => ({
   submitted: t.boolean().default(false),
   when: t.numeric(),
   network: t.text(),
+  networkId: t.text(),
 }), (table) => ({
   SQx: index().on(table.signatureQueueHash),
   nodeIdx: index().on(table.nodeId)
@@ -103,6 +107,7 @@ export const movements = onchainTable("movements", (t) => ({
   executedPayload: t.text(),
   createdBlockNumber: t.numeric(),
   network: t.text(),
+  networkId: t.text(),
 }));
 
 export const signatureQueues = onchainTable("signatureQueues", (t) => ({
@@ -113,6 +118,7 @@ export const signatureQueues = onchainTable("signatureQueues", (t) => ({
   signatures: t.text().array(),
   createdBlockNumber: t.numeric(),
   network: t.text(),
+  networkId: t.text(),
 }));
 
 
@@ -138,6 +144,7 @@ export const nodes = onchainTable("nodes", (t) => ({
   updatedAt: t.numeric(),
   createdBlockNumber: t.numeric(),
   network: t.text(),
+  networkId: t.text()
 }));
 
 export const nodesRelations = relations(nodes, ({ many, one }) => ({
@@ -166,6 +173,7 @@ export const endpoints = onchainTable("endpoints", (t) => ({
   createdAt: t.numeric(),
   createdBlockNumber: t.numeric(),
   network: t.text(),
+  networkId: t.text(),
 }));
 
 
@@ -180,6 +188,7 @@ export const membranes = onchainTable("membranes", (t) => ({
   createdAt: t.numeric(),
   createdBlockNumber: t.numeric(),
   network: t.text(),
+  networkId: t.text(),
 }));
 
 
@@ -189,5 +198,6 @@ export const WillTokenPrice = onchainTable("WillTokenPrice", (t) => ({
   price: t.numeric(),
   createdBlockNumber: t.numeric(),
   network: t.text(),
+  networkId: t.text(),
 }));
 

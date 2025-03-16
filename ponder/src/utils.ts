@@ -82,3 +82,29 @@ export function inferNetworkFromChainId(chainId: number): string {
 export function createNetworkId(network: string, id: string): string {
   return `${network}-${id}`;
 }
+
+/**
+ * Get network information for database storage
+ * @param chainIdOrName The chain ID or network name
+ * @returns An object with network name and ID
+ */
+export function getNetworkInfo(chainIdOrName: number | string): { networkName: string, networkId: number } {
+  let chain: Chain | undefined;
+  
+  if (typeof chainIdOrName === 'number') {
+    chain = findChainById(chainIdOrName);
+  } else {
+    const normalizedName = chainIdOrName.toLowerCase();
+    chain = supportedChains.find(c => c.name.toLowerCase() === normalizedName);
+  }
+  
+  if (!chain) {
+    // Default to optimism sepolia if not found
+    chain = optimismSepolia;
+  }
+  
+  return {
+    networkName: chain.name.toLowerCase(),
+    networkId: chain.id
+  };
+}
