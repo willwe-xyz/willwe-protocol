@@ -2,6 +2,7 @@ import { createConfig } from "ponder";
 import { http, Abi } from "viem";
 import * as viemChains from "viem/chains";
 import { ABIs, deployments } from "./abis/abi";
+import "./src/syncFoundry";
 
 // Collection of all chains that could be supported
 export const supportedChains: viemChains.Chain[] = [
@@ -123,17 +124,12 @@ export const getAllContracts = () => {
       }
     }
 
-    console.log(`Contracts for chain ${chainId} (${chain?.name}):`, contracts);
-
   }
   
   return contracts;
 }
 
-// Import our syncFoundry module to ensure it runs during server startup
-import "./src/syncFoundry";
 
-console.log("Available contracts:", Object.keys(getAllContracts()));
 
 // Create the Ponder configuration
 export default createConfig({

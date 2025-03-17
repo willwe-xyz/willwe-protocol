@@ -1,6 +1,7 @@
 // This file exports event handlers for Membrane contract events
 import { ponder } from "ponder:registry";
 import { membranes, events, nodeSignals } from "../ponder.schema";
+import { safeBigIntStringify } from "./common";
 
 // Helper function to create a unique event ID
 const createEventId = (event) => {
@@ -49,21 +50,30 @@ const saveEvent = async ({ db, event, nodeId, who, eventName, eventType, network
 
 export const handleMembraneCreated = async ({ event, context }) => {
   const { db } = context;
-  console.log("Membrane Created:", event.args);
+  console.log("Membrane Created:", safeBigIntStringify(event.args));
 
   try {
-    // Create a unique ID for the membrane
-    const membraneId = `${event.args.membraneId.toString()}-${event.block.hash}`;
+    // Safely check if needed properties exist
+    if (!event?.args?.membraneId) {
+      console.error("Missing membraneId in MembraneCreated event");
+      return;
+    }
+    
+    // Create a unique ID for the membrane - safely convert membraneId to string
+    const membraneIdString = event.args.membraneId.toString();
+    const membraneId = `${membraneIdString}-${event.block.hash}`;
+    
+    // Safely handle network information with defaults
     const network = context.network || { name: "optimismsepolia", id: "11155420" };
-    const networkId = network.id.toString();
-    const networkName = network.name.toLowerCase();
+    const networkId = network.id?.toString() || "11155420";
+    const networkName = (network.name || "optimismsepolia").toLowerCase();
     
     // Insert the membrane
     await db.insert(membranes).values({ 
       id: membraneId,
-      membraneId: event.args.membraneId,
-      creator: event.args.creator,
-      metadataCID: event.args.CID,
+      membraneId: membraneIdString,
+      creator: event.args.creator || event.transaction?.from || "unknown",
+      metadataCID: event.args.CID || "",
       data: event.args.data || "",
       tokens: [], // Empty array as default
       balances: [], // Empty array as default
@@ -80,7 +90,7 @@ export const handleMembraneCreated = async ({ event, context }) => {
       db,
       event,
       nodeId: "0", // Default nodeId since membranes aren't directly tied to nodes initially
-      who: event.args.creator,
+      who: event.args.creator || event.transaction?.from || "unknown",
       eventName: "MembraneCreated",
       eventType: "membraneSignal",
       network: network
@@ -90,18 +100,19 @@ export const handleMembraneCreated = async ({ event, context }) => {
     await db.insert(nodeSignals).values({
       id: `${createEventId(event)}-membrane-creation`,
       nodeId: "0", // No specific node at creation time
-      who: event.args.creator,
+      who: event.args.creator || event.transaction?.from || "unknown",
       signalType: "membrane",
-      signalValue: event.args.membraneId.toString(),
+      signalValue: membraneIdString,
       currentPrevalence: "0", // Not applicable for creation
       when: event.block.timestamp,
       network: networkName,
       networkId: networkId
     }).onConflictDoNothing();
     
-    console.log(`Saved membrane creation signal from ${event.args.creator}`);
+    console.log(`Saved membrane creation signal from ${event.args.creator || "unknown"}`);
   } catch (error) {
     console.error("Error in handleMembraneCreated:", error);
+    console.error("Event args:", safeBigIntStringify(event?.args || {}));
   }
 };
 

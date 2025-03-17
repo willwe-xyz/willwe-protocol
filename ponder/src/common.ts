@@ -86,3 +86,47 @@ export const safeString = (value, defaultValue = "0") => {
   if (value === undefined || value === null) return defaultValue;
   return String(value);
 };
+
+/**
+ * Safely access event arguments with proper validation
+ * @param event The event object
+ * @param argName The name of the argument to safely access
+ * @param defaultValue Optional default value if arg is missing
+ * @returns The argument value or default value
+ */
+export const safeEventArg = (event, argName, defaultValue = undefined) => {
+  if (!event?.args || event.args[argName] === undefined) {
+    return defaultValue;
+  }
+  
+  const arg = event.args[argName];
+  return arg === null ? defaultValue : arg;
+};
+
+/**
+ * Safely converts an event argument to string
+ * @param event The event object
+ * @param argName The name of the argument
+ * @param defaultValue Optional default value
+ * @returns The argument as string
+ */
+export const safeEventArgString = (event, argName, defaultValue = "0") => {
+  const arg = safeEventArg(event, argName);
+  if (arg === undefined || arg === null) return defaultValue;
+  return arg.toString();
+};
+
+/**
+ * Safely stringify objects containing BigInt values for logging
+ * @param obj Object to stringify
+ * @returns Safe JSON string with BigInt values converted to strings
+ */
+export const safeBigIntStringify = (obj) => {
+  return JSON.stringify(obj, (key, value) => {
+    // Convert BigInt values to strings
+    if (typeof value === 'bigint') {
+      return value.toString();
+    }
+    return value;
+  }, 2);
+};

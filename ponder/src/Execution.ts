@@ -1,73 +1,164 @@
 // This file exports event handlers for Execution contract events
 import { ponder } from "ponder:registry";
 import { events, movements, signatureQueues, signatures, nodeSignals } from "../ponder.schema";
-import { createEventId, saveEvent, getDefaultNetwork } from "./common";
+import { createEventId, saveEvent, getDefaultNetwork, safeBigIntStringify, safeString } from "./common";
+
+// Helper function to safely convert any value to string
+const safeToString = (value, defaultValue = "0") => {
+  if (value === undefined || value === null) return defaultValue;
+  try {
+    return value.toString();
+  } catch (error) {
+    console.error(`Error converting value to string:`, error);
+    return defaultValue;
+  }
+};
 
 export const handleNewMovementCreated = async ({ event, context }) => {
   const { db } = context;
-  console.log("New Movement Created:", event.args);
+  console.log("New Movement Created:", safeBigIntStringify(event.args));
 
   try {
-    if (!event?.args?.nodeId) {
-      console.error("Missing required nodeId in event args");
+    // Safely check if required args exist
+    if (!event?.args) {
+      console.error("Missing args in NewMovementCreated event");
       return;
     }
 
-    // Create a unique ID for the movement
-    const movementId = (event.args.movementHash?.toString() || 
-                        event.args.movementId?.toString() || 
-                        `mov-${createEventId(event)}`);
+    // Safely extract nodeId with detailed logging
+    let nodeId = "0"; // Safe default
+    try {
+      console.log(`Movement nodeId type: ${typeof event.args.nodeId}, value: ${event.args.nodeId}`);
+      nodeId = event.args.nodeId ? safeToString(event.args.nodeId) : "0";
+      console.log(`Using nodeId: ${nodeId}`);
+    } catch (error) {
+      console.error(`Error extracting nodeId: ${error.message}`);
+    }
     
-    const nodeId = event.args.nodeId.toString();
-    const network = context.network || getDefaultNetwork();
-    const networkId = network.id.toString();
-    const networkName = network.name.toLowerCase();
+    // Create a unique ID for the movement - safely handle movementHash
+    let movementId;
+    try {
+      // Check if the properties exist before attempting to access them
+      if (event.args.movementHash) {
+        movementId = safeToString(event.args.movementHash);
+      } else if (event.args.movementId) {
+        movementId = safeToString(event.args.movementId);
+      } else {
+        movementId = `mov-${createEventId(event)}`;
+      }
+    } catch (error) {
+      console.error(`Error extracting movementId: ${error.message}`);
+      movementId = `mov-${createEventId(event)}`;
+    }
     
-    // Insert the movement with safe defaults for missing fields
-    await db.insert(movements).values({
-      id: movementId,
-      nodeId: nodeId,
-      category: event.args.category === 0 ? "Revert" : event.args.category === 1 ? "AgentMajority" : "EnergeticMajority",
-      initiator: event.args.initiator || event.transaction?.from || "unknown",
-      exeAccount: event.args.exeAccount || event.args.initiator || event.transaction?.from || "unknown",
-      viaNode: event.args.viaNode || 0,
-      expiresAt: event.args.expiresAt || BigInt(event.block.timestamp) + BigInt(7 * 24 * 60 * 60), // 1 week default
-      description: event.args.description || "",
-      executedPayload: event.args.executedPayload || "",
-      createdBlockNumber: event.block.number,
-      network: networkName,
-      networkId: networkId
-    }).onConflictDoNothing();
+    // Network info with fallbacks
+    const defaultNetwork = { name: "optimismsepolia", id: "11155420" };
+    const network = context.network || defaultNetwork;
+    const networkId = (network.id || "11155420").toString();
+    const networkName = (network.name || "optimismsepolia").toLowerCase();
+    
+    // Safely get initiator
+    const initiator = event.args.initiator || event.transaction?.from || "unknown";
+    
+    // Safely handle viaNode with extra checking
+    let viaNode = "0";
+    try {
+      if (event.args.viaNode !== undefined) {
+        viaNode = safeToString(event.args.viaNode);
+      }
+    } catch (error) {
+      console.error(`Error processing viaNode: ${error.message}`);
+    }
+    
+    // Safely handle expiresAt with extra checking
+    let expiresAt;
+    try {
+      if (event.args.expiresAt !== undefined) {
+        expiresAt = safeToString(event.args.expiresAt);
+      } else {
+        // Default: current time + 1 week
+        expiresAt = (BigInt(event.block.timestamp) + BigInt(7 * 24 * 60 * 60)).toString();
+      }
+    } catch (error) {
+      console.error(`Error processing expiresAt: ${error.message}`);
+      expiresAt = (BigInt(event.block.timestamp) + BigInt(7 * 24 * 60 * 60)).toString();
+    }
+    
+    // Safe category handling
+    let category = "EnergeticMajority"; // default
+    try {
+      if (event.args.category === 0) {
+        category = "Revert";
+      } else if (event.args.category === 1) {
+        category = "AgentMajority";
+      }
+    } catch (error) {
+      console.error(`Error processing category: ${error.message}`);
+    }
+    
+    // Insert the movement with safe property access and explicit try/catch
+    try {
+      await db.insert(movements).values({
+        id: movementId,
+        nodeId: nodeId,
+        category: category,
+        initiator: initiator,
+        exeAccount: event.args.exeAccount || initiator,
+        viaNode: viaNode,
+        expiresAt: expiresAt,
+        description: event.args.description || "",
+        executedPayload: event.args.executedPayload || "",
+        createdBlockNumber: event.block.number,
+        network: networkName,
+        networkId: networkId
+      }).onConflictDoNothing();
 
-    console.log("Inserted Movement:", movementId);
+      console.log("Inserted Movement:", movementId);
+    } catch (insertError) {
+      console.error(`Error inserting movement record: ${insertError.message}`);
+    }
     
     // Use the helper function to save the event
-    await saveEvent({
-      db,
-      event,
-      nodeId,
-      who: event.args.initiator || event.transaction?.from,
-      eventName: "NewMovementCreated",
-      eventType: "configSignal",
-      network: network
-    });
+    try {
+      // Create custom event record without using saveEvent to avoid additional errors
+      await db.insert(events).values({
+        id: createEventId(event),
+        nodeId: nodeId,
+        who: initiator,
+        eventName: "NewMovementCreated",
+        eventType: "configSignal",
+        when: event.block.timestamp,
+        createdBlockNumber: event.block.number,
+        networkId: networkId,
+        network: networkName
+      }).onConflictDoNothing();
+      
+      console.log(`Saved NewMovementCreated event for node ${nodeId}`);
+    } catch (eventError) {
+      console.error(`Error saving event: ${eventError.message}`);
+    }
     
     // Also record as a node signal for historical tracking
-    await db.insert(nodeSignals).values({
-      id: `${createEventId(event)}-movement-created`,
-      nodeId: nodeId,
-      who: event.args.initiator || event.transaction?.from || "unknown",
-      signalType: "redistribution", // Closest signal type for governance actions
-      signalValue: movementId,
-      currentPrevalence: "0", // Not applicable for movements
-      when: event.block.timestamp,
-      network: networkName,
-      networkId: networkId
-    }).onConflictDoNothing();
-    
-    console.log(`Saved movement creation signal from ${event.args.initiator || "unknown"}`);
+    try {
+      await db.insert(nodeSignals).values({
+        id: `${createEventId(event)}-movement-created`,
+        nodeId: nodeId,
+        who: initiator,
+        signalType: "redistribution", // Closest signal type for governance actions
+        signalValue: movementId,
+        currentPrevalence: "0", // Not applicable for movements
+        when: event.block.timestamp,
+        network: networkName,
+        networkId: networkId
+      }).onConflictDoNothing();
+      
+      console.log(`Saved movement creation signal from ${initiator}`);
+    } catch (signalError) {
+      console.error(`Error saving node signal: ${signalError.message}`);
+    }
   } catch (error) {
     console.error("Error in handleNewMovementCreated:", error);
+    console.error("Event args:", safeBigIntStringify(event?.args || {}));
   }
 };
 
@@ -78,7 +169,7 @@ export const handleQueueExecuted = async ({ event, context }) => {
   try {
     const queueId = event.args.queueId.toString();
     const nodeId = event.args.nodeId.toString();
-    const network = context.network || getDefaultNetwork();
+    const network = context.network || getDefaultNetwork(context);
     const networkId = network.id.toString();
     const networkName = network.name.toLowerCase();
     
@@ -133,7 +224,7 @@ export const handleNewSignaturesSubmitted = async ({ event, context }) => {
     const queueId = event.args.queueId.toString();
     const movementId = event.args.movementId.toString();
     const nodeId = event.args.nodeId.toString();
-    const network = context.network || getDefaultNetwork();
+    const network = context.network || getDefaultNetwork(context);
     const networkId = network.id.toString();
     const networkName = network.name.toLowerCase();
     
@@ -212,7 +303,7 @@ export const handleSignatureRemoved = async ({ event, context }) => {
     const queueId = event.args.queueId.toString();
     const nodeId = event.args.nodeId.toString();
     const signer = event.args.signer;
-    const network = context.network || getDefaultNetwork();
+    const network = context.network || getDefaultNetwork(context);
     const networkId = network.id.toString();
     const networkName = network.name.toLowerCase();
     
@@ -265,7 +356,7 @@ export const handleWillWeSet = async ({ event, context }) => {
   console.log("WillWe Set:", event.args);
   
   try {
-    const network = context.network || getDefaultNetwork();
+    const network = context.network || getDefaultNetwork(context);
     
     // Use the helper function to save the event
     await saveEvent({

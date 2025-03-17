@@ -201,3 +201,24 @@ export const WillTokenPrice = onchainTable("WillTokenPrice", (t) => ({
   networkId: t.text(),
 }));
 
+// Add chat_messages table to the schema
+export const chatMessages = onchainTable("chat_messages", (t) => ({
+  id: t.text().primaryKey(),
+  nodeId: t.text(), // The node this chat message belongs to
+  sender: t.text(), // Address or identifier of the sender
+  content: t.text(), // Message content
+  timestamp: t.numeric(), // When the message was sent
+  networkId: t.text(), // Network ID for multi-chain support
+}), (table) => ({
+  nodeIdIdx: index().on(table.nodeId),
+  timestampIdx: index().on(table.timestamp),
+}));
+
+// Add relations for chat messages
+export const chatMessagesRelations = relations(chatMessages, ({ one }) => ({
+  node: one(nodes, {
+    fields: [chatMessages.nodeId],
+    references: [nodes.nodeId]
+  }),
+}));
+
