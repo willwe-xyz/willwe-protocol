@@ -643,14 +643,10 @@ app.post("/chat/messages", async (c) => {
     const network = nodeExists[0]?.networkId || networkId || "11155420";
     
     // Insert the message using the schema
-    await db.insert(schema.chatMessages).values({
-      id,
-      nodeId,
-      sender,
-      content, 
-      timestamp,
-      networkId: network
-    });
+    await db.execute(sql`
+      INSERT INTO ${schema.chatMessages} (id, nodeId, sender, content, timestamp, networkId)
+      VALUES (${id}, ${nodeId}, ${sender}, ${content}, ${timestamp}, ${network})
+    `);
     
     return c.json({
       success: true,

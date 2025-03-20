@@ -605,7 +605,7 @@ export async function handleUserNodeSignal({ event, context }) {
       nodeId,
       who: user,
       eventName: "UserNodeSignal",
-      eventType: "configSignal",
+      eventType: "redistributionSignal",
       network: context.network
     });
     
@@ -723,7 +723,8 @@ export async function handleConfigSignal({ event, context }) {
       nodeId,
       who,
       eventName: "ConfigSignal",
-      eventType: "configSignal"
+      eventType: "configSignal",
+      network: context.network
     });
     
     // Since ConfigSignal is more general, we are recording it in the events table only
@@ -854,7 +855,8 @@ export async function handleMembraneChanged({ event, context }) {
       nodeId,
       who: event.transaction.from,
       eventName: "MembraneChanged",
-      eventType: "membraneSignal"
+      eventType: "membraneSignal",
+      network: context.network
     });
     
     // Save a signal record for historical tracking

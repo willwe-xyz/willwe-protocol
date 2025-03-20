@@ -17,6 +17,7 @@ const safeToString = (value, defaultValue = "0") => {
 export const handleNewMovementCreated = async ({ event, context }) => {
   const { db } = context;
   console.log("New Movement Created:", safeBigIntStringify(event.args));
+  if (! context.network) throw new Error("Missing network context");
 
   try {
     // Safely check if required args exist
@@ -50,12 +51,12 @@ export const handleNewMovementCreated = async ({ event, context }) => {
       console.error(`Error extracting movementId: ${error.message}`);
       movementId = `mov-${createEventId(event)}`;
     }
+
     
     // Network info with fallbacks
-    const defaultNetwork = { name: "optimismsepolia", id: "11155420" };
-    const network = context.network || defaultNetwork;
-    const networkId = (network.id || "11155420").toString();
-    const networkName = (network.name || "optimismsepolia").toLowerCase();
+    const network = context.network;
+    const networkId = network.id;
+    const networkName = network.name;
     
     // Safely get initiator
     const initiator = event.args.initiator || event.transaction?.from || "unknown";
@@ -125,8 +126,8 @@ export const handleNewMovementCreated = async ({ event, context }) => {
         id: createEventId(event),
         nodeId: nodeId,
         who: initiator,
-        eventName: "NewMovementCreated",
-        eventType: "configSignal",
+        eventName: "New Movement Created",
+        eventType: "newmovement",
         when: event.block.timestamp,
         createdBlockNumber: event.block.number,
         networkId: networkId,
