@@ -1,7 +1,7 @@
 import { db } from "ponder:api";
 import schema from "ponder:schema";
 import { Hono } from "hono";
-import { eq, desc, and, like, or, sql, gte, lte, inArray } from "drizzle-orm";
+import { eq, desc, and, like, or, sql, gte, lte, inArray, asc } from "drizzle-orm";
 import { error } from "console";
 import { randomUUID } from 'crypto';
 import { drizzle } from "drizzle-orm/node-postgres";
@@ -603,7 +603,7 @@ app.get("/chat/messages", async (c) => {
     // Apply filtering, sorting and limit
     const query = db.select().from(schema.chatMessages)
       .where(and(...whereConditions))
-      .orderBy(desc(schema.chatMessages.timestamp))
+      .orderBy(asc(schema.chatMessages.timestamp))
       .limit(limit);
     
     const messages = await query;
