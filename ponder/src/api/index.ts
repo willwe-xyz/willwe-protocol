@@ -616,6 +616,7 @@ app.get("/chat/messages", async (c) => {
 app.post("/chat/messages", async (c) => {
   try {
     const { nodeId, sender, content, networkId } = await c.req.json();
+    console.log("Chat message:", nodeId, sender, content);
     
     if (!nodeId || !sender || !content) {
       return c.json({ error: "nodeId, sender, and content are required" }, 400);
@@ -649,9 +650,9 @@ app.post("/chat/messages", async (c) => {
     `);
     console.log("Table columns:", tableInfo);
     
-    // Insert the message using exact lowercase column names
+    // Insert the message using snake_case column names
     await db.execute(sql`
-      INSERT INTO chat_messages (id, nodeid, sender, content, timestamp, networkid)
+      INSERT INTO chat_messages (id, node_id, sender, content, timestamp, network_id)
       VALUES (${id}, ${nodeId}, ${sender}, ${content}, ${timestamp}, ${network})
     `);
     
