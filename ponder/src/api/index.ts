@@ -654,7 +654,7 @@ app.post("/chat/messages", async (c) => {
     
     // Insert the message using the writable database connection
     await writeDb.execute(sql`
-      INSERT INTO chat_messages (id, node_id, sender, content, timestamp, network_id)
+      INSERT INTO ${schema.chatMessages} (id, node_id, sender, content, timestamp, network_id)
       VALUES (${id}, ${nodeId}, ${sender}, ${content}, ${timestamp}, ${network})
     `);
     
