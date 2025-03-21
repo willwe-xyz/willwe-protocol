@@ -642,9 +642,9 @@ app.post("/chat/messages", async (c) => {
     const timestamp = Date.now();
     const network = nodeExists[0]?.networkId || networkId || "11155420";
     
-    // Insert the message using the schema
+    // Insert the message using SQL with proper column name quoting
     await db.execute(sql`
-      INSERT INTO ${schema.chatMessages} (id, nodeId, sender, content, timestamp, networkId)
+      INSERT INTO ${schema.chatMessages} (id, "nodeId", sender, content, timestamp, "networkId")
       VALUES (${id}, ${nodeId}, ${sender}, ${content}, ${timestamp}, ${network})
     `);
     

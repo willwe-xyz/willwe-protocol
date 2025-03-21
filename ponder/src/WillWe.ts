@@ -598,16 +598,6 @@ export async function handleUserNodeSignal({ event, context }) {
     const user = event.args.user;
     const signals = event.args.signals || [];
     
-    // Use the helper function to save the event
-    await saveEvent({
-      db,
-      event,
-      nodeId,
-      who: user,
-      eventName: "UserNodeSignal",
-      eventType: "redistributionSignal",
-      network: context.network
-    });
     
     // Process the signals array
     // In the signals array, [0] is membrane signal, [1] is inflation signal
@@ -627,6 +617,17 @@ export async function handleUserNodeSignal({ event, context }) {
           context
         );
         
+        await saveEvent({
+          db,
+          event,
+          nodeId,
+          who: user,
+          eventName: "For Membrane Change",
+          eventType: "membraneSignal",
+          network: context.network
+        });
+
+
         // Save as nodeSignal
         await db.insert(nodeSignals).values({
           id: `${createEventId(event)}-membrane`,
@@ -653,6 +654,16 @@ export async function handleUserNodeSignal({ event, context }) {
           networkName, 
           context
         );
+
+        await saveEvent({
+          db,
+          event,
+          nodeId,
+          who: user,
+          eventName: "For Inflation Change",
+          eventType: "inflateSignal",
+          network: context.network
+        });
         
         // Save as nodeSignal
         await db.insert(nodeSignals).values({
@@ -681,6 +692,16 @@ export async function handleUserNodeSignal({ event, context }) {
             abi: ABIs["WillWe"],
             functionName: "balanceOf",
             args: [user, nodeId]
+          });
+
+          await saveEvent({
+            db,
+            event,
+            nodeId,
+            who: user,
+            eventName: "Changed Redistribution",
+            eventType: "redistributionSignal",
+            network: context.network
           });
 
           // Save as nodeSignal with array of redistributionSignals
