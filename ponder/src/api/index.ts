@@ -642,9 +642,16 @@ app.post("/chat/messages", async (c) => {
     const timestamp = Date.now();
     const network = nodeExists[0]?.networkId || networkId || "11155420";
     
-    // Insert the message using SQL with proper column name quoting
+    // Uncomment this to see actual column names in the database
+    const tableInfo = await db.execute(sql`
+      SELECT column_name FROM information_schema.columns 
+      WHERE table_name = 'chat_messages'
+    `);
+    console.log("Table columns:", tableInfo);
+    
+    // Insert the message using exact lowercase column names
     await db.execute(sql`
-      INSERT INTO ${schema.chatMessages} (id, "nodeId", sender, content, timestamp, "networkId")
+      INSERT INTO chat_messages (id, nodeid, sender, content, timestamp, networkid)
       VALUES (${id}, ${nodeId}, ${sender}, ${content}, ${timestamp}, ${network})
     `);
     
