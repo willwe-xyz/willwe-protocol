@@ -4,6 +4,15 @@ import { Hono } from "hono";
 import { eq, desc, and, like, or, sql, gte, lte, inArray } from "drizzle-orm";
 import { error } from "console";
 import { randomUUID } from 'crypto';
+import { drizzle } from "drizzle-orm/node-postgres";
+import { Pool } from "pg";
+
+// Create a separate writable database connection
+const pool = new Pool({
+  connectionString: process.env.PONDER_DATABASE_URL || "postgres://postgres:postgres@localhost:5432/ponder"
+});
+
+const writeDb = drizzle(pool);
 
 const app = new Hono();
 
@@ -627,7 +636,7 @@ app.post("/chat/messages", async (c) => {
       return c.json({ error: "Message content is too long (max 1000 characters)" }, 400);
     }
     
-    // Check if the node exists (optional, but a good validation step)
+    // Check if the node exists (using read-only db)
     const nodeExists = await db
       .select()
       .from(schema.nodes)
@@ -643,15 +652,8 @@ app.post("/chat/messages", async (c) => {
     const timestamp = Date.now();
     const network = nodeExists[0]?.networkId || networkId || "11155420";
     
-    // Uncomment this to see actual column names in the database
-    const tableInfo = await db.execute(sql`
-      SELECT column_name FROM information_schema.columns 
-      WHERE table_name = 'chat_messages'
-    `);
-    console.log("Table columns:", tableInfo);
-    
-    // Insert the message using snake_case column names
-    await db.execute(sql`
+    // Insert the message using the writable database connection
+    await writeDb.execute(sql`
       INSERT INTO chat_messages (id, node_id, sender, content, timestamp, network_id)
       VALUES (${id}, ${nodeId}, ${sender}, ${content}, ${timestamp}, ${network})
     `);
