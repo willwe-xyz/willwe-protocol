@@ -29,8 +29,8 @@ export const saveEvent = async ({ db, event, nodeId, who, eventName, eventType, 
     const eventId = createEventId(event);
     
     // Get network info with proper fallbacks - ensure we have valid values
-    const networkName = (network?.name || event.context?.network?.name || "optimismsepolia").toLowerCase();
-    const networkId = (network?.id || event.context?.network?.id || "11155420").toString();
+    const networkName = (network?.name || event.context?.network?.name || "unknown").toLowerCase();
+    const networkId = (network?.id || event.context?.network?.id || "unknown").toString();
     
     // Ensure nodeId is a string
     const safeNodeId = (nodeId || "0").toString();
@@ -74,8 +74,8 @@ export const safePromise = async (promise, errorMessage = "Operation failed") =>
  */
 export const getDefaultNetwork = (contextNetwork) => {
   return {
-    name: (contextNetwork?.name || "optimismsepolia").toLowerCase(),
-    id: (contextNetwork?.id || "11155420").toString()
+    name: (contextNetwork?.name || "unknown").toLowerCase(),
+    id: (contextNetwork?.id || "unknown").toString()
   };
 };
 

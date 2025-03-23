@@ -118,7 +118,7 @@ app.post("/events/signature", async (c) => {
               'UserSignature', 
               ${Math.floor(Date.now() / 1000)}, 
               0, 
-              ${(networkId === 11155420 || networkId === "11155420") ? "optimismsepolia" : "unknown"})
+              ${(networkId === 11155420 || networkId === "unknown") ? "unknown" : "unknown"})
       RETURNING id`);
 
     return c.json({ success: true, eventId: event[0]?.id });
@@ -650,7 +650,7 @@ app.post("/chat/messages", async (c) => {
     // Generate unique ID and timestamp
     const id = randomUUID();
     const timestamp = Date.now();
-    const network = nodeExists[0]?.networkId || networkId || "11155420";
+    const network = nodeExists[0]?.networkId || networkId || "unknown";
     
     // Insert the message using the writable database connection
     await writeDb.execute(sql`

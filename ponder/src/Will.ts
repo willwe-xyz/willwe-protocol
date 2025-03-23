@@ -1,8 +1,10 @@
 // This file contains event handlers for Will Token price updates
 import { ponder } from "ponder:registry";
 import { WillTokenPrice } from "../ponder.schema";
+import { PonderContext, LogEvent } from "./types";
 
-export const handlePriceUpdate = async ({ event, context }) => {
+
+export const handlePriceUpdate = async (event: LogEvent, context:PonderContext) => {
   const { db } = context;
   console.log("Will Token Price Update:", event.args);
 
