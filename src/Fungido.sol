@@ -107,6 +107,7 @@ contract Fungido is ERC1155, PureUtils {
     event SharesGenerated(uint256 indexed nodeId, uint256 amount);
     event InflationRateChanged(uint256 indexed nodeId, uint256 oldInflationRate, uint256 newInflationRate);
     event MembraneChanged(uint256 indexed nodeId, uint256 previousMembrane, uint256 newMembrane);
+    event MembershipMinted(address indexed who, uint256 indexed nodeId);
     ////////////////////////////////////////////////
     //////________MODIFIER________/////////////////
 
@@ -300,6 +301,7 @@ contract Fungido is ERC1155, PureUtils {
         members[id].push(to);
 
         _mint(to, membershipID(id), 1, abi.encodePacked(to, "membership", id));
+        emit MembershipMinted(to, id);
     }
 
     function localizeEndpoint(address endpoint_, uint256 endpointParent_, address owner_) external {

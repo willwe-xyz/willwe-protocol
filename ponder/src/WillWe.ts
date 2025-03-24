@@ -927,7 +927,8 @@ export async function handleInflationRateChanged({ event, context }) {
       nodeId,
       who: event.transaction.from,
       eventName: "InflationRateChanged",
-      eventType: "inflationRateChanged"
+      eventType: "inflationRateChanged",
+      network: context.network
     });
     
     // Save a signal record for historical tracking
@@ -960,10 +961,11 @@ export async function handleSharesGenerated({ event, context }) {
       return;
     }
     
-    const nodeId = event.args.nodeId.toString();
-    const network = context.network || { name: "optimismsepolia", id: "11155420" };
-    const networkId = network.id.toString();
-    const networkName = network.name.toLowerCase();
+    const nodeId = event?.args?.nodeId.toString();
+    const network = context?.network || { name: "optimismsepolia", id: "11155420" };
+    const networkId = network?.chainId.toString();
+    const networkName = network?.name.toLowerCase();
+    const amount = event?.args?.amount?.toString() || "0";
     
     // Ensure the node exists before updating
     await ensureNodeExists(db, nodeId, event.block.timestamp, networkName, networkId);
@@ -971,7 +973,7 @@ export async function handleSharesGenerated({ event, context }) {
     // Update the node
     await db.update(nodes, { nodeId: nodeId })
       .set({ 
-        lastRedistributionTime: event.block.timestamp.toString(),
+        lastRedistributionTime: event.block?.timestamp?.toString(),
         updatedAt: event.block.timestamp 
       });
       
@@ -981,8 +983,8 @@ export async function handleSharesGenerated({ event, context }) {
       event,
       nodeId,
       who: event.transaction.from,
-      eventName: "SharesGenerated",
-      eventType: "inflationMinted",
+      eventName: `${formatEther(amount)} Shares Generated`,
+      eventType: "inflation",
       network: network
     });
   } catch (error) {
