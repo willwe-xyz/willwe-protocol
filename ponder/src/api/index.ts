@@ -279,7 +279,7 @@ app.get("/user/:address", async (c) => {
   const address = c.req.param("address").toLowerCase();
   const limit = parseInt(c.req.query("limit") || "50");
   const includeNodes = c.req.query("includeNodes") === "true";
-  
+  console.log("Getting memberships for user", address);
   try {
     // Get memberships
     const memberships = await db
@@ -287,7 +287,8 @@ app.get("/user/:address", async (c) => {
       .from(schema.memberships)
       .where(eq(schema.memberships.who, address))
       .limit(limit);
-      
+      console.log("Got memberships for user", memberships);
+
     // Get events
     const events = await db
       .select()
@@ -295,7 +296,8 @@ app.get("/user/:address", async (c) => {
       .where(eq(schema.events.who, address))
       .orderBy(desc(schema.events.when))
       .limit(limit);
-      
+      console.log("Got events for user", events);
+
     // Get signals
     const signals = await db
       .select()
