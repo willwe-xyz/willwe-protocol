@@ -41,7 +41,6 @@ const createEventId = (event: EventWithTransaction): string => {
 
 const getNodeData = async (nodeId, context) => {{
   const client = context.client || getPublicClient(context.network.name);
-  console.log(deployments["WillWe"]["11155420"], context.client, nodeId);
   const nodeData = await client.readContract({
     address: deployments["WillWe"]["11155420"],
     abi: ABIs["WillWe"],
@@ -63,7 +62,7 @@ const saveEvent = async ({ db, event, nodeId, who, eventName, eventType, network
     
     // Get network info with proper fallbacks - ensure we have valid values
     const networkName = (network?.name || event.context?.network?.name || "optimismsepolia").toLowerCase();
-    const networkId = (network?.id || event.context?.network?.id || "11155420").toString();
+    const networkId = (network?.chainId || event.context?.network?.chainId || "11155420").toString();
     
     // Ensure nodeId is a string
     const safeNodeId = (nodeId || "0").toString();
@@ -225,7 +224,7 @@ export async function handleNewRootNode({ event, context }) {
     
     // Network info with fallbacks
     const networkName = context.network?.name?.toLowerCase() || "optimismsepolia";
-    const networkId = context.network?.id?.toString() || "11155420";
+    const networkId = context.network?.chainId.toString() || "11155420";
     
     // Insert the new root node
     await db.insert(nodes).values({
@@ -322,7 +321,7 @@ export async function handleNewNode({ event, context }) {
     
     // Network info with fallbacks
     const networkName = context.network?.name?.toLowerCase() || "optimismsepolia";
-    const networkId = context.network?.id?.toString() || "11155420";
+    const networkId = context.network?.chainId.toString() || "11155420";
     
     // Safely get node data with proper error handling
     let nodeData = null;
@@ -535,7 +534,7 @@ export async function handleMembershipMinted({ event, context }) {
     await db.insert(memberships).values({
       id: membershipId,
       nodeId: nodeId,
-      who: event.args.who,
+      who: event.args.who.toLowerCase(),
       when: event.block.timestamp,
       isValid: true
     }).onConflictDoNothing();
@@ -547,7 +546,7 @@ export async function handleMembershipMinted({ event, context }) {
       db,
       event,
       nodeId,
-      who: event.args.who,
+      who: event.args.who.toLowerCase(),
       eventName: "MembershipMinted",
       eventType: "mint",
       network: context.network
@@ -792,7 +791,7 @@ export async function handleCreatedEndpoint({ event, context }) {
     // Network info with fallbacks - use safe access patterns
     const network = context.network || { name: "optimismsepolia", id: "11155420" };
     const networkName = (network.name || "optimismsepolia").toLowerCase();
-    const networkId = (network.id || "11155420").toString();
+    const networkId = (network.chainId || "11155420").toString();
     
     // Handle endpoint type safely
     let endpointType = "userOwned"; // default
@@ -857,7 +856,7 @@ export async function handleMembraneChanged({ event, context }) {
     const newMembraneId = event.args.newMembrane.toString();
     const previousMembraneId = event.args.previousMembrane.toString();
     const network = context.network?.name?.toLowerCase() || "optimismsepolia";
-    const networkId = context.network?.id?.toString() || "11155420"; // optimismSepolia id
+    const networkId = context.network?.chainId.toString() || "11155420"; // optimismSepolia id
     
     // Ensure the node exists before updating
     await ensureNodeExists(db, nodeId, event.block.timestamp, network, networkId);
@@ -908,7 +907,7 @@ export async function handleInflationRateChanged({ event, context }) {
     const newInflationRate = event.args.newInflationRate.toString();
     const oldInflationRate = event.args.oldInflationRate.toString();
     const network = context.network?.name?.toLowerCase() || "optimismsepolia";
-    const networkId = context.network?.id?.toString() || "11155420"; // optimismSepolia id
+    const networkId = context.network?.chainId.toString() || "11155420"; // optimismSepolia id
     
     // Ensure the node exists before updating
     await ensureNodeExists(db, nodeId, event.block.timestamp, network, networkId);
@@ -999,15 +998,17 @@ export async function handleMinted({ event, context }) {
   
   try {
     // Check if nodeId exists before calling toString()
-    if (!event?.args?.nodeId) {
-      console.error("Missing nodeId in Minted event args");
+    if (!event?.args?.nodeId && !context.network.chainId) {
+      console.error("Missing nodeId or network in Minted event args");
       return;
     }
     
-    const nodeId = event.args.nodeId.toString();
-    const network = context.network || { name: "optimismsepolia", id: "11155420" };
-    const networkId = network.id.toString();
-    const networkName = network.name.toLowerCase();
+    const nodeId = event.args.nodeId?.toString();
+    const network = context.network;
+    
+    // Fix: Safely access network id with proper fallbacks
+    const networkId = network?.chainId.toString() || network?.chainId?.toString() || "11155420";
+    const networkName = network?.name?.toLowerCase() || "optimismsepolia";
     
     // Safely get amount
     let amount = "0";
@@ -1057,7 +1058,7 @@ export async function handleBurned({ event, context }) {
   try {
     const nodeId = event.args.nodeId.toString();
     const network = context.network?.name?.toLowerCase() || "optimismsepolia";
-    const networkId = context.network?.id?.toString() || "11155420"; // optimismSepolia id
+    const networkId = context.network?.chainId.toString() || "11155420"; // optimismSepolia id
     
     // Ensure the node exists before updating
     await ensureNodeExists(db, nodeId, event.block.timestamp, network, networkId);
@@ -1144,3 +1145,6 @@ export async function handleResignaled({ event, context }) {
     console.error("Error in handleResignaled:", error);
   }
 }
+
+
+

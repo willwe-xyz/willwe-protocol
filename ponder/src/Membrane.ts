@@ -21,7 +21,7 @@ const saveEvent = async ({ db, event, nodeId, who, eventName, eventType, network
     
     // Get network info with proper fallbacks - ensure we have valid values
     const networkName = (network?.name || event.context?.network?.name || "optimismsepolia").toLowerCase();
-    const networkId = (network?.id || event.context?.network?.id || "11155420").toString();
+    const networkId = (network?.chainId || event.context?.network?.chainId || "11155420").toString();
     
     // Ensure nodeId is a string
     const safeNodeId = (nodeId || "0").toString();
@@ -65,7 +65,7 @@ export const handleMembraneCreated = async ({ event, context }) => {
     
     // Safely handle network information with defaults
     const network = context.network || { name: "optimismsepolia", id: "11155420" };
-    const networkId = network.id?.toString() || "11155420";
+    const networkId = network.chainId?.toString() || "11155420";
     const networkName = (network.name || "optimismsepolia").toLowerCase();
     
     // Insert the membrane

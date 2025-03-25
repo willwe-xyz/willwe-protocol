@@ -55,7 +55,7 @@ export const handleNewMovementCreated = async ({ event, context }) => {
     
     // Network info with fallbacks
     const network = context.network;
-    const networkId = network.id;
+    const networkId = network.chainId;
     const networkName = network.name;
     
     // Safely get initiator
@@ -171,7 +171,7 @@ export const handleQueueExecuted = async ({ event, context }) => {
     const queueId = event.args.queueId.toString();
     const nodeId = event.args.nodeId.toString();
     const network = context.network || getDefaultNetwork(context);
-    const networkId = network.id.toString();
+    const networkId = network.chainId.toString();
     const networkName = network.name.toLowerCase();
     
     // Find the queue first to see if it exists
@@ -226,7 +226,7 @@ export const handleNewSignaturesSubmitted = async ({ event, context }) => {
     const movementId = event.args.movementId.toString();
     const nodeId = event.args.nodeId.toString();
     const network = context.network || getDefaultNetwork(context);
-    const networkId = network.id.toString();
+    const networkId = network.chainId.toString();
     const networkName = network.name.toLowerCase();
     
     // Check if queue exists
@@ -305,7 +305,7 @@ export const handleSignatureRemoved = async ({ event, context }) => {
     const nodeId = event.args.nodeId.toString();
     const signer = event.args.signer;
     const network = context.network || getDefaultNetwork(context);
-    const networkId = network.id.toString();
+    const networkId = network.chainId.toString();
     const networkName = network.name.toLowerCase();
     
     // Find signatures matching this queue and signer
