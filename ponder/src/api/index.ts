@@ -274,6 +274,63 @@ app.get("/events", async (c) => {
   }
 });
 
+// Get feed of events from all nodes a user is a member of
+app.get("/userFeed/:address", async (c) => {
+  const address = c.req.param("address").toLowerCase();
+  const limit = parseInt(c.req.query("limit") || "50");
+  const offset = parseInt(c.req.query("offset") || "0");
+  
+  try {
+    // Get all nodes the user is a member of
+    const memberships = await db
+      .select()
+      .from(schema.memberships)
+      .where(eq(schema.memberships.who, address));
+    
+    // Extract nodeIds from memberships
+    const nodeIds = memberships.map(m => m.nodeId).filter((id): id is string => id !== null);
+    
+    if (nodeIds.length === 0) {
+      return c.json({
+        events: [],
+        meta: {
+          total: 0,
+          limit,
+          offset
+        }
+      });
+    }
+    
+    // Get events for all these nodes
+    const events = await db
+      .select()
+      .from(schema.events)
+      .where(inArray(schema.events.nodeId, nodeIds))
+      .orderBy(desc(schema.events.when))
+      .limit(limit)
+      .offset(offset);
+    
+    // Get total count for pagination
+    const totalCount = await db
+      .select({ count: sql`count(*)`.as('count') })
+      .from(schema.events)
+      .where(inArray(schema.events.nodeId, nodeIds));
+    
+    return c.json({
+      events,
+      meta: {
+        total: totalCount[0]?.count || 0,
+        limit,
+        offset,
+        nodeCount: nodeIds.length
+      }
+    });
+  } catch (error) {
+    console.error(`Error fetching feed for user ${address}:`, error);
+    return c.json({ error: "Internal server error" }, 500);
+  }
+});
+
 // Get user activity
 app.get("/user/:address", async (c) => {
   const address = c.req.param("address").toLowerCase();

@@ -7,7 +7,6 @@ import * as ExecutionHandlers from './Execution';
 import * as MembranesHandlers from './Membrane';
 import * as WillHandlers from './Will';
 
-// Import syncFoundry to ensure it runs (import only, the function runs on import)
 import './syncFoundry';
 
 
