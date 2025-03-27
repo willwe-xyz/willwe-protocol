@@ -1,7 +1,7 @@
 // This file exports event handlers for Execution contract events
 import { ponder } from "ponder:registry";
 import { events, movements, signatureQueues, signatures, nodeSignals } from "../ponder.schema";
-import { createEventId, saveEvent, getDefaultNetwork, safeBigIntStringify, safeString } from "./common";
+import { createEventId, saveEvent, getDefaultNetwork, safeBigIntStringify, safeString, getRootNodeId } from "./common";
 
 // Helper function to safely convert any value to string
 const safeToString = (value, defaultValue = "0") => {
@@ -173,6 +173,7 @@ export const handleQueueExecuted = async ({ event, context }) => {
     const network = context.network || getDefaultNetwork(context);
     const networkId = network.chainId.toString();
     const networkName = network.name.toLowerCase();
+    const rootNodeId = await getRootNodeId(nodeId, context);
     
     // Find the queue first to see if it exists
     const existingQueue = await db.find(signatureQueues, { id: queueId });
@@ -195,7 +196,8 @@ export const handleQueueExecuted = async ({ event, context }) => {
       who: event.args.executor,
       eventName: "QueueExecuted",
       eventType: "configSignal",
-      network: network
+      network: network,
+      rootNodeId: rootNodeId
     });
     
     // Record execution as a node signal
@@ -250,7 +252,8 @@ export const handleNewSignaturesSubmitted = async ({ event, context }) => {
     
     // Create a unique ID for the signature with fallback
     const signatureId = createEventId(event);
-    
+    const rootNodeId = await getRootNodeId(nodeId, context);
+
     // Add new signature
     await db.insert(signatures).values({
       id: signatureId,
@@ -274,7 +277,8 @@ export const handleNewSignaturesSubmitted = async ({ event, context }) => {
       who: event.args.signer,
       eventName: "NewSignaturesSubmitted",
       eventType: "configSignal",
-      network: network
+      network: network,
+      rootNodeId: rootNodeId
     });
     
     // Record signature as a node signal
@@ -307,7 +311,8 @@ export const handleSignatureRemoved = async ({ event, context }) => {
     const network = context.network || getDefaultNetwork(context);
     const networkId = network.chainId.toString();
     const networkName = network.name.toLowerCase();
-    
+    const rootNodeId = await getRootNodeId(nodeId, context);
+
     // Find signatures matching this queue and signer
     const matchingSignatures = await db.select().from(signatures)
       .where('signatureQueueHash', '=', queueId)
@@ -330,7 +335,8 @@ export const handleSignatureRemoved = async ({ event, context }) => {
       who: signer,
       eventName: "SignatureRemoved",
       eventType: "configSignal",
-      network: network
+      network: network,
+      rootNodeId: rootNodeId
     });
     
     // Record signature removal as a node signal
@@ -355,7 +361,7 @@ export const handleSignatureRemoved = async ({ event, context }) => {
 export const handleWillWeSet = async ({ event, context }) => {
   const { db } = context;
   console.log("WillWe Set:", event.args);
-  
+
   try {
     const network = context.network || getDefaultNetwork(context);
     
@@ -367,7 +373,8 @@ export const handleWillWeSet = async ({ event, context }) => {
       who: event.args.setter || event.transaction.from,
       eventName: "WillWeSet",
       eventType: "configSignal",
-      network: network
+      network: network,
+      rootNodeId: "0"
     });
     
     console.log(`Recorded WillWeSet event from ${event.args.setter || event.transaction.from}`);

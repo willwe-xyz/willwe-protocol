@@ -6,7 +6,8 @@ import { supportedChains } from "../ponder.config";
 import { NodeState } from "./types";
 import { ABIs, deployments } from "../abis/abi";
 import viem from "viem";
-import { safeBigIntStringify, safeEventArg, safeEventArgString } from './common';
+import { safeBigIntStringify, safeEventArg, safeEventArgString, createEventId, saveEvent, getNodeData, getPublicClient, getRootNodeId } from './common';
+import { root } from "viem/chains";
 
 // Helper function to safely convert any value to string
 const safeToString = (value, defaultValue = "0") => {
@@ -32,90 +33,6 @@ interface EventWithTransaction {
     logIndex: number | string;
   };
 }
-
-const createEventId = (event: EventWithTransaction): string => {
-  const transactionHash = event.transaction?.hash || `tx-${event.block.hash}-${event.block.number}`;
-  return `${transactionHash}-${event.log.logIndex}`;
-};
-
-
-const getNodeData = async (nodeId, context) => {{
-  const client = context.client || getPublicClient(context.network.name);
-  const nodeData = await client.readContract({
-    address: deployments["WillWe"]["11155420"],
-    abi: ABIs["WillWe"],
-    functionName: "getNodeData",
-    args: [nodeId, "0x0000000000000000000000000000000000000000"]
-  });
-  return nodeData;
-}}
-
-// Helper function to safely insert an event
-const saveEvent = async ({ db, event, nodeId, who, eventName, eventType, network }) => {
-  try {
-    if (!db || !event || !event.block) {
-      console.error(`Missing required parameters for saveEvent: db=${!!db}, event=${!!event}, block=${!!(event && event.block)}`);
-      return false;
-    }
-
-    const eventId = createEventId(event);
-    
-    // Get network info with proper fallbacks - ensure we have valid values
-    const networkName = (network?.name || event.context?.network?.name || "optimismsepolia").toLowerCase();
-    const networkId = (network?.chainId || event.context?.network?.chainId || "11155420").toString();
-    
-    // Ensure nodeId is a string
-    const safeNodeId = (nodeId || "0").toString();
-    // Ensure who is a string
-    const safeWho = (who || event.transaction?.from || "unknown").toString();
-    
-    await db.insert(events).values({
-      id: eventId,
-      nodeId: safeNodeId,
-      who: safeWho,
-      eventName: eventName || "Unknown",
-      eventType: eventType || "configSignal",
-      when: event.block.timestamp,
-      createdBlockNumber: event.block.number,
-      networkId: networkId,
-      network: networkName
-    }).onConflictDoNothing();
-    
-    console.log(`Inserted ${eventName} event:`, eventId);
-    return true;
-  } catch (error) {
-    console.error(`Error saving ${eventName} event:`, error);
-    return false;
-  }
-};
-
-// Helper function to get the appropriate public client for a network
-const getPublicClient = (network) => {
-  // Default to optimismSepolia if network is not provided
-  const networkName = network || "optimismSepolia";
-  
-  // Find the chain config by name or chain ID
-  const chainId = typeof networkName === 'string' 
-    ? supportedChains.find(chain => chain.name.toLowerCase() === networkName.toLowerCase())?.id
-    : networkName;
-  
-  // Find the chain by ID if we have a numeric chainId
-  const chain = supportedChains.find(chain => chain.id === chainId) || supportedChains.find(chain => chain.name.toLowerCase() === "optimismsepolia");
-  
-  if (!chain) {
-    console.error(`Chain not found for network: ${networkName}, defaulting to optimismSepolia`);
-    return null;
-  }
-  
-  // Get the RPC URL from environment variable
-  const rpcUrl = process.env[`PONDER_RPC_URL_${chain.id}`] || "https://sepolia.optimism.io";
-  
-  // Create and return the public client
-  return createPublicClient({
-    chain,
-    transport: http(rpcUrl)
-  });
-};
 
 // Helper function to get signal prevalence from contract
 const getSignalPrevalence = async (nodeId, signalValue, contractAddress, network, context) => {
@@ -192,6 +109,7 @@ const ensureNodeExists = async (db, nodeId, timestamp, networkName, networkId) =
     return false;
   }
 };
+
 
 export async function handleNewRootNode({ event, context }) {
   const { db } = context;
@@ -324,7 +242,7 @@ export async function handleNewNode({ event, context }) {
     const networkId = context.network?.chainId.toString() || "11155420";
     
     // Safely get node data with proper error handling
-    let nodeData = null;
+    let nodeData : NodeState | null = null;
     try {
       console.log(`Attempting to get node data for nodeId: ${nodeId}`);
       nodeData = await getNodeData(nodeId, context);
@@ -372,7 +290,8 @@ export async function handleNewNode({ event, context }) {
           who: event.args.creator || event.transaction?.from || "unknown",
           eventName: "NewNode",
           eventType: "mint",
-          network: context.network
+          network: context.network,
+          rootNodeId: nodeData?.rootPath?.[0]?.toString() || ''
         });
         console.log(`Saved event for node ${nodeId} even though node data fetch failed`);
       } catch (saveError) {
@@ -421,7 +340,8 @@ export async function handleNewNode({ event, context }) {
         who: event.args.creator || event.transaction?.from || "unknown",
         eventName: "NewNode",
         eventType: "mint",
-        network: context.network
+        network: context.network,
+        rootNodeId: nodeData?.rootPath?.[0]?.toString() || ''
       });
       
       return;
@@ -507,7 +427,9 @@ export async function handleNewNode({ event, context }) {
         who: event.args.creator || event.transaction?.from || "unknown",
         eventName: "NewNode",
         eventType: "mint",
-        network: context.network
+        network: context.network,
+        rootNodeId: nodeData?.rootPath?.[0]?.toString() || ''
+
       });
       
       console.log(`Saved NewNode event for node ${nodeId}`);
@@ -524,7 +446,9 @@ export async function handleNewNode({ event, context }) {
 export async function handleMembershipMinted({ event, context }) {
   const { db } = context;
   console.log("Membership Minted:", event.args);
-  
+
+  const nodeData: NodeState = await getNodeData(event.args.nodeId.toString(), context);
+
   try {
     // Create a unique ID for the membership using proper fallback for transaction hash
     const membershipId = createEventId(event);
@@ -549,7 +473,8 @@ export async function handleMembershipMinted({ event, context }) {
       who: event.args.who.toLowerCase(),
       eventName: "MembershipMinted",
       eventType: "mint",
-      network: context.network
+      network: context.network,
+      rootNodeId: nodeData?.rootPath?.[0]?.toString() || ''
     });
   } catch (error) {
     console.error("Error in handleMembershipMinted:", error);
@@ -567,6 +492,15 @@ export async function handleTransferSingle({ event, context }) {
     let eventTypeName = event.args.from == "0x0000000000000000000000000000000000000000" ? "mint" : "transfer";
     if  (eventTypeName === "transfer" && event.args.to === "0x0000000000000000000000000000000000000000") eventTypeName = "burn";
 
+    // Get the root node ID for this node
+    let rootNodeId = '';
+    try {
+      const nodeData = await getNodeData(nodeId, context);
+      rootNodeId = nodeData?.rootPath?.[0]?.toString() || '';
+    } catch (error) {
+      console.log(`Could not get root node ID for node ${nodeId}:`, error);
+    }
+
     await saveEvent({
       db,
       event,
@@ -574,13 +508,13 @@ export async function handleTransferSingle({ event, context }) {
       who: event.args.to,
       eventName: "TransferSingle",
       eventType: eventTypeName,
-      network: network
+      network: network,
+      rootNodeId: rootNodeId
     });
   } catch (error) {
     console.error("Error in handleTransferSingle:", error);
   }
 }
-
 
 export async function handleUserNodeSignal({ event, context }) {
   const { db } = context;
@@ -623,7 +557,8 @@ export async function handleUserNodeSignal({ event, context }) {
           who: user,
           eventName: "For Membrane Change",
           eventType: "membraneSignal",
-          network: context.network
+          network: context.network,
+          rootNodeId: nodeData?.rootPath?.[0]?.toString() || ''
         });
 
 
@@ -661,7 +596,8 @@ export async function handleUserNodeSignal({ event, context }) {
           who: user,
           eventName: "For Inflation Change",
           eventType: "inflateSignal",
-          network: context.network
+          network: context.network,
+          rootNodeId: nodeData?.rootPath?.[0]?.toString() || ''
         });
         
         // Save as nodeSignal
@@ -700,7 +636,8 @@ export async function handleUserNodeSignal({ event, context }) {
             who: user,
             eventName: "Changed Redistribution",
             eventType: "redistributionSignal",
-            network: context.network
+            network: context.network,
+            rootNodeId: nodeData?.rootPath?.[0]?.toString() || ''
           });
 
           // Save as nodeSignal with array of redistributionSignals
@@ -735,6 +672,7 @@ export async function handleConfigSignal({ event, context }) {
     const nodeId = event.args.nodeId.toString();
     const expressedOption = event.args.expressedOption;
     const who = event.args.origin || event.transaction.from;
+    const rootNodeId = await getRootNodeId(nodeId, context);
     
     // Use the helper function to save the event
     await saveEvent({
@@ -744,9 +682,10 @@ export async function handleConfigSignal({ event, context }) {
       who,
       eventName: "ConfigSignal",
       eventType: "configSignal",
-      network: context.network
+      network: context.network,
+      rootNodeId: rootNodeId
     });
-    
+
     // Since ConfigSignal is more general, we are recording it in the events table only
     // The specific signals (membrane, inflation, redistribution) are recorded by the handleUserNodeSignal handler
     console.log(`Recorded config signal for node ${nodeId} from ${who}`);
@@ -843,7 +782,7 @@ export async function handleCreatedEndpoint({ event, context }) {
     console.log(`Successfully processed endpoint creation for ${nodeId} by ${owner}`);
   } catch (error) {
     console.error("Error in handleCreatedEndpoint:", error);
-    console.error("Event args:", safeBigIntStringify(event?.args || {}));
+    console.error("Event args:", safeBigIntStringify(event.args || {}));
   }
 }
 
@@ -876,7 +815,8 @@ export async function handleMembraneChanged({ event, context }) {
       who: event.transaction.from,
       eventName: "MembraneChanged",
       eventType: "membraneSignal",
-      network: context.network
+      network: context.network,
+      rootNodeId: '' // Add empty string as default
     });
     
     // Save a signal record for historical tracking
@@ -908,7 +848,8 @@ export async function handleInflationRateChanged({ event, context }) {
     const oldInflationRate = event.args.oldInflationRate.toString();
     const network = context.network?.name?.toLowerCase() || "optimismsepolia";
     const networkId = context.network?.chainId.toString() || "11155420"; // optimismSepolia id
-    
+    const rootNodeId = await getRootNodeId(nodeId, context);
+
     // Ensure the node exists before updating
     await ensureNodeExists(db, nodeId, event.block.timestamp, network, networkId);
     
@@ -927,7 +868,8 @@ export async function handleInflationRateChanged({ event, context }) {
       who: event.transaction.from,
       eventName: "InflationRateChanged",
       eventType: "inflationRateChanged",
-      network: context.network
+      network: context.network,
+      rootNodeId: rootNodeId
     });
     
     // Save a signal record for historical tracking
@@ -965,7 +907,7 @@ export async function handleSharesGenerated({ event, context }) {
     const networkId = network?.chainId.toString();
     const networkName = network?.name.toLowerCase();
     const amount = event?.args?.amount?.toString() || "0";
-    
+    const rootNodeId = await getRootNodeId(nodeId, context);
     // Ensure the node exists before updating
     await ensureNodeExists(db, nodeId, event.block.timestamp, networkName, networkId);
     
@@ -984,7 +926,8 @@ export async function handleSharesGenerated({ event, context }) {
       who: event.transaction.from,
       eventName: `${formatEther(amount)} Shares Generated`,
       eventType: "inflation",
-      network: network
+      network: network,
+      rootNodeId: rootNodeId
     });
   } catch (error) {
     console.error(`Error in handleSharesGenerated: ${error.message}`);
@@ -1021,13 +964,14 @@ export async function handleMinted({ event, context }) {
     
     // Get current node data
     const node = await db.find(nodes, { nodeId: nodeId });
-    
+    const rootNodeId = await getRootNodeId(nodeId, context);
+
     // Update the node's total supply
     if (node) {
       const currentSupply = BigInt(node.totalSupply || '0');
       const newAmount = BigInt(amount);
       const newTotal = (currentSupply + newAmount).toString();
-      
+
       await db.update(nodes, { nodeId: nodeId })
         .set({ 
           totalSupply: newTotal,
@@ -1043,7 +987,8 @@ export async function handleMinted({ event, context }) {
       who: event.args.fromAddressOrNode,
       eventName: "Minted",
       eventType: "mint",
-      network: network
+      network: network,
+      rootNodeId: rootNodeId 
     });
   } catch (error) {
     console.error(`Error in handleMinted: ${error.message}`);
@@ -1065,7 +1010,8 @@ export async function handleBurned({ event, context }) {
     
     // Get current node data
     const node = await db.find(nodes, { nodeId: nodeId });
-    
+    const rootNodeId = await getRootNodeId(nodeId, context);
+
     // Update the node's total supply
     if (node) {
       const currentSupply = BigInt(node.totalSupply || '0');
@@ -1087,7 +1033,8 @@ export async function handleBurned({ event, context }) {
       who: event.args.fromAddressOrNode,
       eventName: "Burned",
       eventType: "burn",
-      network: context.network
+      network: context.network,
+      rootNodeId: rootNodeId
     });
   } catch (error) {
     console.error("Error in handleBurned:", error);
@@ -1102,7 +1049,8 @@ export async function handleSignaled({ event, context }) {
     const nodeId = event.args.nodeId.toString();
     const sender = event.args.sender;
     const origin = event.args.origin;
-    
+    const rootNodeId = await getRootNodeId(nodeId, context);
+
     // Use the helper function to save the event
     await saveEvent({
       db,
@@ -1111,7 +1059,8 @@ export async function handleSignaled({ event, context }) {
       who: sender,
       eventName: "Signaled",
       eventType: "configSignal",
-      network: context.network
+      network: context.network,
+      rootNodeId: rootNodeId
     });
     
     // This is a general signal event that we record in the events table
@@ -1128,7 +1077,8 @@ export async function handleResignaled({ event, context }) {
   try {
     const nodeId = event.args.nodeId.toString();
     const from = event.args.from || event.transaction.from;
-    
+    const rootNodeId = await getRootNodeId(nodeId, context);
+
     // Use the helper function to save the event
     await saveEvent({
       db,
@@ -1137,7 +1087,8 @@ export async function handleResignaled({ event, context }) {
       who: from,
       eventName: "Resignaled",
       eventType: "configSignal",
-      network: context.network
+      network: context.network,
+      rootNodeId: rootNodeId
     });
     
     console.log(`Recorded resignal event for node ${nodeId} from ${from}`);

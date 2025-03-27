@@ -2,7 +2,10 @@
  * Common utility functions shared across handlers
  */
 import { events } from "../ponder.schema";
-
+import { deployments, ABIs } from "../abis/abi";
+import { supportedChains } from "../ponder.config";
+import { NodeState } from "./types";
+import { http, createPublicClient } from "viem";
 /**
  * Creates a unique ID from an event
  */
@@ -16,10 +19,11 @@ export const createEventId = (event) => {
   return `${transactionHash}-${logIndex}`;
 };
 
+
 /**
  * Safely inserts an event with proper error handling
  */
-export const saveEvent = async ({ db, event, nodeId, who, eventName, eventType, network }) => {
+export const saveEvent = async ({ db, event, nodeId, who, eventName, eventType, network, rootNodeId = '' }) => {
   try {
     if (!db || !event || !event.block) {
       console.error(`Missing required parameters for saveEvent: db=${!!db}, event=${!!event}, block=${!!(event && event.block)}`);
@@ -29,8 +33,8 @@ export const saveEvent = async ({ db, event, nodeId, who, eventName, eventType, 
     const eventId = createEventId(event);
     
     // Get network info with proper fallbacks - ensure we have valid values
-    const networkName = (network?.name || event.context?.network?.name || "unknown").toLowerCase();
-    const networkId = (network?.chainId || event.context?.network?.chainId || "unknown").toString();
+    const networkName = (network?.name || event.context?.network?.name || "unknow").toLowerCase();
+    const networkId = (network?.chainId || event.context?.network?.chainId || "0").toString();
     
     // Ensure nodeId is a string
     const safeNodeId = (nodeId || "0").toString();
@@ -40,6 +44,7 @@ export const saveEvent = async ({ db, event, nodeId, who, eventName, eventType, 
     await db.insert(events).values({
       id: eventId,
       nodeId: safeNodeId,
+      rootNodeId: rootNodeId,
       who: safeWho,
       eventName: eventName || "Unknown",
       eventType: eventType || "configSignal",
@@ -68,6 +73,57 @@ export const safePromise = async (promise, errorMessage = "Operation failed") =>
     return null;
   }
 };
+
+// Helper function to get the appropriate public client for a network
+export const getPublicClient = (network) => {
+  // Default to optimismSepolia if network is not provided
+  const networkName = network || "optimismSepolia";
+  
+  // Find the chain config by name or chain ID
+  const chainId = typeof networkName === 'string' 
+    ? supportedChains.find(chain => chain.name.toLowerCase() === networkName.toLowerCase())?.id
+    : networkName;
+  
+  // Find the chain by ID if we have a numeric chainId
+  const chain = supportedChains.find(chain => chain.id === chainId) || supportedChains.find(chain => chain.name.toLowerCase() === "optimismsepolia");
+  
+  if (!chain) {
+    console.error(`Chain not found for network: ${networkName}, defaulting to optimismSepolia`);
+    return null;
+  }
+  
+  // Get the RPC URL from environment variable
+  const rpcUrl = process.env[`PONDER_RPC_URL_${chain.id}`] || "https://sepolia.optimism.io";
+  
+  // Create and return the public client
+  return createPublicClient({
+    chain,
+    transport: http(rpcUrl)
+  });
+};
+
+export const getNodeData = async (nodeId, context) : Promise<NodeState> => {{
+  const client = context.client || getPublicClient(context.network.name);
+  const nodeData: NodeState = await client.readContract({
+    address: deployments?.WillWe?.[context.network.chainId.toString()],
+    abi: ABIs["WillWe"],
+    functionName: "getNodeData",
+    args: [nodeId, "0x0000000000000000000000000000000000000000"]
+  });
+  return nodeData;
+}}
+
+export const getRootNodeId = async (nodeId: string, context: any) : Promise<string> => {
+  try {
+    const nodeData: NodeState = await getNodeData(nodeId, context);
+    const rootNodeId : string = nodeData?.rootPath && nodeData.rootPath.length > 0 ? 
+      String(nodeData.rootPath[0] || "0") : "0";
+    return rootNodeId;
+  } catch (error) {
+    console.error(`Error getting root node ID for ${nodeId}:`, error);
+    return "0";
+  }
+}
 
 /**
  * Get default network info object with safe values

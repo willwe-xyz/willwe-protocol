@@ -31,13 +31,13 @@ export interface NodeBasicInfo {
   }
   
   export interface NodeState {
-    basicInfo: bigint[];
+    basicInfo: NodeBasicInfo;
     membraneMeta: string;
     membersOfNode: string[];
-    childrenNodes: bigint[];
+    childrenNodes: string[];
     movementEndpoints: string[];
-    rootPath: bigint[];
-    signals: bigint[];
+    rootPath: string[];
+    signals: string[];
   }
   
   export interface MovementInfo {

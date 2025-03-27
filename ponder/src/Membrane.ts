@@ -1,52 +1,7 @@
 // This file exports event handlers for Membrane contract events
 import { ponder } from "ponder:registry";
 import { membranes, events, nodeSignals } from "../ponder.schema";
-import { safeBigIntStringify } from "./common";
-
-// Helper function to create a unique event ID
-const createEventId = (event) => {
-  const transactionHash = event.transaction?.hash || `tx-${event.block.hash}-${event.block.number}`;
-  return `${transactionHash}-${event.log.logIndex}`;
-};
-
-// Helper function to safely insert an event
-const saveEvent = async ({ db, event, nodeId, who, eventName, eventType, network }) => {
-  try {
-    if (!db || !event || !event.block) {
-      console.error(`Missing required parameters for saveEvent: db=${!!db}, event=${!!event}, block=${!!(event && event.block)}`);
-      return false;
-    }
-
-    const eventId = createEventId(event);
-    
-    // Get network info with proper fallbacks - ensure we have valid values
-    const networkName = (network?.name || event.context?.network?.name || "optimismsepolia").toLowerCase();
-    const networkId = (network?.chainId || event.context?.network?.chainId || "11155420").toString();
-    
-    // Ensure nodeId is a string
-    const safeNodeId = (nodeId || "0").toString();
-    // Ensure who is a string
-    const safeWho = (who || event.transaction?.from || "unknown").toString();
-    
-    await db.insert(events).values({
-      id: eventId,
-      nodeId: safeNodeId,
-      who: safeWho,
-      eventName: eventName || "Unknown",
-      eventType: eventType || "configSignal",
-      when: event.block.timestamp,
-      createdBlockNumber: event.block.number,
-      networkId: networkId,
-      network: networkName
-    }).onConflictDoNothing();
-    
-    console.log(`Inserted ${eventName} event:`, eventId);
-    return true;
-  } catch (error) {
-    console.error(`Error saving ${eventName} event:`, error);
-    return false;
-  }
-};
+import { createEventId, saveEvent, safeBigIntStringify } from "./common";
 
 export const handleMembraneCreated = async ({ event, context }) => {
   const { db } = context;

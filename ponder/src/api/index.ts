@@ -759,4 +759,51 @@ app.post("/chat/validate", async (c) => {
   }
 });
 
+// Get events from a root node and all its child nodes
+app.get("/getrootnode-events", async (c) => {
+  const rootNodeId = c.req.query("nodeId");
+  const limit = parseInt(c.req.query("limit") || "50");
+  const offset = parseInt(c.req.query("offset") || "0");
+  const networkId = c.req.query("networkId");
+  
+  if (!rootNodeId) {
+    return c.json({ error: "nodeId is required" }, 400);
+  }
+  
+  try {
+    // Build filters
+    const filters = [eq(schema.events.rootNodeId, rootNodeId)];
+    
+    if (networkId) {
+      filters.push(eq(schema.events.networkId, networkId));
+    }
+
+    const events = await db
+      .select()
+      .from(schema.events)
+      .where(and(...filters))
+      .orderBy(desc(schema.events.when))
+      .limit(limit)
+      .offset(offset);
+    
+    // Get total count for pagination
+    const totalCount = await db
+      .select({ count: sql`count(*)`.as('count') })
+      .from(schema.events)
+      .where(and(...filters));
+    
+    return c.json({
+      events,
+      meta: {
+        total: totalCount[0]?.count || 0,
+        limit,
+        offset
+      }
+    });
+  } catch (error) {
+    console.error(`Error fetching events for root node ${rootNodeId}:`, error);
+    return c.json({ error: "Internal server error" }, 500);
+  }
+});
+
 export default app;

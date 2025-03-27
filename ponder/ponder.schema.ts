@@ -9,6 +9,7 @@ export const SignalType = onchainEnum("signalType", ["membrane", "inflation", "r
 export const events = onchainTable("events", (t) => ({
   id: t.text().primaryKey(),
   nodeId: t.text(),
+  rootNodeId: t.text(),
   who: t.text(),
   eventName: t.text(),
   eventType: EventType("eventType"),
@@ -18,6 +19,7 @@ export const events = onchainTable("events", (t) => ({
   networkId: t.text(),
 }), (table) => ({
   nodeIdx: index().on(table.nodeId),
+  rootNodeIdx: index().on(table.rootNodeId),
   whox: index().on(table.who)
 }));
 
