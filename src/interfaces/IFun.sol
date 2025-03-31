@@ -61,10 +61,10 @@ interface IFun is IERC1155, IExecution {
     function membershipID(uint256 fid_) external pure returns (uint256);
     function inflationOf(uint256 nodeId) external view returns (uint256);
     function totalSupply(uint256 nodeId) external view returns (uint256);
-    function getUserNodeSignals(address signalOrigin, uint256 parentNodeId)
+    function getUserNodeSignals(address user, uint256 targetNode)
         external
         view
-        returns (uint256[2][] memory);
+        returns (uint256[] memory);
 
     // Data Access
     function getNodeData(uint256 nodeId, address user) external view returns (NodeState memory);

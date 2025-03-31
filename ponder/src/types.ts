@@ -13,10 +13,6 @@ export interface NodeBasicInfo {
     totalSupply: string;              
   }
   
-  export interface UserSignal {
-    MembraneInflation: [string, string][];
-    lastRedistSignal: string[];           
-  }
   
   export interface MembraneMetadata {
     name: string;
@@ -37,7 +33,7 @@ export interface NodeBasicInfo {
     childrenNodes: string[];
     movementEndpoints: string[];
     rootPath: string[];
-    signals: string[];
+    signals: string[]; 
   }
   
   export interface MovementInfo {
@@ -81,7 +77,7 @@ export interface NodeBasicInfo {
     membersOfNode: string[];
     childrenNodes: string[];
     rootPath: string[];
-    signals: UserSignal[];
+    signals: string[]; 
     ancestors: string[];
   }
   
@@ -123,7 +119,6 @@ export interface NodeBasicInfo {
     value: string;
   }
   
-  // Movement and governance types
   export enum MovementType {
     Revert = 0,
     AgentMajority = 1,
@@ -165,7 +160,7 @@ export interface NodeBasicInfo {
     movement: Movement;
     signatureQueue: {
       state: SignatureQueueState;
-      Action: Movement;  // This should match the Movement interface
+      Action: Movement;  
       Signers: string[];
       Sigs: string[];
     };
@@ -203,18 +198,6 @@ export interface NodeBasicInfo {
     );
   };
   
-  export const isValidUserSignal = (data: any): data is UserSignal => {
-    return (
-      Array.isArray(data?.MembraneInflation) &&
-      Array.isArray(data?.lastRedistSignal) &&
-      data.MembraneInflation.every((item: any) =>
-        Array.isArray(item) &&
-        item.length === 2 &&
-        typeof item[0] === 'string' &&
-        typeof item[1] === 'string'
-      )
-    );
-  };
   
   export const transformNodeData = (nodeData: NodeState): NodeBasicInfo => {
     return {

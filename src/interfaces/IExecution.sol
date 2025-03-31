@@ -38,10 +38,6 @@ struct LatentMovement {
     bytes32 movementHash;
 }
 
-struct UserSignal {
-    string[2][] MembraneInflation;
-    string[] lastRedistSignal;
-}
 
 struct Call {
     address target;
@@ -56,7 +52,7 @@ struct NodeState {
     string[] childrenNodes; // Array of children node IDs
     address[] movementEndpoints; // Array of node specific execution endpoints
     string[] rootPath; // Path from root to current node
-    UserSignal[] signals; // Array of signals
+    uint256[] signals; // Array of signals
 }
 
 interface IExecution {

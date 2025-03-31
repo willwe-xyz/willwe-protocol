@@ -34,30 +34,31 @@ contract Fun is Fungido {
     event InflationSignal(uint256 indexed nodeId, address indexed origin, uint256 inflationRate);
     event UserNodeSignal(uint256 indexed nodeId, address indexed user, uint256[] signals);
 
-    function resignal(uint256 targetNode_, uint256[] memory signals, address originator) public virtual {
+    function resignal(uint256 targetNode_, address originator) public virtual {
+        uint256[] memory signals = getUserNodeSignals(originator, targetNode_);
+        if (signals.length <= 2) return;
         impersonatingAddress = originator;
         sendSignal(targetNode_, signals);
         delete impersonatingAddress;
         emit Resignaled(msg.sender, targetNode_, originator);
     }
 
-    function _msgSender() internal view override returns (address) {
-        if (msg.sig == this.resignal.selector && impersonatingAddress != address(0)) {
-            return impersonatingAddress;
-        }
-        return msg.sender;
-    }
 
     function sendSignal(uint256 targetNode_, uint256[] memory signals) public virtual {
         if (parentOf[targetNode_] == targetNode_) revert TargetIsRoot();
         bool isMember = isMember(_msgSender(), targetNode_);
-        if (impersonatingAddress == address(0) && (!isMember)) revert Noise();
+        uint256 user = toID(_msgSender());
+
+        if (impersonatingAddress == address(0)) {
+            userNodeSignals[keccak256(abi.encodePacked(_msgSender(), targetNode_))] = signals;
+        }
+        if (!isMember) revert Noise();
 
         uint256 balanceOfSender = balanceOf(_msgSender(), targetNode_);
         if (balanceOf(_msgSender(), targetNode_) < totalSupplyOf[targetNode_] / 100_00) revert NoiseNotVoice();
+
         mintInflation(targetNode_);
 
-        uint256 user = toID(_msgSender());
         uint256[] memory children = childrenOf[targetNode_];
 
         uint256 sigSum;
@@ -65,10 +66,7 @@ contract Fun is Fungido {
         for (i; i < signals.length; ++i) {
             uint256 signalValue = signals[i];
             bytes32 userKey = keccak256(abi.encodePacked(targetNode_, user, signalValue));
-            if (impersonatingAddress != address(0) && isMember && options[userKey][0] != signalValue) {
-                revert ResignalMismatch();
-            }
-            if ((!isMember) && signalValue > 0) revert ResignalMismatch();
+
             if (i <= 1) {
                 if (signalValue == 0) continue;
                 if (i == 0) emit InflationSignal(targetNode_, _msgSender(), signalValue);
@@ -184,8 +182,12 @@ contract Fun is Fungido {
         if (signal > 100_00 && prevSignal == 0) return;
         if (signal > 100_00) revert CannotSkip();
 
-        if (prevSignal != signal) {
-            options[userTargetedPreference] = [signal, block.timestamp, 0];
+        if (prevSignal != signal || impersonatingAddress != address(0)) {
+            if (prevSignal != signal) {
+                options[userTargetedPreference][0] = signal;
+                options[userTargetedPreference][1] = block.timestamp;
+            }
+
             redistribute(children[index - 2]);
             _updateChildParentEligibility(children[index - 2], targetNode_, userTargetedPreference);
         }
@@ -211,9 +213,9 @@ contract Fun is Fungido {
         bytes32 childParentEligibilityPerSec = keccak256(abi.encodePacked(childId, parentId));
         uint256 newContribution =
             calculateUserTargetedPreferenceAmount(childId, parentId, options[userTargetedPreference][0], _msgSender());
-
         if (!(block.timestamp >= options[userTargetedPreference][1])) revert NoTimeDelta();
         if (options[userTargetedPreference][2] > 0) {
+
             options[childParentEligibilityPerSec][0] -= options[userTargetedPreference][2];
         }
 
@@ -265,6 +267,12 @@ contract Fun is Fungido {
         mintInflation(nodeId_);
         distributedAmt = redistribute(nodeId_);
     }
+
+    function _burn(address who_, uint256 fid_, uint256 amount_) internal override {
+        super._burn(who_, fid_, amount_);
+        resignal(fid_, who_);
+    }
+
 
     /////////// External
 

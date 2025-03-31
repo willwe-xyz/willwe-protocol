@@ -2,7 +2,6 @@
 pragma solidity 0.8.25;
 
 import "forge-std/Test.sol";
-import {Fun} from "../src/Fun.sol";
 import {Execution} from "../src/Execution.sol";
 import {SignatureQueue, IExecution, Movement, LatentMovement} from "../src/interfaces/IExecution.sol";
 import {TokenPrep} from "./mock/Tokens.sol";
@@ -308,16 +307,18 @@ contract Endpoints is Test, TokenPrep, InitTest {
     function testSubmitsSignatures() public returns (bytes32 move) {
         // Get structs for hash and initial checks
         (SignatureQueue memory SQ, Movement memory M, bytes memory STX, bytes32 m) = _getStructsForHash();
+        console.log("Movement hash:", vm.toString(m));
+        assertTrue(m != bytes32(0), "no hash");
         move = m;
         assertTrue(uint256(IExecution(E).hashMovement(M)) == uint256(move), "Movement hash mismatch");
 
         // Test empty signature submission
         vm.expectRevert(Execution.EXE_ZeroLen.selector);
         IExecution(E).submitSignatures(move, new address[](0), new bytes[](0));
-
+        
         // Set up members and paths
         _setupMembersAndPaths();
-
+        console.log("_setupMembersAndPaths done");
         // Create valid signatures - use helper function to reduce stack variables
         (address[] memory signers, bytes[] memory signatures) = _getSignaturesForMovement(M, move);
 
@@ -440,10 +441,12 @@ contract Endpoints is Test, TokenPrep, InitTest {
     function _setupMembersAndPaths() internal {
         // Make sure A2 and A3 are members of B2
         if (!F.isMember(A2, B2)) {
+            console.log(F.isMember(A2, B2), "#### AZAZ");
             vm.prank(A2);
             F.mintMembership(B2);
-        }
+                        console.log(F.isMember(A2, B2), "#### AZAZ");
 
+        }
         if (!F.isMember(A3, B2)) {
             vm.prank(A3);
             F.mintMembership(B2);

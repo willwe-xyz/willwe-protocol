@@ -3,9 +3,7 @@ pragma solidity 0.8.25;
 
 import "forge-std/Test.sol";
 import {WillWe} from "../src/WillWe.sol";
-import {Execution} from "../src/Execution.sol";
 import {NodeState} from "../src/interfaces/IExecution.sol";
-import {Fun} from "../src/Fun.sol";
 import {TokenPrep} from "./mock/Tokens.sol";
 import {IERC20} from "openzeppelin-contracts/token/ERC20/IERC20.sol";
 import {InitTest} from "./Init.t.sol";
@@ -192,20 +190,22 @@ contract SignalInflationTests is InitTest, TokenPrep {
         vm.startPrank(A1);
         assertTrue(F.balanceOf(A1, B1) > 0.1 ether, "Expected A1 to have influence");
         uint256[] memory signals = new uint256[](4);
+        signals[0] = 0;
+        signals[1] = block.timestamp; 
         signals[2] = 6000; // 60% to B11
         signals[3] = 4000; // 40% to B12
         F.sendSignal(B1, signals);
 
-        uint256[2][] memory userNodeSignals = F.getUserNodeSignals(A1, B1);
+        uint256[] memory userNodeSignals = F.getUserNodeSignals(A1, B1);
 
         // Check if the length of the returned array is correct
-        assertEq(userNodeSignals.length, 2);
+        assertEq(userNodeSignals.length, 4, "Signal length mismatch");
 
         // Check if the signals and timestamps are correct
-        assertEq(userNodeSignals[0][0], 6000);
-        assertEq(userNodeSignals[1][0], 4000);
-        assertEq(userNodeSignals[0][1], block.timestamp);
-        assertEq(userNodeSignals[1][1], block.timestamp);
+        assertEq(userNodeSignals[2], 6000);
+        assertEq(userNodeSignals[3], 4000);
+        assertEq(userNodeSignals[0], 0);
+        assertEq(userNodeSignals[1], block.timestamp);
 
         vm.stopPrank();
     }
@@ -241,13 +241,94 @@ contract SignalInflationTests is InitTest, TokenPrep {
         assertEq(nodeData.basicInfo[6], F.getMembraneOf(B1).toString(), "membrane issue");
         assertEq(nodeData.basicInfo[9], F.balanceOf(A1, B1).toString(), "user balance f");
 
-        assertEq(nodeData.signals.length, 1, "signals len f");
-        assertEq(nodeData.signals[0].lastRedistSignal.length, 2, "bal ne redistribution");
-        assertEq(nodeData.signals[0].lastRedistSignal[0], "6000");
-        assertEq(nodeData.signals[0].lastRedistSignal[1], "4000");
-        assertEq(nodeData.signals[0].MembraneInflation.length, 2, "len inflation");
-        assertEq(nodeData.signals[0].MembraneInflation[0][1], F.inflationOf(B1).toString(), "mi 1");
-        assertEq(nodeData.signals[0].MembraneInflation[1][1], F.inflationOf(B1).toString(), "mi 1");
+        assertEq(nodeData.signals.length, 4, "signals len f");
+        assertEq(nodeData.signals[2], 6000);
+        assertEq(nodeData.signals[3], 4000);
+
+        vm.stopPrank();
+    }
+
+    function testBurnPHCreduction() public {
+        //// test that the child-parent eligibility is reduced proportionally to burn amount of total expressed by user
+        fundParentNode(A1, rootNodeID, 100 ether);
+
+        // Fund B1 from rootNodeID balance
+        fundParentNode(A1, B1, 100 ether);
+
+        vm.warp(block.timestamp + 1 days);
+
+        uint256[] memory signals = new uint256[](4);
+        signals[2] = 6000; // 60% to B11
+        signals[3] = 4000; // 40% to B12
+
+        vm.prank(A2);
+        F.mintPath(B1, 100 ether);
+
+        vm.prank(A2);
+        F.mintMembership(B1);
+
+        vm.prank(A2);
+        F.sendSignal(B1, signals);
+
+        vm.startPrank(A1);
+
+        signals[2] = 4900;
+        signals[3] = 5100;
+
+        F.sendSignal(B1, signals);
+
+        uint256 B11t0 = F.calculateUserTargetedPreferenceAmount(B11, B1, signals[2], A1);
+        uint256 B12t0 = F.calculateUserTargetedPreferenceAmount(B12, B1, signals[3], A1);
+        uint256 d011 = F.redistribute(B11);
+        uint256 d012 = F.redistribute(B12);
+
+        vm.warp(block.timestamp + 100 days);
+        d011 = F.redistribute(B11);
+        d012 = F.redistribute(B12);
+
+        uint256[] memory fetchedSignals = F.getUserNodeSignals(A1,B1);
+        assertTrue(fetchedSignals.length == signals.length, "Signal length mismatch");
+        assertTrue(fetchedSignals[3] == signals[3], "Signal 3 mismatch");
+        assertTrue(F.isMember(A1, B1), "not member");
+
+        NodeState memory ns0_11 = F.getNodeData(B11, address(0));
+        NodeState memory ns0_12 = F.getNodeData(B11, address(0));
+
+        console.log("########  Burn 10% post signal #####");
+        uint256 burnAmount = F.balanceOf(A1, B1) / 2;
+        console.log("Burn amount:", burnAmount);
+
+        F.burn(B1, burnAmount);
+
+        vm.stopPrank();
+        console.log("Balance of A1 after burn:", T1.balanceOf(A1));
+
+        vm.startPrank(A2);
+        F.resignal(B1, A2);
+
+        vm.warp(block.timestamp + 100 days);
+        uint256 d111 = F.redistribute(B11);
+        uint256 d112 = F.redistribute(B12);
+
+        NodeState memory ns1_11 = F.getNodeData(B11, address(0));
+        NodeState memory ns1_12 = F.getNodeData(B11, address(0));
+
+        // uint256 B11t1 = F.calculateUserTargetedPreferenceAmount(B11, B1, signals[2], A1);
+        // uint256 B12t1 = F.calculateUserTargetedPreferenceAmount(B12, B1, signals[3], A1);
+        console.log("d111, d011, d112, d012");
+        console.log(d111, d011, d112, d012);
+        console.log("ns0_11.basicInfo[7], ns1_11.basicInfo[7], ns0_12.basicInfo[7], ns1_12.basicInfo[7]");
+        console.log(ns0_11.basicInfo[7], ns1_11.basicInfo[7], ns0_12.basicInfo[7], ns1_12.basicInfo[7]);
+
+        console.log(d011, d111, "> reduced");
+        console.log(d112, d012, "> increased due to reducti");
+
+        assertTrue(d111 < d011, "A B11targeted preference amount not reduced");
+
+        console.log(ns0_11.basicInfo[7], ns1_11.basicInfo[7], ns0_12.basicInfo[7], ns1_12.basicInfo[7]);
+
+        assertNotEq(ns0_11.basicInfo[7], ns1_11.basicInfo[7], "childParent redistri 1");
+        assertNotEq(ns0_12.basicInfo[7], ns1_12.basicInfo[7], "childParentRedistri 2");
 
         vm.stopPrank();
     }

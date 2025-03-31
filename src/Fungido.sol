@@ -11,6 +11,8 @@ import {Strings} from "openzeppelin-contracts/contracts/utils/Strings.sol";
 import {PureUtils} from "./components/PureUtils.sol";
 import "./interfaces/IMembrane.sol";
 
+
+
 ///////////////////////////////////////////////
 //////////////////////////////////////////////
 /// @title Fungido
@@ -47,6 +49,9 @@ contract Fungido is ERC1155, PureUtils {
 
     /// @notice tax rate on withdrawals as share in base root value token (default: 0.01%)
     mapping(address => uint256) taxRate;
+
+    /// @notice stores the last expressed redistributive signals of a user
+    mapping(bytes32 => uint256[] signals) userNodeSignals;
 
     address[2] public control;
     address impersonatingAddress;
@@ -201,6 +206,7 @@ contract Fungido is ERC1155, PureUtils {
         if (parentOf[fid_] == 0) revert NodeNotFound();
         if (parentOf[fid_] == fid_) revert BaseOrNonFungible();
         if (totalSupplyOf[fid_] == type(uint256).max) revert Endpoint();
+
         if (isMember(_msgSender(), fid_)) revert AlreadyMember();
         if (!M.gCheck(_msgSender(), getMembraneOf(fid_))) revert Unqualified();
 
@@ -235,6 +241,7 @@ contract Fungido is ERC1155, PureUtils {
     function burn(uint256 fid_, uint256 amount_) public virtual returns (uint256 topVal) {
         if (parentOf[fid_] == 0) revert BaseOrNonFungible();
         topVal = parentOf[fid_] == fid_ ? amount_ : inParentDenomination(amount_, fid_);
+        _burn(_msgSender(), fid_, amount_);
         if (parentOf[fid_] != fid_) {
             this.safeTransferFrom(toAddress(fid_), _msgSender(), parentOf[fid_], topVal, abi.encodePacked("burn"));
         } else {
@@ -250,7 +257,6 @@ contract Fungido is ERC1155, PureUtils {
                 )
             ) revert BurnE20TransferFailed();
         }
-        _burn(_msgSender(), fid_, amount_);
     }
 
     function burnPath(uint256 target_, uint256 amount) external {
@@ -271,7 +277,7 @@ contract Fungido is ERC1155, PureUtils {
     //// @param target agent subject
     //// @param fid_ entity of belonging
     function membershipEnforce(address target, uint256 fid_) public virtual returns (bool s) {
-        if (balanceOf(target, membershipID(fid_)) != 1) revert NotMember();
+        if (! isMember(target, fid_)) revert NotMember();
         if (target == _msgSender()) {
             _burn(target, membershipID(fid_), 1);
             return true;
@@ -300,7 +306,7 @@ contract Fungido is ERC1155, PureUtils {
     function _giveMembership(address to, uint256 id) private {
         members[id].push(to);
 
-        _mint(to, membershipID(id), 1, abi.encodePacked(to, "membership", id));
+        _mint(to, membershipID(id), 1, abi.encodePacked("membership"));
         emit MembershipMinted(to, id);
     }
 
@@ -445,7 +451,7 @@ contract Fungido is ERC1155, PureUtils {
         emit Minted(to, id, amount);
     }
 
-    function _burn(address from, uint256 id, uint256 amount) internal override {
+    function _burn(address from, uint256 id, uint256 amount) internal virtual override {
         totalSupplyOf[id] -= amount;
 
         if (parentOf[id] > id && id > 10 ether) {
@@ -458,7 +464,8 @@ contract Fungido is ERC1155, PureUtils {
         emit Burned(from, id, amount);
     }
 
-    function _msgSender() internal view virtual returns (address) {
+    function _msgSender() internal view  returns (address) {
+        if (impersonatingAddress != address(0)) return impersonatingAddress;
         if (msg.sender == Will) return address(this);
         return msg.sender;
     }
@@ -599,27 +606,8 @@ contract Fungido is ERC1155, PureUtils {
         }
     }
 
-    /// @notice Returns the array containing signal info for each child node in given originator and parent context
-    /// @param signalOrigin address of originator
-    /// @param parentNodeId node id for which originator has expressed
-    function getUserNodeSignals(address signalOrigin, uint256 parentNodeId)
-        external
-        view
-        returns (uint256[2][] memory UserNodeSignals)
-    {
-        uint256[] memory childNodes = childrenOf[parentNodeId];
-        UserNodeSignals = new uint256[2][](childNodes.length);
-
-        for (uint256 i = 0; i < childNodes.length; i++) {
-            // Include the signalOrigin (user's address) in the signalKey
-            bytes32 userTargetedPreference = keccak256(abi.encodePacked(signalOrigin, parentNodeId, childNodes[i]));
-
-            // Store the signal value and the timestamp (assuming options[userKey] structure)
-            UserNodeSignals[i][0] = options[userTargetedPreference][0]; // Signal value
-            UserNodeSignals[i][1] = options[userTargetedPreference][1]; // Last updated timestamp
-        }
-
-        return UserNodeSignals;
+    function getUserNodeSignals(address user_, uint256 node_) public view returns (uint256[] memory) {
+        return userNodeSignals[keccak256(abi.encodePacked(user_, node_))];
     }
 
     function getNodeData(uint256 nodeId, address user) public view returns (NodeState memory nodeData) {
@@ -630,15 +618,7 @@ contract Fungido is ERC1155, PureUtils {
         if (members[userEndpointId].length > 0) {
             nodeData.basicInfo[10] = Strings.toHexString(members[userEndpointId][0]);
         }
-        nodeData.signals = new UserSignal[](1);
-        nodeData.signals[0].MembraneInflation = new string[2][](childrenOf[nodeId].length);
-        nodeData.signals[0].lastRedistSignal = new string[](childrenOf[nodeId].length);
+        nodeData.signals = getUserNodeSignals(user, nodeId);
 
-        for (uint256 i = 0; i < childrenOf[nodeId].length; i++) {
-            nodeData.signals[0].MembraneInflation[i][1] = inflSec[nodeId][0].toString();
-
-            bytes32 userKey = keccak256(abi.encodePacked(user, nodeId, childrenOf[nodeId][i]));
-            nodeData.signals[0].lastRedistSignal[i] = options[userKey][0].toString();
-        }
     }
 }
