@@ -38,7 +38,6 @@ struct LatentMovement {
     bytes32 movementHash;
 }
 
-
 struct Call {
     address target;
     bytes callData;

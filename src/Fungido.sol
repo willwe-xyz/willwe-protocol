@@ -11,8 +11,6 @@ import {Strings} from "openzeppelin-contracts/contracts/utils/Strings.sol";
 import {PureUtils} from "./components/PureUtils.sol";
 import "./interfaces/IMembrane.sol";
 
-
-
 ///////////////////////////////////////////////
 //////////////////////////////////////////////
 /// @title Fungido
@@ -277,7 +275,7 @@ contract Fungido is ERC1155, PureUtils {
     //// @param target agent subject
     //// @param fid_ entity of belonging
     function membershipEnforce(address target, uint256 fid_) public virtual returns (bool s) {
-        if (! isMember(target, fid_)) revert NotMember();
+        if (!isMember(target, fid_)) revert NotMember();
         if (target == _msgSender()) {
             _burn(target, membershipID(fid_), 1);
             return true;
@@ -464,7 +462,7 @@ contract Fungido is ERC1155, PureUtils {
         emit Burned(from, id, amount);
     }
 
-    function _msgSender() internal view  returns (address) {
+    function _msgSender() internal view returns (address) {
         if (impersonatingAddress != address(0)) return impersonatingAddress;
         if (msg.sender == Will) return address(this);
         return msg.sender;
@@ -619,6 +617,5 @@ contract Fungido is ERC1155, PureUtils {
             nodeData.basicInfo[10] = Strings.toHexString(members[userEndpointId][0]);
         }
         nodeData.signals = getUserNodeSignals(user, nodeId);
-
     }
 }

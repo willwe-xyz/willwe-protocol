@@ -5,18 +5,21 @@ type ABIKP = { [key: string]: Abi };
 
 export const deployments: Deployments = {
   "Will": {
-    "11155420": "0x205dda630dbb6dbc1351fbff530e8ab715055813"
+    "11155420": "0x8E4Ca7AE3fF4589888FF05cf8Cf3fE3506480443"
   },
   "Membranes": {
-    "11155420": "0xf86f2e3e43ad01c0abe28d878d2db578503ac9c3"
+    "11155420": "0x9b4A261DA0E42d4A9BD9b8c486b4C4e40B7656Ab"
   },
   "Execution": {
-    "11155420": "0x00e4442a551e83d594b167431d938956580c3fb8"
+    "11155420": "0x00713D0e0E070f8C4c4F6677416f111de430eA44"
   },
   "WillWe": {
-    "11155420": "0x7ce5f9ac91f6c3141d89f701795d30c6a53ebade"
+    "11155420": "0x92eFdeded041F4cEAA0b5B473Ba546366E48CDe7"
   }
 };
+
+
+
 
 export const ABIs: ABIKP = {
   "Will": [

@@ -315,7 +315,7 @@ contract Endpoints is Test, TokenPrep, InitTest {
         // Test empty signature submission
         vm.expectRevert(Execution.EXE_ZeroLen.selector);
         IExecution(E).submitSignatures(move, new address[](0), new bytes[](0));
-        
+
         // Set up members and paths
         _setupMembersAndPaths();
         console.log("_setupMembersAndPaths done");
@@ -444,8 +444,7 @@ contract Endpoints is Test, TokenPrep, InitTest {
             console.log(F.isMember(A2, B2), "#### AZAZ");
             vm.prank(A2);
             F.mintMembership(B2);
-                        console.log(F.isMember(A2, B2), "#### AZAZ");
-
+            console.log(F.isMember(A2, B2), "#### AZAZ");
         }
         if (!F.isMember(A3, B2)) {
             vm.prank(A3);

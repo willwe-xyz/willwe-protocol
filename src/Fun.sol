@@ -43,7 +43,6 @@ contract Fun is Fungido {
         emit Resignaled(msg.sender, targetNode_, originator);
     }
 
-
     function sendSignal(uint256 targetNode_, uint256[] memory signals) public virtual {
         if (parentOf[targetNode_] == targetNode_) revert TargetIsRoot();
         bool isMember = isMember(_msgSender(), targetNode_);
@@ -215,7 +214,6 @@ contract Fun is Fungido {
             calculateUserTargetedPreferenceAmount(childId, parentId, options[userTargetedPreference][0], _msgSender());
         if (!(block.timestamp >= options[userTargetedPreference][1])) revert NoTimeDelta();
         if (options[userTargetedPreference][2] > 0) {
-
             options[childParentEligibilityPerSec][0] -= options[userTargetedPreference][2];
         }
 
@@ -272,7 +270,6 @@ contract Fun is Fungido {
         super._burn(who_, fid_, amount_);
         resignal(fid_, who_);
     }
-
 
     /////////// External
 

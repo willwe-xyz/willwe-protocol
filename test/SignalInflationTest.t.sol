@@ -191,7 +191,7 @@ contract SignalInflationTests is InitTest, TokenPrep {
         assertTrue(F.balanceOf(A1, B1) > 0.1 ether, "Expected A1 to have influence");
         uint256[] memory signals = new uint256[](4);
         signals[0] = 0;
-        signals[1] = block.timestamp; 
+        signals[1] = block.timestamp;
         signals[2] = 6000; // 60% to B11
         signals[3] = 4000; // 40% to B12
         F.sendSignal(B1, signals);
@@ -286,7 +286,7 @@ contract SignalInflationTests is InitTest, TokenPrep {
         d011 = F.redistribute(B11);
         d012 = F.redistribute(B12);
 
-        uint256[] memory fetchedSignals = F.getUserNodeSignals(A1,B1);
+        uint256[] memory fetchedSignals = F.getUserNodeSignals(A1, B1);
         assertTrue(fetchedSignals.length == signals.length, "Signal length mismatch");
         assertTrue(fetchedSignals[3] == signals[3], "Signal 3 mismatch");
         assertTrue(F.isMember(A1, B1), "not member");
