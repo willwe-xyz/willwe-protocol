@@ -37,6 +37,23 @@ contract Fun is Fungido {
     function resignal(uint256 targetNode_, address originator) public virtual {
         uint256[] memory signals = getUserNodeSignals(originator, targetNode_);
         if (signals.length <= 2) return;
+        
+        // Reset user's contribution in a safe way before reapplying signals
+        uint256[] memory children = childrenOf[targetNode_];
+        for (uint256 i = 2; i < signals.length && i - 2 < children.length; i++) {
+            bytes32 userTargetedPreference = keccak256(abi.encodePacked(originator, targetNode_, children[i - 2]));
+            bytes32 childParentEligibility = keccak256(abi.encodePacked(children[i - 2], targetNode_));
+            
+            if (options[userTargetedPreference][2] > 0) {
+                if (options[userTargetedPreference][2] >= options[childParentEligibility][0]) {
+                    options[childParentEligibility][0] = 0;
+                } else {
+                    options[childParentEligibility][0] -= options[userTargetedPreference][2];
+                }
+                options[userTargetedPreference][2] = 0;
+            }
+        }
+        
         impersonatingAddress = originator;
         sendSignal(targetNode_, signals);
         delete impersonatingAddress;
@@ -68,8 +85,11 @@ contract Fun is Fungido {
 
             if (i <= 1) {
                 if (signalValue == 0) continue;
-                if (i == 0) emit InflationSignal(targetNode_, _msgSender(), signalValue);
-                if (i == 1) emit MembraneSignal(targetNode_, _msgSender(), signalValue);
+                if (i == 0)  { 
+                    emit InflationSignal(targetNode_, _msgSender(), signalValue); 
+                } else {
+                emit MembraneSignal(targetNode_, _msgSender(), signalValue);
+                }
                 _handleSpecialSignals(targetNode_, signalValue, i, balanceOfSender, userKey);
             } else {
                 _handleRegularSignals(targetNode_, user, signalValue, i, signals.length, children);
@@ -214,7 +234,12 @@ contract Fun is Fungido {
             calculateUserTargetedPreferenceAmount(childId, parentId, options[userTargetedPreference][0], _msgSender());
         if (!(block.timestamp >= options[userTargetedPreference][1])) revert NoTimeDelta();
         if (options[userTargetedPreference][2] > 0) {
-            options[childParentEligibilityPerSec][0] -= options[userTargetedPreference][2];
+            // Prevent underflow by ensuring we don't subtract more than what's available
+            if (options[userTargetedPreference][2] >= options[childParentEligibilityPerSec][0]) {
+                options[childParentEligibilityPerSec][0] = 0;
+            } else {
+                options[childParentEligibilityPerSec][0] -= options[userTargetedPreference][2];
+            }
         }
 
         options[childParentEligibilityPerSec][0] += newContribution;
