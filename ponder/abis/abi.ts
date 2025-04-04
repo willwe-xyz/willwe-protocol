@@ -3,18 +3,27 @@ import { getAbiItem, Abi } from 'viem'
 type Deployments = { [key: string]: { [key: string]: string } };
 type ABIKP = { [key: string]: Abi };
 
+// === Final Deployment Addresses ===
+//   Will: 0x68232ADeF82451a01a8E0844eE01e4e2C57C0C56
+//   Membrane: 0x0Ded41f963E48dc5b650ba00E2CfA91BC473eD0B
+//   Execution: 0x200FB0a4c6592C91a2846D30a5dbf0C2F285F6cc
+//   WillWe: 0xEb885ee4d53D5be0ff8B235c07f3DB8E8ed7528F
+//   Kibern Director: 0x0000000000000000000000000000000000000000
+//   Control [0,1]: 0xC5559e18069856011A598eBe69ad0Ad6A2E1012f 0x0000000000000000000000000000000000000000
+//   Will Price in ETH: 1000000000
+
 export const deployments: Deployments = {
   "Will": {
-    "11155420": "0x8E4Ca7AE3fF4589888FF05cf8Cf3fE3506480443"
+    "11155420": "0x68232ADeF82451a01a8E0844eE01e4e2C57C0C56"
   },
   "Membranes": {
-    "11155420": "0x9b4A261DA0E42d4A9BD9b8c486b4C4e40B7656Ab"
+    "11155420": "0x0Ded41f963E48dc5b650ba00E2CfA91BC473eD0B"
   },
   "Execution": {
-    "11155420": "0x00713D0e0E070f8C4c4F6677416f111de430eA44"
+    "11155420": "0x200FB0a4c6592C91a2846D30a5dbf0C2F285F6cc"
   },
   "WillWe": {
-    "11155420": "0x92eFdeded041F4cEAA0b5B473Ba546366E48CDe7"
+    "11155420": "0xEb885ee4d53D5be0ff8B235c07f3DB8E8ed7528F"
   }
 };
 
