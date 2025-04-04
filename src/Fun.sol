@@ -38,12 +38,13 @@ contract Fun is Fungido {
         uint256[] memory signals = getUserNodeSignals(originator, targetNode_);
         if (signals.length <= 2) return;
         
-        // Reset user's contribution in a safe way before reapplying signals
+        if ( msg.sig == this.burn.selector || this.burnPath.selector == msg.sig) {
         uint256[] memory children = childrenOf[targetNode_];
         for (uint256 i = 2; i < signals.length && i - 2 < children.length; i++) {
             bytes32 userTargetedPreference = keccak256(abi.encodePacked(originator, targetNode_, children[i - 2]));
             bytes32 childParentEligibility = keccak256(abi.encodePacked(children[i - 2], targetNode_));
             
+
             if (options[userTargetedPreference][2] > 0) {
                 if (options[userTargetedPreference][2] >= options[childParentEligibility][0]) {
                     options[childParentEligibility][0] = 0;
@@ -52,6 +53,7 @@ contract Fun is Fungido {
                 }
                 options[userTargetedPreference][2] = 0;
             }
+        }
         }
         
         impersonatingAddress = originator;
@@ -233,14 +235,13 @@ contract Fun is Fungido {
         uint256 newContribution =
             calculateUserTargetedPreferenceAmount(childId, parentId, options[userTargetedPreference][0], _msgSender());
         if (!(block.timestamp >= options[userTargetedPreference][1])) revert NoTimeDelta();
-        if (options[userTargetedPreference][2] > 0) {
-            // Prevent underflow by ensuring we don't subtract more than what's available
-            if (options[userTargetedPreference][2] >= options[childParentEligibilityPerSec][0]) {
+        
+           if (options[userTargetedPreference][2] >= options[childParentEligibilityPerSec][0]) {
                 options[childParentEligibilityPerSec][0] = 0;
             } else {
                 options[childParentEligibilityPerSec][0] -= options[userTargetedPreference][2];
             }
-        }
+        
 
         options[childParentEligibilityPerSec][0] += newContribution;
         if (options[childParentEligibilityPerSec][0] > inflSec[parentId][0]) {
@@ -293,6 +294,7 @@ contract Fun is Fungido {
 
     function _burn(address who_, uint256 fid_, uint256 amount_) internal override {
         super._burn(who_, fid_, amount_);
+        if (totalSupplyOf[toID(who_)] >= 1) return;
         resignal(fid_, who_);
     }
 

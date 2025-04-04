@@ -150,6 +150,7 @@ contract MintTest is Test, TokenPrep, InitTest {
         uint256 FungiTotal20BalPost = T20.balanceOf(address(F));
 
         assertTrue((balance1 + 1 ether - ((1 ether) / 100_0)) == balance2, "burn balance growth");
+        assertGt(balance2, balance1, "burn balance !grows 2 + ~1 via burn");
 
         ///@dev default tax rate
         assertTrue(FungiTotal20BalPost < FungiTotal20BalPre, "same on burn");
