@@ -27,7 +27,6 @@ contract Fun is Fungido {
     error NotNodeMember();
     error UnsoundMembership();
 
-    event ConfigSignal(uint256 indexed nodeId, bytes32 expressedOption);
     event CreatedEndpoint(address indexed endpoint, address indexed owner, uint256 indexed nodeId);
     event Resignaled(address indexed sender, uint256 indexed nodeId, address origin);
     event MembraneSignal(uint256 indexed nodeId, address indexed origin, uint256 membraneId);
@@ -122,8 +121,6 @@ contract Fun is Fungido {
 
         options[userKey][1] = block.timestamp;
         childrenOf[uint256(userKey)].push(signal);
-
-        emit ConfigSignal(targetNode_, nodeKey);
     }
 
     function _handleMembraneSignal(
