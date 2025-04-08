@@ -806,4 +806,108 @@ app.get("/getrootnode-events", async (c) => {
   }
 });
 
+// Get all signals for a node with supporting users
+app.get("/getNodeConfigSignals", async (c) => {
+  const nodeId = c.req.query("nodeId");
+  const chainId = c.req.query("chainId");
+  
+  if (!nodeId) {
+    return c.json({ error: "nodeId is required" }, 400);
+  }
+  
+  try {
+    // Build filters
+    const filters = [eq(schema.nodeSignals.nodeId, nodeId)];
+    
+    if (chainId) {
+      filters.push(eq(schema.nodeSignals.networkId, chainId));
+    }
+    
+    // Get all signals for the node
+    const signals = await db
+      .select()
+      .from(schema.nodeSignals)
+      .where(and(...filters))
+      .orderBy(desc(schema.nodeSignals.when));
+    
+    // Get membrane signals
+    const membraneSignals = await db
+      .select()
+      .from(schema.membraneSignals)
+      .where(and(
+        eq(schema.membraneSignals.nodeId, nodeId),
+        eq(schema.membraneSignals.isActive, true)
+      ))
+      .orderBy(desc(schema.membraneSignals.when));
+    
+    // Get inflation signals
+    const inflationSignals = await db
+      .select()
+      .from(schema.inflationSignals)
+      .where(and(
+        eq(schema.inflationSignals.nodeId, nodeId),
+        eq(schema.inflationSignals.isActive, true)
+      ))
+      .orderBy(desc(schema.inflationSignals.when));
+    
+    // Get redistribution preferences
+    const redistributionPreferences = await db
+      .select()
+      .from(schema.redistributionPreference)
+      .where(eq(schema.redistributionPreference.nodeId, nodeId))
+      .orderBy(desc(schema.redistributionPreference.when));
+    
+    // Group signals by type and value
+    const groupedSignals = {
+      membrane: groupSignalsByValue(membraneSignals, 'membraneId'),
+      inflation: groupSignalsByValue(inflationSignals, 'inflationValue'),
+      redistribution: groupSignalsByValue(redistributionPreferences, 'preferences'),
+      other: groupSignalsByValue(signals, 'signalValue')
+    };
+    
+    return c.json({
+      nodeId,
+      chainId: chainId || "all",
+      signals: groupedSignals,
+      raw: {
+        membraneSignals,
+        inflationSignals,
+        redistributionPreferences,
+        otherSignals: signals
+      }
+    });
+  } catch (error) {
+    console.error(`Error fetching signals for node ${nodeId}:`, error);
+    return c.json({ error: "Internal server error" }, 500);
+  }
+});
+
+// Helper function to group signals by value
+function groupSignalsByValue(signals: any[], valueField: string): Record<string, { value: string; supporters: string[]; totalStrength: string }> {
+  const grouped: Record<string, { value: string; supporters: string[]; totalStrength: string }> = {};
+  
+  signals.forEach(signal => {
+    const value = signal[valueField];
+    if (!grouped[value]) {
+      grouped[value] = {
+        value,
+        supporters: [],
+        totalStrength: "0"
+      };
+    }
+    
+    // Add supporter
+    grouped[value].supporters.push(signal.who);
+    
+    // Add strength if available
+    if (signal.strength) {
+      const currentStrength = BigInt(grouped[value].totalStrength || "0");
+      const signalStrength = BigInt(signal.strength || "0");
+      grouped[value].totalStrength = (currentStrength + signalStrength).toString();
+    }
+  });
+  
+  return grouped;
+}
+
 export default app;

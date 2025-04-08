@@ -3,32 +3,20 @@ import { getAbiItem, Abi } from 'viem'
 type Deployments = { [key: string]: { [key: string]: string } };
 type ABIKP = { [key: string]: Abi };
 
-// === Final Deployment Addresses ===
-//   Will: 0x68232ADeF82451a01a8E0844eE01e4e2C57C0C56
-//   Membrane: 0x0Ded41f963E48dc5b650ba00E2CfA91BC473eD0B
-//   Execution: 0x200FB0a4c6592C91a2846D30a5dbf0C2F285F6cc
-//   WillWe: 0xEb885ee4d53D5be0ff8B235c07f3DB8E8ed7528F
-//   Kibern Director: 0x0000000000000000000000000000000000000000
-//   Control [0,1]: 0xC5559e18069856011A598eBe69ad0Ad6A2E1012f 0x0000000000000000000000000000000000000000
-//   Will Price in ETH: 1000000000
-
 export const deployments: Deployments = {
   "Will": {
-    "11155420": "0x68232ADeF82451a01a8E0844eE01e4e2C57C0C56"
+    "11155420": "0x2a1EeaF390C6F4274F59A20224a2841a469d9d68"
   },
   "Membranes": {
-    "11155420": "0x0Ded41f963E48dc5b650ba00E2CfA91BC473eD0B"
+    "11155420": "0x8257540c2f41605fb70DCfCbA70C48F8420840CF"
   },
   "Execution": {
-    "11155420": "0x200FB0a4c6592C91a2846D30a5dbf0C2F285F6cc"
+    "11155420": "0x15364dDE1B4C87F8CE3539e3e59A65fbCed12207"
   },
   "WillWe": {
-    "11155420": "0xEb885ee4d53D5be0ff8B235c07f3DB8E8ed7528F"
+    "11155420": "0x41A717c4d277c26e08C46ec6c8d26553F067A769"
   }
 };
-
-
-
 
 export const ABIs: ABIKP = {
   "Will": [
@@ -2304,20 +2292,8 @@ export const ABIs: ABIKP = {
             },
             {
               "name": "signals",
-              "type": "tuple[]",
-              "internalType": "struct UserSignal[]",
-              "components": [
-                {
-                  "name": "MembraneInflation",
-                  "type": "string[2][]",
-                  "internalType": "string[2][]"
-                },
-                {
-                  "name": "lastRedistSignal",
-                  "type": "string[]",
-                  "internalType": "string[]"
-                }
-              ]
+              "type": "uint256[]",
+              "internalType": "uint256[]"
             }
           ]
         }
@@ -2458,20 +2434,8 @@ export const ABIs: ABIKP = {
             },
             {
               "name": "signals",
-              "type": "tuple[]",
-              "internalType": "struct UserSignal[]",
-              "components": [
-                {
-                  "name": "MembraneInflation",
-                  "type": "string[2][]",
-                  "internalType": "string[2][]"
-                },
-                {
-                  "name": "lastRedistSignal",
-                  "type": "string[]",
-                  "internalType": "string[]"
-                }
-              ]
+              "type": "uint256[]",
+              "internalType": "uint256[]"
             }
           ]
         }
@@ -2526,20 +2490,8 @@ export const ABIs: ABIKP = {
             },
             {
               "name": "signals",
-              "type": "tuple[]",
-              "internalType": "struct UserSignal[]",
-              "components": [
-                {
-                  "name": "MembraneInflation",
-                  "type": "string[2][]",
-                  "internalType": "string[2][]"
-                },
-                {
-                  "name": "lastRedistSignal",
-                  "type": "string[]",
-                  "internalType": "string[]"
-                }
-              ]
+              "type": "uint256[]",
+              "internalType": "uint256[]"
             }
           ]
         }
@@ -2570,21 +2522,21 @@ export const ABIs: ABIKP = {
       "name": "getUserNodeSignals",
       "inputs": [
         {
-          "name": "signalOrigin",
+          "name": "user_",
           "type": "address",
           "internalType": "address"
         },
         {
-          "name": "parentNodeId",
+          "name": "node_",
           "type": "uint256",
           "internalType": "uint256"
         }
       ],
       "outputs": [
         {
-          "name": "UserNodeSignals",
-          "type": "uint256[2][]",
-          "internalType": "uint256[2][]"
+          "name": "",
+          "type": "uint256[]",
+          "internalType": "uint256[]"
         }
       ],
       "stateMutability": "view"
@@ -2910,11 +2862,6 @@ export const ABIs: ABIKP = {
           "name": "targetNode_",
           "type": "uint256",
           "internalType": "uint256"
-        },
-        {
-          "name": "signals",
-          "type": "uint256[]",
-          "internalType": "uint256[]"
         },
         {
           "name": "originator",
@@ -3289,25 +3236,6 @@ export const ABIs: ABIKP = {
           "type": "uint256",
           "indexed": false,
           "internalType": "uint256"
-        }
-      ],
-      "anonymous": false
-    },
-    {
-      "type": "event",
-      "name": "ConfigSignal",
-      "inputs": [
-        {
-          "name": "nodeId",
-          "type": "uint256",
-          "indexed": true,
-          "internalType": "uint256"
-        },
-        {
-          "name": "expressedOption",
-          "type": "bytes32",
-          "indexed": false,
-          "internalType": "bytes32"
         }
       ],
       "anonymous": false

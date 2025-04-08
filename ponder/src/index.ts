@@ -9,7 +9,6 @@ import * as WillHandlers from './Will';
 
 import './syncFoundry';
 
-
 // For OP Sepolia (chainId 11155420)
 ponder.on("WillWe_11155420:NewRootNode", WillWeHandlers.handleNewRootNode);
 ponder.on("WillWe_11155420:NewNode", WillWeHandlers.handleNewNode);
@@ -24,6 +23,10 @@ ponder.on("WillWe_11155420:InflationRateChanged", WillWeHandlers.handleInflation
 ponder.on("WillWe_11155420:SharesGenerated", WillWeHandlers.handleSharesGenerated);
 ponder.on("WillWe_11155420:Minted", WillWeHandlers.handleMinted);
 ponder.on("WillWe_11155420:Burned", WillWeHandlers.handleBurned);
+
+// New event handlers for membrane and inflation signals
+ponder.on("WillWe_11155420:MembraneSignal", WillWeHandlers.handleMembraneSignal);
+ponder.on("WillWe_11155420:InflationSignal", WillWeHandlers.handleInflationSignal);
 
 // Execution handlers for OP Sepolia
 ponder.on("Execution_11155420:NewMovementCreated", ExecutionHandlers.handleNewMovementCreated);

@@ -2,7 +2,7 @@ import { onchainTable, onchainEnum, relations, index } from "ponder";
 import { zeroAddress } from "viem"  
 
 export const Network = onchainEnum("network", ["mainnet", "rinkeby", "ropsten", "kovan", "goerli", "localhost"]);
-export const EventType = onchainEnum("eventType", ["redistribution", "redistributionSignal", "membraneSignal", "mint", "burn", "transfer", "approval", "approvalForAll", "configSignal", "inflationMinted", "inflationRateChanged", "crosschainTransfer", "newNode", "newRoot", "newmovement"]);
+export const EventType = onchainEnum("eventType", ["redistribution", "redistributionSignal", "membraneSignal", "inflateSignal", "mint", "burn", "transfer", "approval", "approvalForAll", "inflationMinted", "inflationRateChanged", "crosschainTransfer", "newNode", "newRoot", "newmovement"]);
 export const EndpointType = onchainEnum("endpointType", ["userOwned", "movement"]);
 export const SignalType = onchainEnum("signalType", ["membrane", "inflation", "redistribution"]);
 
@@ -53,6 +53,15 @@ export const membraneSignals = onchainTable("membraneSignals", (t) => ({
   who: t.text(),
   signalOrigin: t.text(zeroAddress),
   membraneId: t.text(),
+  strength: t.text(), // Signal strength (user's balance)
+  when: t.numeric(), // When the signal was created/updated
+  isActive: t.boolean().default(true), // Whether this signal is still active
+  network: t.text(),
+  networkId: t.text(),
+}), (table) => ({
+  nodeIdx: index().on(table.nodeId),
+  whox: index().on(table.who),
+  membraneIdx: index().on(table.membraneId)
 }))
 
 export const inflationSignals = onchainTable("inflationSignals", (t) => ({
@@ -61,6 +70,14 @@ export const inflationSignals = onchainTable("inflationSignals", (t) => ({
   who: t.text(),
   signalOrigin: t.text(zeroAddress),
   inflationValue: t.text(),
+  strength: t.text(), // Signal strength (user's balance)
+  when: t.numeric(), // When the signal was created/updated
+  isActive: t.boolean().default(true), // Whether this signal is still active
+  network: t.text(),
+  networkId: t.text(),
+}), (table) => ({
+  nodeIdx: index().on(table.nodeId),
+  whox: index().on(table.who)
 }))
 
 export const nodeSignals = onchainTable("nodeSignals", (t) => ({

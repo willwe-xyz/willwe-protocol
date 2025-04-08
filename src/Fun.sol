@@ -29,9 +29,9 @@ contract Fun is Fungido {
 
     event CreatedEndpoint(address indexed endpoint, address indexed owner, uint256 indexed nodeId);
     event Resignaled(address indexed sender, uint256 indexed nodeId, address origin);
-    event MembraneSignal(uint256 indexed nodeId, address indexed origin, uint256 membraneId);
-    event InflationSignal(uint256 indexed nodeId, address indexed origin, uint256 inflationRate);
-    event UserNodeSignal(uint256 indexed nodeId, address indexed user, uint256[] signals);
+    event MembraneSignal(uint256 indexed nodeId, address indexed origin, uint256 membraneId, uint256 strength);
+    event InflationSignal(uint256 indexed nodeId, address indexed origin, uint256 inflationRate, uint256 strength);
+    event UserNodeSignal(uint256 indexed nodeId, address indexed user, uint256[] signals, uint256 strenght);
 
     function resignal(uint256 targetNode_, address originator) public virtual {
         uint256[] memory signals = getUserNodeSignals(originator, targetNode_);
@@ -83,9 +83,9 @@ contract Fun is Fungido {
             if (i <= 1) {
                 if (signalValue == 0) continue;
                 if (i == 0) {
-                    emit InflationSignal(targetNode_, _msgSender(), signalValue);
+                    emit InflationSignal(targetNode_, _msgSender(), signalValue, balanceOfSender);
                 } else {
-                    emit MembraneSignal(targetNode_, _msgSender(), signalValue);
+                    emit MembraneSignal(targetNode_, _msgSender(), signalValue, balanceOfSender);
                 }
                 _handleSpecialSignals(targetNode_, signalValue, i, balanceOfSender, userKey, signalsKey);
             } else {
@@ -94,7 +94,7 @@ contract Fun is Fungido {
             }
         }
         if (signals.length >= 3 && sigSum != 0 && sigSum != 100_00) revert IncompleteSign();
-        emit UserNodeSignal(targetNode_, toAddress(user), signals);
+        emit UserNodeSignal(targetNode_, toAddress(user), signals, balanceOfSender);
 
         if (impersonatingAddress == address(0)) {
             userNodeSignals[keccak256(abi.encodePacked(_msgSender(), targetNode_))] = signals;
