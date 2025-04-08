@@ -24,5 +24,4 @@ import {Fun} from "./Fun.sol";
 
 contract WillWe is Fun {
     constructor(address Execution, address Membrane) Fun(Execution, Membrane) {}
-
 }

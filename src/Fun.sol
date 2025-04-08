@@ -36,26 +36,25 @@ contract Fun is Fungido {
 
     function resignal(uint256 targetNode_, address originator) public virtual {
         uint256[] memory signals = getUserNodeSignals(originator, targetNode_);
-        if (signals.length <= 2) return;
-        
-        if ( msg.sig == this.burn.selector || this.burnPath.selector == msg.sig) {
-        uint256[] memory children = childrenOf[targetNode_];
-        for (uint256 i = 2; i < signals.length && i - 2 < children.length; i++) {
-            bytes32 userTargetedPreference = keccak256(abi.encodePacked(originator, targetNode_, children[i - 2]));
-            bytes32 childParentEligibility = keccak256(abi.encodePacked(children[i - 2], targetNode_));
-            
 
-            if (options[userTargetedPreference][2] > 0) {
-                if (options[userTargetedPreference][2] >= options[childParentEligibility][0]) {
-                    options[childParentEligibility][0] = 0;
-                } else {
-                    options[childParentEligibility][0] -= options[userTargetedPreference][2];
+        if (signals.length <= 2) return;
+        if (msg.sig == this.burn.selector || this.burnPath.selector == msg.sig) {
+            uint256[] memory children = childrenOf[targetNode_];
+            for (uint256 i = 2; i < signals.length && i - 2 < children.length; i++) {
+                bytes32 userTargetedPreference = keccak256(abi.encodePacked(originator, targetNode_, children[i - 2]));
+                bytes32 childParentEligibility = keccak256(abi.encodePacked(children[i - 2], targetNode_));
+
+                if (options[userTargetedPreference][2] > 0) {
+                    if (options[userTargetedPreference][2] >= options[childParentEligibility][0]) {
+                        options[childParentEligibility][0] = 0;
+                    } else {
+                        options[childParentEligibility][0] -= options[userTargetedPreference][2];
+                    }
+                    options[userTargetedPreference][2] = 0;
                 }
-                options[userTargetedPreference][2] = 0;
             }
         }
-        }
-        
+
         impersonatingAddress = originator;
         sendSignal(targetNode_, signals);
         delete impersonatingAddress;
@@ -63,36 +62,33 @@ contract Fun is Fungido {
     }
 
     function sendSignal(uint256 targetNode_, uint256[] memory signals) public virtual {
-        if (parentOf[targetNode_] == targetNode_) revert TargetIsRoot();
         bool isMember = isMember(_msgSender(), targetNode_);
         uint256 user = toID(_msgSender());
-
-        if (impersonatingAddress == address(0)) {
-            userNodeSignals[keccak256(abi.encodePacked(_msgSender(), targetNode_))] = signals;
-        }
+        if (parentOf[targetNode_] == targetNode_) revert TargetIsRoot();
         if (!isMember) revert Noise();
 
         uint256 balanceOfSender = balanceOf(_msgSender(), targetNode_);
-        if (balanceOf(_msgSender(), targetNode_) < totalSupplyOf[targetNode_] / 100_00) revert NoiseNotVoice();
+        if (balanceOfSender < totalSupplyOf[targetNode_] / 100_00) revert NoiseNotVoice();
 
         mintInflation(targetNode_);
 
         uint256[] memory children = childrenOf[targetNode_];
+        bytes32 signalsKey = keccak256(abi.encodePacked(_msgSender(), targetNode_));
 
         uint256 sigSum;
-        uint256 i = impersonatingAddress != address(0) ? 2 : 0;
+        uint256 i;
         for (i; i < signals.length; ++i) {
             uint256 signalValue = signals[i];
             bytes32 userKey = keccak256(abi.encodePacked(targetNode_, user, signalValue));
 
             if (i <= 1) {
                 if (signalValue == 0) continue;
-                if (i == 0)  { 
-                    emit InflationSignal(targetNode_, _msgSender(), signalValue); 
+                if (i == 0) {
+                    emit InflationSignal(targetNode_, _msgSender(), signalValue);
                 } else {
-                emit MembraneSignal(targetNode_, _msgSender(), signalValue);
+                    emit MembraneSignal(targetNode_, _msgSender(), signalValue);
                 }
-                _handleSpecialSignals(targetNode_, signalValue, i, balanceOfSender, userKey);
+                _handleSpecialSignals(targetNode_, signalValue, i, balanceOfSender, userKey, signalsKey);
             } else {
                 _handleRegularSignals(targetNode_, user, signalValue, i, signals.length, children);
                 sigSum += signalValue;
@@ -100,6 +96,10 @@ contract Fun is Fungido {
         }
         if (signals.length >= 3 && sigSum != 0 && sigSum != 100_00) revert IncompleteSign();
         emit UserNodeSignal(targetNode_, toAddress(user), signals);
+
+        if (impersonatingAddress == address(0)) {
+            userNodeSignals[keccak256(abi.encodePacked(_msgSender(), targetNode_))] = signals;
+        }
     }
 
     function _handleSpecialSignals(
@@ -107,16 +107,17 @@ contract Fun is Fungido {
         uint256 signal,
         uint256 index,
         uint256 balanceOfSender,
-        bytes32 userKey
+        bytes32 userKey,
+        bytes32 signalsKey
     ) private {
         if (signal == 0) return;
         bytes32 nodeKey = keccak256(abi.encodePacked(targetNode_, signal));
 
         if (block.timestamp == options[userKey][1]) revert NoTimeDelta();
         if (index == 0) {
-            _handleMembraneSignal(targetNode_, userKey, nodeKey, signal, balanceOfSender);
+            _handleMembraneSignal(targetNode_, userKey, nodeKey, signal, balanceOfSender, signalsKey, index);
         } else {
-            _handleInflationSignal(targetNode_, userKey, nodeKey, signal, balanceOfSender);
+            _handleInflationSignal(targetNode_, userKey, nodeKey, signal, balanceOfSender, signalsKey, index);
         }
 
         options[userKey][1] = block.timestamp;
@@ -130,14 +131,15 @@ contract Fun is Fungido {
         bytes32 userKey,
         bytes32 nodeKey,
         uint256 signal,
-        uint256 balanceOfSender
+        uint256 balanceOfSender,
+        bytes32 signalsKey,
+        uint256 index
     ) private {
         if (signal < type(uint160).max || bytes(M.getMembraneById(signal).meta).length == 0) revert MembraneNotFound();
-        _updateSignalOption(targetNode_, userKey, nodeKey, signal, balanceOfSender);
+        _updateSignalOption(userKey, nodeKey, signal, balanceOfSender, signalsKey, index, targetNode_);
         if (options[nodeKey][0] * 2 > totalSupplyOf[targetNode_]) {
             (bool s,) = M.integrityCheck(targetNode_);
             if (!s) revert UnsoundMembership();
-            mintInflation(targetNode_);
             emit MembraneChanged(targetNode_, inUseMembraneId[targetNode_][0], signal);
             inUseMembraneId[targetNode_] = [signal, block.timestamp];
         }
@@ -148,9 +150,11 @@ contract Fun is Fungido {
         bytes32 userKey,
         bytes32 nodeKey,
         uint256 signal,
-        uint256 balanceOfSender
+        uint256 balanceOfSender,
+        bytes32 signalsKey,
+        uint256 index
     ) private {
-        _updateSignalOption(targetNode_, userKey, nodeKey, signal, balanceOfSender);
+        _updateSignalOption(userKey, nodeKey, signal, balanceOfSender, signalsKey, index, targetNode_);
         if (options[nodeKey][0] * 2 > totalSupplyOf[targetNode_]) {
             (bool s,) = M.integrityCheck(targetNode_);
             if (!s) revert UnsoundMembership();
@@ -215,17 +219,27 @@ contract Fun is Fungido {
     }
 
     function _updateSignalOption(
-        uint256 targetNode_,
         bytes32 userKey,
         bytes32 nodeKey,
         uint256 signal,
-        uint256 balanceOfSender
+        uint256 balanceOfSender,
+        bytes32 signalsKey,
+        uint256 sIndex,
+        uint256 targetNode
     ) private {
-        if (options[userKey][1] > 0 && (inUseMembraneId[targetNode_][1] < options[userKey][1])) {
-            if (options[userKey][2] > 0) {
+        if (options[userKey][1] > 0) {
+            if (options[userKey][2] > 0 && (options[userKey][1] > 0)) {
                 options[nodeKey][0] -= options[userKey][2];
             }
         }
+        if (userNodeSignals[signalsKey].length > sIndex) {
+            uint256 pastSignal = userNodeSignals[signalsKey][sIndex];
+            if (pastSignal != signal) {
+                options[keccak256(abi.encodePacked(targetNode, pastSignal))][0] -=
+                    options[keccak256(abi.encodePacked(targetNode, _msgSender(), pastSignal))][2];
+            }
+        }
+
         options[userKey] = [signal, block.timestamp, balanceOfSender];
         options[nodeKey][0] += balanceOfSender;
     }
@@ -235,13 +249,12 @@ contract Fun is Fungido {
         uint256 newContribution =
             calculateUserTargetedPreferenceAmount(childId, parentId, options[userTargetedPreference][0], _msgSender());
         if (!(block.timestamp >= options[userTargetedPreference][1])) revert NoTimeDelta();
-        
-           if (options[userTargetedPreference][2] >= options[childParentEligibilityPerSec][0]) {
-                options[childParentEligibilityPerSec][0] = 0;
-            } else {
-                options[childParentEligibilityPerSec][0] -= options[userTargetedPreference][2];
-            }
-        
+
+        if (options[userTargetedPreference][2] >= options[childParentEligibilityPerSec][0]) {
+            options[childParentEligibilityPerSec][0] = 0;
+        } else {
+            options[childParentEligibilityPerSec][0] -= options[userTargetedPreference][2];
+        }
 
         options[childParentEligibilityPerSec][0] += newContribution;
         if (options[childParentEligibilityPerSec][0] > inflSec[parentId][0]) {
@@ -330,7 +343,6 @@ contract Fun is Fungido {
     }
 
     function getChangePrevalence(uint256 nodeId_, uint256 signal_) public view returns (uint256) {
-        bytes32 nodeKey = keccak256(abi.encodePacked(nodeId_, signal_));
-        return options[nodeKey][0];
+        return options[keccak256(abi.encodePacked(nodeId_, signal_))][0];
     }
 }
