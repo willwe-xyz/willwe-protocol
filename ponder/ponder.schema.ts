@@ -2,7 +2,7 @@ import { onchainTable, onchainEnum, relations, index } from "ponder";
 import { zeroAddress } from "viem"  
 
 export const Network = onchainEnum("network", ["mainnet", "rinkeby", "ropsten", "kovan", "goerli", "localhost"]);
-export const EventType = onchainEnum("eventType", ["redistribution", "redistributionSignal", "membraneSignal", "inflateSignal", "mint", "burn", "transfer", "approval", "approvalForAll", "inflationMinted", "inflationRateChanged", "crosschainTransfer", "newNode", "newRoot", "newmovement"]);
+export const EventType = onchainEnum("eventType", ["redistribution", "redistributionSignal", "membraneSignal", "inflateSignal", "mint", "burn", "transfer", "approval", "approvalForAll", "inflationMinted", "inflationRateChanged", "crosschainTransfer", "newNode", "newRoot", "newmovement", "configSignal"]);
 export const EndpointType = onchainEnum("endpointType", ["userOwned", "movement"]);
 export const SignalType = onchainEnum("signalType", ["membrane", "inflation", "redistribution"]);
 

@@ -360,24 +360,29 @@ export const handleSignatureRemoved = async ({ event, context }) => {
 
 export const handleWillWeSet = async ({ event, context }) => {
   const { db } = context;
-  console.log("WillWe Set:", event.args);
-
+  console.log("WillWe Set:", safeBigIntStringify(event.args));
+  
   try {
+    const implementation = event.args.implementation;
     const network = context.network || getDefaultNetwork(context);
+    const networkId = network.chainId.toString();
+    const networkName = network.name.toLowerCase();
     
-    // Use the helper function to save the event
-    await saveEvent({
-      db,
-      event,
-      nodeId: "0", // Default nodeId
-      who: event.args.setter || event.transaction.from,
+    // Save the event
+    await db.insert(events).values({
+      id: createEventId(event),
+      nodeId: "0", // No specific node for this event
+      who: event.transaction?.from || "unknown",
       eventName: "WillWeSet",
       eventType: "configSignal",
-      network: network,
-      rootNodeId: "0"
-    });
+      when: event.block.timestamp,
+      createdBlockNumber: event.block.number,
+      networkId: networkId,
+      network: networkName
+    }).onConflictDoNothing();
     
-    console.log(`Recorded WillWeSet event from ${event.args.setter || event.transaction.from}`);
+    console.log(`Inserted WillWeSet event: ${createEventId(event)}`);
+    console.log(`Recorded WillWeSet event from ${event.transaction?.from}`);
   } catch (error) {
     console.error("Error in handleWillWeSet:", error);
   }

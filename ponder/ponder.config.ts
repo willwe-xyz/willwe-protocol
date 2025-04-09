@@ -84,8 +84,12 @@ export const getAllContracts = () => {
       const networkName = chain.name;
       
       // WillWe contract
-      if ('WillWe' in deployments && deployments.WillWe[chainIdStr] && ABIs.WillWe) {
-        contracts[`WillWe_${chainId}`] = {
+      if ('WillWe' in deployments && deployments.WillWe[chainIdStr]) {
+        if (!ABIs.WillWe) {
+          console.warn(`Missing ABI for WillWe on chain ${chainId}, skipping`);
+          continue;
+        }
+        contracts[`WillWe-${chainId}`] = {
           abi: ABIs.WillWe as Abi,
           address: deployments.WillWe[chainIdStr],
           network: networkName,
@@ -94,8 +98,12 @@ export const getAllContracts = () => {
       }
       
       // Membranes contract
-      if ('Membranes' in deployments && deployments.Membranes?.[chainIdStr] && ABIs.Membranes) {
-        contracts[`Membrane_${chainId}`] = {
+      if ('Membranes' in deployments && deployments.Membranes?.[chainIdStr]) {
+        if (!ABIs.Membranes) {
+          console.warn(`Missing ABI for Membranes on chain ${chainId}, skipping`);
+          continue;
+        }
+        contracts[`Membranes-${chainId}`] = {
           abi: ABIs.Membranes as Abi,
           address: deployments.Membranes[chainIdStr],
           network: networkName,
@@ -104,8 +112,12 @@ export const getAllContracts = () => {
       }
       
       // Execution contract
-      if ('Execution' in deployments && deployments.Execution?.[chainIdStr] && ABIs.Execution) {
-        contracts[`Execution_${chainId}`] = {
+      if ('Execution' in deployments && deployments.Execution?.[chainIdStr]) {
+        if (!ABIs.Execution) {
+          console.warn(`Missing ABI for Execution on chain ${chainId}, skipping`);
+          continue;
+        }
+        contracts[`Execution-${chainId}`] = {
           abi: ABIs.Execution as Abi,
           address: deployments.Execution[chainIdStr],
           network: networkName,
@@ -114,8 +126,12 @@ export const getAllContracts = () => {
       }
       
       // Will contract
-      if ('Will' in deployments && deployments.Will?.[chainIdStr] && ABIs.Will) {
-        contracts[`Will_${chainId}`] = {
+      if ('Will' in deployments && deployments.Will?.[chainIdStr]) {
+        if (!ABIs.Will) {
+          console.warn(`Missing ABI for Will on chain ${chainId}, skipping`);
+          continue;
+        }
+        contracts[`Will-${chainId}`] = {
           abi: ABIs.Will as Abi,
           address: deployments.Will[chainIdStr],
           network: networkName,
@@ -123,13 +139,13 @@ export const getAllContracts = () => {
         };
       }
     }
-
   }
+  
+  // Log the registered contracts for debugging
+  console.log("Registered contracts:", Object.keys(contracts));
   
   return contracts;
 }
-
-
 
 // Create the Ponder configuration
 export default createConfig({
@@ -137,7 +153,7 @@ export default createConfig({
   contracts: getAllContracts(),
   database: {
     kind: "postgres",
-    connectionString: process.env.PONDER_DATABASE_URL || "postgres://postgres:postgres@localhost:5432/ponder",
+    connectionString: process.env.PONDER_DATABASE_URL || "postgres://postgres:postgres@localhost:5432/ponder?schema=willwe"
   },
 });
 

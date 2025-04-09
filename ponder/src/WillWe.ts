@@ -180,13 +180,13 @@ export async function handleNewRootNode({ event, context }) {
     // Safely get creator with fallback
     const creator = event.args.creator || event.transaction?.from || "unknown";
     
-    // Fix: Use a string identifier instead of EventType enum to avoid serialization errors
+    // Save the event
     await db.insert(events).values({
       id: createEventId(event),
       nodeId: nodeId,
       who: creator,
       eventName: "NewRootNode",
-      eventType: "newRoot", // Pass as string instead of enum
+      eventType: "newRoot",
       when: event.block.timestamp,
       createdBlockNumber: event.block.number,
       networkId: networkId,
