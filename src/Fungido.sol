@@ -336,7 +336,7 @@ contract Fungido is ERC1155, PureUtils {
     /// @param taxRate_ share retained at full exit withdrawal expressed as basis points (default 0.01% or 100)
     function taxPolicyPreference(address rootToken_, uint256 taxRate_) external {
         if (_msgSender() != control[0]) revert Unautorised();
-        if (taxRate_ == 1) revert Overreach();
+        if (taxRate_ <= 1) revert Overreach();
         taxRate[rootToken_] = taxRate_;
     }
 
@@ -490,8 +490,16 @@ contract Fungido is ERC1155, PureUtils {
         return inUseMembraneId[fid_][0];
     }
 
-    function allMembersOf(uint256 fid_) public view returns (address[] memory) {
-        return members[fid_];
+    function allMembersOf(uint256 fid_) public view returns (address[] memory membersOf) {
+        address[] memory membersStore = members[fid_];
+        membersOf = new address[](membersStore.length);
+        for (uint256 i; i < membersStore.length; ++i) {
+            if (membersStore[i] == address(0)) continue;
+
+            if (balanceOf(membersStore[i], membershipID(fid_)) >= 0) {
+                membersOf[i] = membersStore[i];
+            }
+        }
     }
 
     function getChildrenOf(uint256 fid_) public view returns (uint256[] memory) {
@@ -575,7 +583,7 @@ contract Fungido is ERC1155, PureUtils {
         /// Membrane Metadata CID
         NodeData.membraneMeta = M.getMembraneById(inUseMembraneId[nodeId][0]).meta;
         /// Array of member addresses
-        NodeData.membersOfNode = members[nodeId];
+        NodeData.membersOfNode = allMembersOf(nodeId);
 
         NodeData.movementEndpoints = members[toID(executionAddress) + nodeId];
         /// Array of direct children node IDs
@@ -608,6 +616,41 @@ contract Fungido is ERC1155, PureUtils {
         return userNodeSignals[keccak256(abi.encodePacked(user_, node_))];
     }
 
+    function getAllSignalsOfNode(uint256 nodeId) public view returns (AllNodeSignals memory all) {
+        address[] memory membersOf = allMembersOf(nodeId);
+        all.signalers = new address[](membersOf.length);
+        all.inflationSignals = new uint256[2][](membersOf.length);
+        all.membraneSignals = new uint256[2][](membersOf.length);
+        all.redistributionSignals = new uint256[][](membersOf.length);
+
+        for (uint256 i; i < membersOf.length; ++i) {
+            if (membersOf[i] == address(0)) continue;
+            address member = membersOf[i];
+            uint256[] memory mSignals = getUserNodeSignals(member, nodeId);
+
+            all.signalers[i] = member;
+
+            if (mSignals.length > 0) {
+                if (mSignals.length > 0) {
+                    all.inflationSignals[i] =
+                        [mSignals[0], options[keccak256(abi.encodePacked(member, nodeId, mSignals[0]))][2]];
+                }
+                if (mSignals.length > 1) {
+                    all.membraneSignals[i] =
+                        [mSignals[1], options[keccak256(abi.encodePacked(member, nodeId, mSignals[1]))][2]];
+                }
+                if (mSignals.length > 2) {
+                    uint256[] memory redistribution = new uint256[](mSignals.length - 2);
+                    for (uint256 j = 2; j < mSignals.length; ++j) {
+                        redistribution[j - 2] = mSignals[j];
+                    }
+                    all.redistributionSignals[i] = redistribution;
+                }
+            }
+        }
+        return all;
+    }
+
     function getNodeData(uint256 nodeId, address user) public view returns (NodeState memory nodeData) {
         nodeData = getNodeData(nodeId);
         if (user == address(0)) return nodeData;
@@ -616,6 +659,6 @@ contract Fungido is ERC1155, PureUtils {
         if (members[userEndpointId].length > 0) {
             nodeData.basicInfo[10] = Strings.toHexString(members[userEndpointId][0]);
         }
-        nodeData.signals = getUserNodeSignals(user, nodeId);
+        nodeData.nodeSignals = getAllSignalsOfNode(nodeId);
     }
 }

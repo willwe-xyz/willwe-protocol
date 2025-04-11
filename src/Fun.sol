@@ -292,6 +292,7 @@ contract Fun is Fungido {
 
     /// @notice redistributes eligible amounts to all nodes on target path and mints inflation for target
     /// @param nodeId_ target node to actualize path to and mint inflation for
+    /// @return distributedAmt total amount distributed
     function redistributePath(uint256 nodeId_) external returns (uint256 distributedAmt) {
         uint256[] memory path = getFidPath(nodeId_);
         distributedAmt = 1;

@@ -219,6 +219,8 @@ contract SignalInflationTests is InitTest, TokenPrep {
         vm.startPrank(A1);
 
         uint256[] memory signals = new uint256[](4);
+        signals[0] = 0;
+        signals[1] = 0;
         signals[2] = 6000; // 60% to B11
         signals[3] = 4000; // 40% to B12
         F.sendSignal(B1, signals);
@@ -241,9 +243,21 @@ contract SignalInflationTests is InitTest, TokenPrep {
         assertEq(nodeData.basicInfo[6], F.getMembraneOf(B1).toString(), "membrane issue");
         assertEq(nodeData.basicInfo[9], F.balanceOf(A1, B1).toString(), "user balance f");
 
-        assertEq(nodeData.signals.length, 4, "signals len f");
-        assertEq(nodeData.signals[2], 6000);
-        assertEq(nodeData.signals[3], 4000);
+        // Check if the signals are correct
+        assertEq(nodeData.nodeSignals.signalers.length, 1, "Signaler length mismatch");
+        assertEq(nodeData.nodeSignals.signalers[0], A1, "Signaler address mismatch");
+
+        assertEq(nodeData.nodeSignals.inflationSignals.length, 1, "Inflation signals length mismatch");
+        assertEq(
+            F.getChangePrevalence(B1, signals[1]),
+            nodeData.nodeSignals.inflationSignals[0][1] * 1 gwei,
+            "Inflation signal value mismatch"
+        );
+
+        assertEq(nodeData.nodeSignals.redistributionSignals.length, 1, "Redistribution signals length mismatch");
+        assertEq(nodeData.nodeSignals.redistributionSignals[0].length, 2, "Redistribution signal array length mismatch");
+        assertEq(nodeData.nodeSignals.redistributionSignals[0][0], signals[2], "Redistribution signal value mismatch");
+        assertEq(nodeData.nodeSignals.redistributionSignals[0][1], signals[3], "Redistribution signal value mismatch");
 
         vm.stopPrank();
     }

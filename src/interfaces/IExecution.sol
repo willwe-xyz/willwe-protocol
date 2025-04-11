@@ -44,6 +44,13 @@ struct Call {
     uint256 value;
 }
 
+struct AllNodeSignals {
+    address[] signalers;
+    uint256[2][] inflationSignals;
+    uint256[2][] membraneSignals;
+    uint256[][] redistributionSignals;
+}
+
 struct NodeState {
     string[12] basicInfo; // [nodeId, inflation, reserve, budget, rootValuationBudget, rootValuationReserve, membraneId, eligibilityPerSec, lastRedistributionTime, balanceOfUser [0 default], endpointOfUserForNode [address(0) defaul - no endpoint], total supply of node]
     string membraneMeta; // Membrane Metadata CID
@@ -51,7 +58,7 @@ struct NodeState {
     string[] childrenNodes; // Array of children node IDs
     address[] movementEndpoints; // Array of node specific execution endpoints
     string[] rootPath; // Path from root to current node
-    uint256[] signals; // Array of signals
+    AllNodeSignals nodeSignals;
 }
 
 interface IExecution {
