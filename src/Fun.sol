@@ -339,8 +339,4 @@ contract Fun is Fungido {
 
         return newContribution;
     }
-
-    function getChangePrevalence(uint256 nodeId_, uint256 signal_) public view returns (uint256) {
-        return options[keccak256(abi.encodePacked(nodeId_, signal_))][0];
-    }
 }

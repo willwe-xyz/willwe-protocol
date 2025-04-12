@@ -248,11 +248,6 @@ contract SignalInflationTests is InitTest, TokenPrep {
         assertEq(nodeData.nodeSignals.signalers[0], A1, "Signaler address mismatch");
 
         assertEq(nodeData.nodeSignals.inflationSignals.length, 1, "Inflation signals length mismatch");
-        assertEq(
-            F.getChangePrevalence(B1, signals[1]),
-            nodeData.nodeSignals.inflationSignals[0][1] * 1 gwei,
-            "Inflation signal value mismatch"
-        );
 
         assertEq(nodeData.nodeSignals.redistributionSignals.length, 1, "Redistribution signals length mismatch");
         assertEq(nodeData.nodeSignals.redistributionSignals[0].length, 2, "Redistribution signal array length mismatch");
