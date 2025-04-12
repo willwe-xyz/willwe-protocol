@@ -65,7 +65,7 @@ contract Fungido is ERC1155, PureUtils {
         M = IMembrane(membranes);
 
         name = "WillWe.xyz";
-        symbol = "WILL";
+        symbol = "Weeeeeeee";
 
         useBefore = true;
     }
