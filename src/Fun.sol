@@ -83,9 +83,9 @@ contract Fun is Fungido {
             if (i <= 1) {
                 if (signalValue == 0) continue;
                 if (i == 0) {
-                    emit InflationSignal(targetNode_, _msgSender(), signalValue, balanceOfSender);
-                } else {
                     emit MembraneSignal(targetNode_, _msgSender(), signalValue, balanceOfSender);
+                } else {
+                    emit InflationSignal(targetNode_, _msgSender(), signalValue, balanceOfSender);
                 }
                 _handleSpecialSignals(targetNode_, signalValue, i, balanceOfSender, userKey, signalsKey);
             } else {
@@ -97,7 +97,12 @@ contract Fun is Fungido {
         emit UserNodeSignal(targetNode_, toAddress(user), signals, balanceOfSender);
 
         if (impersonatingAddress == address(0)) {
-            userNodeSignals[keccak256(abi.encodePacked(_msgSender(), targetNode_))] = signals;
+            uint256[] memory lastSignals = userNodeSignals[signalsKey];
+            if (lastSignals.length >=2) {
+            if (signals[0] == 0) signals[0] = lastSignals[0];
+            if (signals[1] == 0) signals[1] = lastSignals[1];
+        }
+            userNodeSignals[signalsKey] = signals;
         }
     }
 

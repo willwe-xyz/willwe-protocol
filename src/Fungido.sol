@@ -592,14 +592,7 @@ contract Fungido is ERC1155, PureUtils {
         NodeData.rootPath = uintArrayToStringArray(getFidPath(nodeId));
     }
 
-    function getNodes(uint256[] memory nodeIds) external view returns (NodeState[] memory nodes) {
-        nodes = new NodeState[](nodeIds.length);
-        for (uint256 i = 0; i < nodeIds.length; i++) {
-            nodes[i] = getNodeData(nodeIds[i]);
-        }
-    }
 
-    ///
     function getAllNodesForRoot(address rootAddress, address userIfAny)
         external
         view
@@ -632,11 +625,11 @@ contract Fungido is ERC1155, PureUtils {
 
             if (mSignals.length > 0) {
                 if (mSignals.length > 0) {
-                    all.inflationSignals[i] =
-                        [mSignals[0], options[keccak256(abi.encodePacked(nodeId, toID(member), mSignals[0]))][2]];
-
                     all.membraneSignals[i] =
-                        [mSignals[1], options[keccak256(abi.encodePacked(nodeId, toID(member), mSignals[1]))][2]];
+                        [mSignals[1], options[keccak256(abi.encodePacked(nodeId, toID(member), mSignals[0]))][2]];
+
+                    all.inflationSignals[i] =
+                        [mSignals[0], options[keccak256(abi.encodePacked(nodeId, toID(member), mSignals[1]))][2]];
                 }
                 if (mSignals.length > 2) {
                     uint256[] memory redistribution = new uint256[](mSignals.length - 2);
