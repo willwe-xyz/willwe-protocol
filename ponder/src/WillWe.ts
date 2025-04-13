@@ -603,7 +603,10 @@ export async function handleUserNodeSignal({ event, context }) {
             console.error(`Error getting balance for ${user} in node ${nodeId}:`, error);
           }
         }
-        
+
+        // Define inflationSignals table if not already defined
+        const inflationSignals = db.inflationSignals || db.table("inflationSignals");
+
         // Deactivate any existing inflation signals from this user for this node
         await db.update(inflationSignals)
           .set({ isActive: false })
@@ -612,7 +615,7 @@ export async function handleUserNodeSignal({ event, context }) {
             eq(inflationSignals.who, user),
             eq(inflationSignals.isActive, true)
           ));
-        
+
         // Insert the new inflation signal
         await db.insert(inflationSignals).values({
           id: `${createEventId(event)}-inflation`,
@@ -626,7 +629,7 @@ export async function handleUserNodeSignal({ event, context }) {
           network: networkName.toLowerCase(),
           networkId: context.network?.id?.toString() || "11155420"
         }).onConflictDoNothing();
-        
+
         await saveEvent({
           db,
           event,
@@ -637,7 +640,7 @@ export async function handleUserNodeSignal({ event, context }) {
           network: context.network,
           rootNodeId: rootNodeId
         });
-        
+
         // Save as nodeSignal for backward compatibility
         await db.insert(nodeSignals).values({
           id: `${createEventId(event)}-inflation-signal`,
@@ -650,7 +653,7 @@ export async function handleUserNodeSignal({ event, context }) {
           network: networkName.toLowerCase(),
           networkId: context.network?.id?.toString() || "11155420"
         }).onConflictDoNothing();
-        
+
         console.log(`Inserted inflation signal for node ${nodeId} from ${user}`);
       }
       
