@@ -19,6 +19,7 @@ function getCurrentDeployments(): Deployments {
     const deploymentsMatch = content.match(/export const deployments\s*=\s*(\{[\s\S]*?\});/);
     
     if (deploymentsMatch && deploymentsMatch[1]) {
+      // eslint-disable-next-line no-eval
       return eval(`(${deploymentsMatch[1]})`);
     }
   } catch (err) {
@@ -56,6 +57,7 @@ export function readFoundryDeployments(): Deployments {
       // Contract name mapping for script deployments
       const contractNameToDeployKey = {
         'WillWe': 'WillWe',
+        'Fun': 'WillWe', // Map Fun to WillWe for consistency
         'Execution': 'Execution',
         'Membranes': 'Membranes',
         'Membrane': 'Membranes',
@@ -135,6 +137,10 @@ export function readFoundryDeployments(): Deployments {
     console.warn(`Error reading broadcast directory: ${err}`);
   }
 
+  // Manual deployment overrides for debugging
+  // Add the WillWe contract address for OP Sepolia
+  deployments.WillWe["11155420"] = "0xD31ED23C4D4E53AB87Ec4a4d8dFc42e2b4df4920";
+
   return deployments;
 }
 
@@ -155,7 +161,7 @@ export function readFoundryABIs(): ABIKP {
   
   // Alternative locations for ABIs
   const alternativeLocations: { [key: string]: string[] } = {
-    'WillWe': ['Fun.sol/WillWe.json']
+    'WillWe': ['Fun.sol/Fun.json'] // Now Fun contract is used as WillWe
   };
   
   const outDir = join(process.cwd(), '..', 'out');
@@ -200,6 +206,25 @@ export function readFoundryABIs(): ABIKP {
           } catch (err) {
             console.warn(`Error reading alternative ABI for ${contractName}: ${err}`);
           }
+        }
+      }
+    }
+    
+    // If we still don't have the ABI, check if we have a JSON file in the abis directory
+    if (!abiFound) {
+      const localAbiPath = join(process.cwd(), 'abis', `${contractName}.json`);
+      if (existsSync(localAbiPath)) {
+        try {
+          const fileContent = readFileSync(localAbiPath, 'utf8');
+          const artifactData = JSON.parse(fileContent);
+          
+          if (artifactData && artifactData.abi) {
+            abis[contractName] = artifactData.abi;
+            console.log(`Found ABI for ${contractName} at ${localAbiPath}`);
+            abiFound = true;
+          }
+        } catch (err) {
+          console.warn(`Error reading local ABI for ${contractName}: ${err}`);
         }
       }
     }

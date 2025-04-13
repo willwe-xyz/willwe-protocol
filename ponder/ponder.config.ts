@@ -153,7 +153,8 @@ export default createConfig({
   contracts: getAllContracts(),
   database: {
     kind: "postgres",
-    connectionString: process.env.PONDER_DATABASE_URL || "postgres://postgres:postgres@localhost:5432/ponder?schema=willwe"
+    connectionString: process.env.PONDER_DATABASE_URL || "postgres://postgres:postgres@localhost:5432/ponder",
+    schema: "willwe"
   },
 });
 
