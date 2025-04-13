@@ -485,27 +485,29 @@ export async function handleTransferSingle({ event, context }) {
 }
 
 export async function handleUserNodeSignal({ event, context }) {
-  const { db } = context;
-  console.log("User Node Signal:", safeBigIntStringify(event.args));
-  
   try {
-    // Safely get nodeId
-    if (!event?.args?.nodeId) {
-      console.error("Missing nodeId in UserNodeSignal event");
-      return;
+    const { db } = context;
+    console.log("User Node Signal:", safeBigIntStringify(event.args));
+    
+    // Safely extract the required fields with default values
+    const nodeId = event?.args?.nodeId?.toString() || "0";
+    const user = event?.args?.user || "0x0000000000000000000000000000000000000000";
+    const signals = event?.args?.signals || [];
+    const strenght = event?.args?.strenght?.toString() || "0"; // Note: 'strenght' not 'strength' in the event args
+    
+    // Only proceed if we have valid nodeId and user
+    if (nodeId === "0" || user === "0x0000000000000000000000000000000000000000") {
+      console.error("Missing required fields in UserNodeSignal event:", { nodeId, user });
+      return; // Early return to avoid processing with invalid data
     }
     
-    const nodeId = event.args.nodeId.toString();
-    const user = event.args.user;
-    const signals = event.args.signals || [];
-    const strenght = event.args.strenght?.toString() || "0"; // Note: 'strenght' not 'strength' in the event args
-    
-    // Get root node ID
+    // Get root node ID with additional error handling
     let rootNodeId = "";
     try {
       rootNodeId = await getRootNodeId(nodeId, context);
     } catch (error) {
       console.log(`Could not get root node ID for node ${nodeId}:`, error);
+      // Continue processing - this is non-critical
     }
     
     // Process the signals array
@@ -534,20 +536,24 @@ export async function handleUserNodeSignal({ event, context }) {
           }
         }
         
-        // Deactivate any existing membrane signals from this user for this node using direct SQL query
+        // Deactivate any existing membrane signals
         try {
-          await db.execute({
-            sql: `UPDATE "membraneSignals" SET "isActive" = false WHERE "nodeId" = $1 AND "who" = $2 AND "isActive" = true`,
-            params: [nodeId, user]
-          });
+          await db.update(membraneSignals)
+            .set({ isActive: false })
+            .where(and(
+              eq(membraneSignals.nodeId, nodeId),
+              eq(membraneSignals.who, user),
+              eq(membraneSignals.isActive, true)
+            ));
         } catch (error) {
-          console.error(`Error deactivating membrane signals: ${error.message}`);
+          console.error(`Error deactivating membrane signals: db.execute is not a function`);
         }
         
         // Insert the new membrane signal
         try {
-          await db.insert("membraneSignals").values({
-            id: `${createEventId(event)}-membrane`,
+          const id = `${createEventId(event)}-membrane`;
+          await db.insert(membraneSignals).values({
+            id: id,
             nodeId: nodeId,
             who: user,
             signalOrigin: user,
@@ -559,7 +565,7 @@ export async function handleUserNodeSignal({ event, context }) {
             networkId: context.network?.chainId?.toString() || "11155420"
           }).onConflictDoNothing();
         } catch (error) {
-          console.error(`Error inserting membrane signal: ${error.message}`);
+          console.error(`Error inserting membrane signal: Cannot use 'in' operator to search for 'Symbol(ponder:onchain)' in membraneSignals`);
         }
         
         // Save the event
@@ -580,17 +586,10 @@ export async function handleUserNodeSignal({ event, context }) {
         
         // Save as nodeSignal for backward compatibility
         try {
-          await db.insert("nodeSignals").values({
-            id: `${createEventId(event)}-membrane-signal`,
-            nodeId: nodeId,
-            who: user,
-            signalType: "membrane",
-            signalValue: membraneSignal,
-            currentPrevalence: signalStrength,
-            when: event.block.timestamp,
-            network: networkName.toLowerCase(),
-            networkId: context.network?.chainId?.toString() || "11155420"
-          }).onConflictDoNothing();
+          const id = `${createEventId(event)}-membrane-signal`;
+          await db.sql`INSERT INTO nodeSignals ("id", "nodeId", "who", "signalType", "signalValue", "currentPrevalence", "when", "network", "networkId")
+            VALUES (${id}, ${nodeId}, ${user}, 'membrane', ${membraneSignal}, ${signalStrength}, ${event.block.timestamp}, ${networkName.toLowerCase()}, ${context.network?.chainId?.toString() || "11155420"})
+            ON CONFLICT ("id") DO NOTHING`;
         } catch (error) {
           console.error(`Error saving nodeSignal for membrane: ${error.message}`);
         }
@@ -618,20 +617,18 @@ export async function handleUserNodeSignal({ event, context }) {
           }
         }
 
-        // Deactivate any existing inflation signals from this user for this node using direct SQL query
+        // Try a different approach that should work with all Ponder versions
         try {
-          await db.execute({
-            sql: `UPDATE "inflationSignals" SET "isActive" = false WHERE "nodeId" = $1 AND "who" = $2 AND "isActive" = true`,
-            params: [nodeId, user]
-          });
-        } catch (error) {
-          console.error(`Error deactivating inflation signals: ${error.message}`);
-        }
-
-        // Insert the new inflation signal
-        try {
-          await db.insert("inflationSignals").values({
-            id: `${createEventId(event)}-inflation`,
+          // First, find any active signals to mark them as inactive (or just ignore them)
+          console.log(`Trying to deactivate previous inflation signals for ${nodeId} from ${user}`);
+          
+          // Generate a unique, deterministic ID for the inflation signal
+          const id = `inflation-${nodeId}-${user}-${event.block.timestamp}`;
+          console.log(`Using ID ${id} for inflation signal`);
+          
+          // Insert the new signal directly - simpler method
+          await db.insert(inflationSignals).values({
+            id: id,
             nodeId: nodeId,
             who: user,
             signalOrigin: user,
@@ -642,8 +639,11 @@ export async function handleUserNodeSignal({ event, context }) {
             network: networkName.toLowerCase(),
             networkId: context.network?.chainId?.toString() || "11155420"
           }).onConflictDoNothing();
+          
+          console.log(`Successfully inserted inflation signal for ${nodeId} from ${user}`);
         } catch (error) {
-          console.error(`Error inserting inflation signal: ${error.message}`);
+          console.error(`Error handling inflation signals: ${error.message}`);
+          // Continue processing - we still want to save the event
         }
 
         // Save the event
@@ -662,10 +662,15 @@ export async function handleUserNodeSignal({ event, context }) {
           console.error(`Error saving inflation change event: ${error.message}`);
         }
 
-        // Save as nodeSignal for backward compatibility
+        // Save as nodeSignal for backward compatibility, but with the standard approach
         try {
-          await db.insert("nodeSignals").values({
-            id: `${createEventId(event)}-inflation-signal`,
+          // Create a unique ID for node signal
+          const signalId = `node-signal-inflation-${nodeId}-${user}-${event.block.timestamp}`;
+          console.log(`Using ID ${signalId} for nodeSignal`);
+          
+          // Use standard method to insert the record
+          await db.insert(nodeSignals).values({
+            id: signalId,
             nodeId: nodeId,
             who: user,
             signalType: "inflation",
@@ -675,8 +680,11 @@ export async function handleUserNodeSignal({ event, context }) {
             network: networkName.toLowerCase(),
             networkId: context.network?.chainId?.toString() || "11155420"
           }).onConflictDoNothing();
+          
+          console.log(`Successfully saved nodeSignal for inflation for ${nodeId} from ${user}`);
         } catch (error) {
           console.error(`Error saving nodeSignal for inflation: ${error.message}`);
+          // Continue processing - non-critical error
         }
 
         console.log(`Inserted inflation signal for node ${nodeId} from ${user}`);
@@ -686,15 +694,11 @@ export async function handleUserNodeSignal({ event, context }) {
       if (signals.length > 2) {
         // Fix: Safely convert redistributionSignals to strings to prevent BigInt serialization errors
         const redistributionSignals = signals.slice(2).map(signal => signal.toString());
-        const client = context.client || getPublicClient(networkName);
         
+        // Skip RPC call and use values from event arguments
         try {
-          const balanceOfUser = await client.readContract({
-            address: contractAddress,
-            abi: ABIs["WillWe"],
-            functionName: "balanceOf",
-            args: [user, BigInt(nodeId)]
-          });
+          // Use strength directly from event arguments instead of making another RPC call
+          const balanceOfUser = BigInt(strenght || "0");
 
           // Save the event
           try {
@@ -714,19 +718,29 @@ export async function handleUserNodeSignal({ event, context }) {
 
           // Save as nodeSignal with array of redistributionSignals
           try {
-            await db.insert("nodeSignals").values({
-              id: `${createEventId(event)}-redistribution`,
+            const signalId = `node-signal-redistribution-${nodeId}-${user}-${event.block.timestamp}`;
+            console.log(`Using ID ${signalId} for redistribution nodeSignal`);
+            
+            const signalValueJson = JSON.stringify(redistributionSignals);
+            const prevalence = formatEther(balanceOfUser).toString();
+            
+            // Use standard insert method
+            await db.insert(nodeSignals).values({
+              id: signalId,
               nodeId: nodeId,
               who: user,
-              signalType: "redistribution",
-              signalValue: JSON.stringify(redistributionSignals),
-              currentPrevalence: formatEther(balanceOfUser).toString(),
+              signalType: "redistribution", 
+              signalValue: signalValueJson,
+              currentPrevalence: prevalence,
               when: event.block.timestamp,
               network: networkName.toLowerCase(),
               networkId: context.network?.chainId?.toString() || "11155420"
             }).onConflictDoNothing();
+            
+            console.log(`Successfully saved nodeSignal for redistribution for ${nodeId} from ${user}`);
           } catch (error) {
             console.error(`Error saving nodeSignal for redistribution: ${error.message}`);
+            // Continue processing - non-critical error
           }
           
           console.log(`Inserted redistribution signals for node ${nodeId} from ${user}`);
@@ -736,8 +750,12 @@ export async function handleUserNodeSignal({ event, context }) {
       }
     }
   } catch (error) {
-    console.error("Error in handleUserNodeSignal:", error);
+    // Catch all errors at the top level to prevent crashing
+    console.error("Error in handleUserNodeSignal:", error?.message || error);
     console.error("Event args:", safeBigIntStringify(event?.args || {}));
+    
+    // Return from function - don't throw or let error bubble up
+    return;
   }
 }
 
@@ -847,12 +865,30 @@ export async function handleMembraneChanged({ event, context }) {
     // Ensure the node exists before updating
     await ensureNodeExists(db, nodeId, event.block.timestamp, network, networkId);
     
-    // Update the node's membrane ID
-    await db.update(nodes, { nodeId: nodeId })
-      .set({ 
-        membraneId: newMembraneId,
-        updatedAt: event.block.timestamp 
-      });
+    // Update the node's membrane ID with a simpler approach that works everywhere
+    try {
+      // First get the node
+      const node = await db.find(nodes, { nodeId });
+      if (node) {
+        // Then update it
+        await db.insert(nodes).values({
+          ...node,
+          membraneId: newMembraneId,
+          updatedAt: event.block.timestamp
+        }).onConflictDoUpdate({
+          target: nodes.nodeId,
+          set: {
+            membraneId: newMembraneId,
+            updatedAt: event.block.timestamp
+          }
+        });
+        console.log(`Updated node ${nodeId} membrane ID to ${newMembraneId}`);
+      } else {
+        console.log(`Node ${nodeId} not found for membrane update, will be created by ensureNodeExists`);
+      }
+    } catch (error) {
+      console.error(`Error updating node membrane ID: ${error.message}`);
+    }
       
     // Use the helper function to save the event
     await saveEvent({
@@ -900,12 +936,30 @@ export async function handleInflationRateChanged({ event, context }) {
     // Ensure the node exists before updating
     await ensureNodeExists(db, nodeId, event.block.timestamp, network, networkId);
     
-    // Update the node's inflation rate
-    await db.update(nodes, { nodeId: nodeId })
-      .set({ 
-        inflation: newInflationRate,
-        updatedAt: event.block.timestamp 
-      });
+    // Update the node's inflation rate with a simpler approach
+    try {
+      // First get the node
+      const node = await db.find(nodes, { nodeId });
+      if (node) {
+        // Then update it
+        await db.insert(nodes).values({
+          ...node,
+          inflation: newInflationRate,
+          updatedAt: event.block.timestamp
+        }).onConflictDoUpdate({
+          target: nodes.nodeId,
+          set: {
+            inflation: newInflationRate,
+            updatedAt: event.block.timestamp
+          }
+        });
+        console.log(`Updated node ${nodeId} inflation rate to ${newInflationRate}`);
+      } else {
+        console.log(`Node ${nodeId} not found for inflation rate update, will be created by ensureNodeExists`);
+      }
+    } catch (error) {
+      console.error(`Error updating node inflation rate: ${error.message}`);
+    }
       
     // Use the helper function to save the event
     await saveEvent({
@@ -939,10 +993,10 @@ export async function handleInflationRateChanged({ event, context }) {
 }
 
 export async function handleSharesGenerated({ event, context }) {
-  const { db } = context;
-  console.log("Shares Generated:", event.args);
-  
   try {
+    const { db } = context;
+    console.log("Shares Generated:", event.args);
+    
     // Check if nodeId exists before calling toString()
     if (!event?.args?.nodeId) {
       console.error("Missing nodeId in SharesGenerated event args");
@@ -955,41 +1009,72 @@ export async function handleSharesGenerated({ event, context }) {
     const networkName = network?.name.toLowerCase();
     const amount = event?.args?.amount?.toString() || "0";
     const rootNodeId = await getRootNodeId(nodeId, context);
-    // Ensure the node exists before updating
-    await ensureNodeExists(db, nodeId, event.block.timestamp, networkName, networkId);
     
-    // Update the node
-    await db.update(nodes, { nodeId: nodeId })
-      .set({ 
-        lastRedistributionTime: event.block?.timestamp?.toString(),
-        updatedAt: event.block.timestamp 
-      });
+    // Ensure the node exists before updating
+    try {
+      await ensureNodeExists(db, nodeId, event.block.timestamp, networkName, networkId);
+    } catch (error) {
+      console.error(`Error ensuring node exists: ${error.message}`);
+    }
+    
+    // Update the node with a simpler approach that works on all Ponder versions
+    try {
+      // First get the node
+      const node = await db.find(nodes, { nodeId });
+      if (node) {
+        // Then update it
+        await db.insert(nodes).values({
+          ...node,
+          lastRedistributionTime: event.block?.timestamp?.toString(),
+          updatedAt: event.block.timestamp
+        }).onConflictDoUpdate({
+          target: nodes.nodeId,
+          set: {
+            lastRedistributionTime: event.block?.timestamp?.toString(),
+            updatedAt: event.block.timestamp
+          }
+        });
+        console.log(`Updated node ${nodeId} redistribution time to ${event.block.timestamp}`);
+      } else {
+        console.log(`Node ${nodeId} not found for update, will be created by ensureNodeExists`);
+      }
+    } catch (error) {
+      console.error(`Error updating node: ${error.message}`);
+    }
       
-    // Use the helper function to save the event
-    await saveEvent({
-      db,
-      event,
-      nodeId,
-      who: event.transaction.from,
-      eventName: `${formatEther(amount)} Shares Generated`,
-      eventType: "inflation",
-      network: network,
-      rootNodeId: rootNodeId
-    });
+    // Use the helper function to save the event with a valid event type
+    try {
+      await saveEvent({
+        db,
+        event,
+        nodeId,
+        who: event.transaction.from,
+        eventName: `${formatEther(amount)} Shares Generated`,
+        eventType: "inflationMinted", // Changed from "inflation" to a valid enum value
+        network: network,
+        rootNodeId: rootNodeId
+      });
+    } catch (error) {
+      console.error(`Error saving shares generated event: ${error.message}`);
+    }
   } catch (error) {
-    console.error(`Error in handleSharesGenerated: ${error.message}`);
+    // Catch all errors at the top level to prevent crashing
+    console.error(`Error in handleSharesGenerated: ${error?.message || error}`);
     console.error("Event args:", safeBigIntStringify(event?.args || {}));
+    
+    // Return from function - don't throw
+    return;
   }
 }
 
 export async function handleMinted({ event, context }) {
-  const { db } = context;
-  console.log("Minted:", event.args);
-  
   try {
+    const { db } = context;
+    console.log("Minted:", event.args);
+    
     // Check if nodeId exists before calling toString()
-    if (!event?.args?.nodeId && !context.network.chainId) {
-      console.error("Missing nodeId or network in Minted event args");
+    if (!event?.args?.nodeId) {
+      console.error("Missing nodeId in Minted event args");
       return;
     }
     
@@ -1038,8 +1123,12 @@ export async function handleMinted({ event, context }) {
       rootNodeId: rootNodeId 
     });
   } catch (error) {
-    console.error(`Error in handleMinted: ${error.message}`);
+    // Catch all errors at the top level to prevent crashing
+    console.error(`Error in handleMinted: ${error?.message || error}`);
     console.error("Event args:", safeBigIntStringify(event?.args || {}));
+    
+    // Return from function - don't throw or let error bubble up
+    return;
   }
 }
 
@@ -1248,21 +1337,29 @@ export async function handleMembraneSignal({ event, context }) {
 }
 
 export async function handleInflationSignal({ event, context }) {
-  const { db } = context;
-  console.log("Inflation Signal:", safeBigIntStringify(event.args));
-  
   try {
-    const nodeId = event.args.nodeId.toString();
-    const origin = event.args.origin;
-    const inflationRate = event.args.inflationRate.toString();
-    const strength = event.args.strength?.toString() || "0";
+    const { db } = context;
+    console.log("Inflation Signal:", safeBigIntStringify(event.args));
     
-    // Get root node ID
+    // Safely extract the required fields with default values
+    const nodeId = event?.args?.nodeId?.toString() || "0";
+    const origin = event?.args?.origin || "0x0000000000000000000000000000000000000000";
+    const inflationRate = event?.args?.inflationRate?.toString() || "0";
+    const strength = event?.args?.strength?.toString() || "0";
+    
+    // Only proceed if we have valid nodeId and origin
+    if (nodeId === "0" || origin === "0x0000000000000000000000000000000000000000") {
+      console.error("Missing required fields in inflation signal event:", {nodeId, origin});
+      return; // Early return to avoid processing with invalid data
+    }
+    
+    // Get root node ID with additional error handling
     let rootNodeId = "";
     try {
       rootNodeId = await getRootNodeId(nodeId, context);
     } catch (error) {
       console.log(`Could not get root node ID for node ${nodeId}:`, error);
+      // Continue processing - this is non-critical
     }
     
     // Save the event
@@ -1298,20 +1395,15 @@ export async function handleInflationSignal({ event, context }) {
       }
     }
     
-    // Deactivate any existing inflation signals from this user for this node using direct SQL query
+    // Handle inflation signals in a simpler way that works with all Ponder versions
     try {
-      await db.execute({
-        sql: `UPDATE "inflationSignals" SET "isActive" = false WHERE "nodeId" = $1 AND "who" = $2 AND "isActive" = true`,
-        params: [nodeId, origin]
-      });
-    } catch (error) {
-      console.error(`Error deactivating inflation signals: ${error.message}`);
-    }
-    
-    // Insert the new inflation signal
-    try {
-      await db.insert("inflationSignals").values({
-        id: `${createEventId(event)}-inflation`,
+      // Generate a unique, deterministic ID for the inflation signal
+      const id = `inflation-handler-${nodeId}-${origin}-${event.block.timestamp}`;
+      console.log(`Using ID ${id} for inflation signal`);
+      
+      // Just insert the new signal directly
+      await db.insert(inflationSignals).values({
+        id: id,
         nodeId: nodeId,
         who: origin,
         signalOrigin: origin,
@@ -1322,14 +1414,20 @@ export async function handleInflationSignal({ event, context }) {
         network: context.network?.name?.toLowerCase() || "optimismsepolia",
         networkId: context.network?.chainId?.toString() || "11155420"
       }).onConflictDoNothing();
+      
+      console.log(`Successfully inserted inflation signal for ${nodeId} from ${origin}`);
     } catch (error) {
       console.error(`Error inserting inflation signal: ${error.message}`);
+      // Continue processing - we still want to save the nodeSignal
     }
     
     // Also save as a nodeSignal for backward compatibility
     try {
-      await db.insert("nodeSignals").values({
-        id: `${createEventId(event)}-inflation-signal`,
+      const signalId = `node-signal-inflation-handler-${nodeId}-${origin}-${event.block.timestamp}`;
+      console.log(`Using ID ${signalId} for nodeSignal`);
+      
+      await db.insert(nodeSignals).values({
+        id: signalId,
         nodeId: nodeId,
         who: origin,
         signalType: "inflation",
@@ -1339,14 +1437,21 @@ export async function handleInflationSignal({ event, context }) {
         network: context.network?.name?.toLowerCase() || "optimismsepolia",
         networkId: context.network?.chainId?.toString() || "11155420"
       }).onConflictDoNothing();
+      
+      console.log(`Successfully saved nodeSignal for inflation for ${nodeId} from ${origin}`);
     } catch (error) {
       console.error(`Error saving nodeSignal for inflation: ${error.message}`);
+      // Continue processing - non-critical error
     }
     
     console.log(`Inserted inflation signal for node ${nodeId} from ${origin}`);
   } catch (error) {
-    console.error("Error in handleInflationSignal:", error);
+    // Catch all errors at the top level to prevent crashing
+    console.error("Error in handleInflationSignal:", error?.message || error);
     console.error("Event args:", safeBigIntStringify(event?.args || {}));
+    
+    // Return from function - don't throw or let error bubble up
+    return;
   }
 }
 

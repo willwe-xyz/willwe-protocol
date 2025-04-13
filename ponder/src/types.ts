@@ -26,14 +26,22 @@ export interface NodeBasicInfo {
     createdAt: string;
   }
   
+  export interface AllNodeSignals {
+    signalers: string[];
+    inflationSignals: [string, string][]; // [address, value] pairs
+    membraneSignals: [string, string][]; // [address, value] pairs
+    redistributionSignals: string[][]; // Array of arrays of strings
+  }
+  
   export interface NodeState {
-    basicInfo: NodeBasicInfo;
+    basicInfo: any; // The contract returns either an array or an object
     membraneMeta: string;
     membersOfNode: string[];
     childrenNodes: string[];
     movementEndpoints: string[];
     rootPath: string[];
-    signals: string[]; 
+    nodeSignals?: AllNodeSignals; // Optional because older versions might still use 'signals'
+    signals?: string[]; // Kept for backwards compatibility
   }
   
   export interface MovementInfo {
@@ -187,31 +195,106 @@ export interface NodeBasicInfo {
   // Type guard functions
   ///////////////////////////////////////////
   export const isValidNodeState = (data: any): data is NodeState => {
-    return (
-      Array.isArray(data?.basicInfo) &&
-      data.basicInfo.length === 12 &&
-      typeof data.membraneMeta === 'string' &&
-      Array.isArray(data.membersOfNode) &&
-      Array.isArray(data.childrenNodes) &&
-      Array.isArray(data.rootPath) &&
-      Array.isArray(data.signals)
-    );
+    if (!data) return false;
+    
+    // Check if membraneMeta exists and is a string
+    if (typeof data.membraneMeta !== 'string') return false;
+    
+    // Check that all required array properties exist
+    if (!Array.isArray(data.membersOfNode) ||
+        !Array.isArray(data.childrenNodes) ||
+        !Array.isArray(data.rootPath)) {
+      return false;
+    }
+    
+    // Check for either signals or nodeSignals (at least one should exist)
+    if (!Array.isArray(data.signals) && !data.nodeSignals) {
+      return false;
+    }
+    
+    // If nodeSignals exists, validate its structure
+    if (data.nodeSignals) {
+      if (!Array.isArray(data.nodeSignals.signalers)) return false;
+      // Don't require the signal arrays as they might be empty
+    }
+    
+    // Check if basicInfo exists (can be either array or object)
+    if (!data.basicInfo) return false;
+    
+    // If basicInfo is an array, check that it has 12 elements
+    if (Array.isArray(data.basicInfo) && data.basicInfo.length !== 12) {
+      return false;
+    }
+    
+    // If basicInfo is an object, check for required fields
+    if (!Array.isArray(data.basicInfo) && typeof data.basicInfo === 'object') {
+      const requiredKeys = ['nodeId', 'inflation', 'membraneId', 'totalSupply'];
+      for (const key of requiredKeys) {
+        if (data.basicInfo[key] === undefined) return false;
+      }
+    }
+    
+    return true;
   };
   
   
   export const transformNodeData = (nodeData: NodeState): NodeBasicInfo => {
+    // Handle the case where basicInfo is already an object
+    if (!Array.isArray(nodeData.basicInfo) && typeof nodeData.basicInfo === 'object') {
+      const basicInfo = nodeData.basicInfo;
+      return {
+        nodeId: basicInfo.nodeId?.toString() || "0",
+        inflation: basicInfo.inflation?.toString() || "0",
+        balanceAnchor: basicInfo.balanceAnchor?.toString() || "0",
+        balanceBudget: basicInfo.balanceBudget?.toString() || "0",
+        rootValuationBudget: basicInfo.rootValuationBudget?.toString() || "0",
+        rootValuationReserve: basicInfo.rootValuationReserve?.toString() || "0",
+        membraneId: basicInfo.membraneId?.toString() || "0",
+        eligibilityPerSec: basicInfo.eligibilityPerSec?.toString() || "0",
+        lastRedistribution: basicInfo.lastRedistribution?.toString() || "0",
+        balanceOfUser: basicInfo.balanceOfUser?.toString() || "0",
+        endpointOfUserForNode: basicInfo.endpointOfUserForNode?.toString() || "0x0000000000000000000000000000000000000000",
+        totalSupply: basicInfo.totalSupply?.toString() || "0"
+      };
+    }
+    
+    // Handle the case where basicInfo is an array
+    if (Array.isArray(nodeData.basicInfo)) {
+      // Safely handle array indexes
+      const safeGet = (index: number, defaultValue: string = "0") => {
+        return (nodeData.basicInfo[index] !== undefined) ? 
+          nodeData.basicInfo[index]?.toString() : defaultValue;
+      };
+      
+      return {
+        nodeId: safeGet(0),
+        inflation: safeGet(1),
+        balanceAnchor: safeGet(2),
+        balanceBudget: safeGet(3),
+        rootValuationBudget: safeGet(4),
+        rootValuationReserve: safeGet(5),
+        membraneId: safeGet(6),
+        eligibilityPerSec: safeGet(7),
+        lastRedistribution: safeGet(8),
+        balanceOfUser: safeGet(9),
+        endpointOfUserForNode: safeGet(10, "0x0000000000000000000000000000000000000000"),
+        totalSupply: safeGet(11)
+      };
+    }
+    
+    // Default empty response
     return {
-      nodeId: nodeData.basicInfo[0],
-      inflation: nodeData.basicInfo[1],
-      balanceAnchor: nodeData.basicInfo[2],
-      balanceBudget: nodeData.basicInfo[3],
-      rootValuationBudget: nodeData.basicInfo[4],
-      rootValuationReserve: nodeData.basicInfo[5],
-      membraneId: nodeData.basicInfo[6],
-      eligibilityPerSec: nodeData.basicInfo[7],
-      lastRedistribution: nodeData.basicInfo[8],
-      balanceOfUser: nodeData.basicInfo[9],
-      endpointOfUserForNode: nodeData.basicInfo[10],
-      totalSupply: nodeData.basicInfo[11]
+      nodeId: "0",
+      inflation: "0",
+      balanceAnchor: "0",
+      balanceBudget: "0",
+      rootValuationBudget: "0",
+      rootValuationReserve: "0",
+      membraneId: "0",
+      eligibilityPerSec: "0",
+      lastRedistribution: "0",
+      balanceOfUser: "0",
+      endpointOfUserForNode: "0x0000000000000000000000000000000000000000",
+      totalSupply: "0"
     };
   };

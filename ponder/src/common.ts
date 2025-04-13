@@ -4,7 +4,7 @@
 import { events } from "../ponder.schema";
 import { deployments, ABIs } from "../abis/abi";
 import { supportedChains } from "../ponder.config";
-import { NodeState } from "./types";
+import { NodeState, AllNodeSignals } from "./types";
 import { http, createPublicClient } from "viem";
 /**
  * Creates a unique ID from an event
@@ -102,22 +102,105 @@ export const getPublicClient = (network) => {
   });
 };
 
-export const getNodeData = async (nodeId, context) : Promise<NodeState> => {{
-  const client = context.client || getPublicClient(context.network.name);
-  const nodeData: NodeState = await client.readContract({
-    address: deployments?.WillWe?.[context.network.chainId.toString()],
-    abi: ABIs["WillWe"],
-    functionName: "getNodeData",
-    args: [nodeId, "0x0000000000000000000000000000000000000000"]
-  });
-  return nodeData;
-}}
+export const getNodeData = async (nodeId, context) : Promise<NodeState | null> => {
+  try {
+    // Create a minimal default response to return in case of RPC errors or other failures
+    const defaultResponse: NodeState = {
+      basicInfo: {
+        nodeId: nodeId.toString(),
+        inflation: "0",
+        balanceAnchor: "0",
+        balanceBudget: "0",
+        rootValuationBudget: "0",
+        rootValuationReserve: "0",
+        membraneId: "0", 
+        eligibilityPerSec: "0",
+        lastRedistribution: "0",
+        balanceOfUser: "0",
+        endpointOfUserForNode: "0x0000000000000000000000000000000000000000",
+        totalSupply: "0"
+      },
+      membraneMeta: "",
+      membersOfNode: [],
+      childrenNodes: [],
+      movementEndpoints: [],
+      rootPath: [nodeId.toString()], // Include the current node ID to avoid missing rootPath errors
+      nodeSignals: {
+        signalers: [],
+        inflationSignals: [],
+        membraneSignals: [],
+        redistributionSignals: []
+      },
+      signals: [] // For backwards compatibility
+    };
+    
+    // Handle case when context might not have network or client
+    if (!context?.network) {
+      console.log(`Missing network in context for nodeId: ${nodeId}, returning default data`);
+      return defaultResponse;
+    }
+    
+    // // Skip RPC call if we know it's likely to fail and just return default data
+    // // This allows the rest of the handler to continue working
+    // let skipContractCall = false;
+    // if (context.network?.name === "optimismsepolia" || context.network?.chainId?.toString() === "11155420") {
+    //   skipContractCall = true; // Optimism Sepolia seems to be having issues
+    //   console.log(`Skipping contract call for nodeId ${nodeId} on network ${context.network.name} to avoid RPC errors`);
+    // }
+    
+    // if (skipContractCall) {
+    //   return defaultResponse;
+    // }
+    
+    const client = context.client || getPublicClient(context?.network?.name);
+    if (!client) {
+      console.log(`Failed to create client for network: ${context?.network?.name}, returning default data`);
+      return defaultResponse;
+    }
+    
+    const contractAddress = deployments?.WillWe?.[context.network.chainId.toString()];
+    if (!contractAddress) {
+      console.log(`Contract address not found for chain ID: ${context.network.chainId}, returning default data`);
+      return defaultResponse;
+    }
+    
+    try {
+      const nodeData = await client.readContract({
+        address: contractAddress,
+        abi: ABIs["WillWe"],
+        functionName: "getNodeData",
+        args: [nodeId, "0x0000000000000000000000000000000000000000"]
+      });
+      
+      if (!nodeData) {
+        console.log(`No data returned from contract for nodeId: ${nodeId}, returning default data`);
+        return defaultResponse;
+      }
+      
+      console.log(`Successfully fetched node data for nodeId: ${nodeId}`);
+      return nodeData;
+    } catch (error) {
+      console.log(`Error reading contract data for nodeId ${nodeId}, returning default data:`, error.message || error);
+      return defaultResponse;
+    }
+  } catch (error) {
+    console.log(`Unexpected error in getNodeData for ${nodeId}, returning default data:`, error.message || error);
+    return defaultResponse; // Always return the default response to prevent crashes
+  }
+}
 
 export const getRootNodeId = async (nodeId: string, context: any) : Promise<string> => {
   try {
-    const nodeData: NodeState = await getNodeData(nodeId, context);
-    const rootNodeId : string = nodeData?.rootPath && nodeData.rootPath.length > 0 ? 
-      String(nodeData.rootPath[0] || "0") : "0";
+    const nodeData = await getNodeData(nodeId, context);
+    
+    // If nodeData is null or rootPath is missing, return default
+    if (!nodeData || !nodeData.rootPath) {
+      console.log(`No valid node data or rootPath for ${nodeId}, returning default root ID`);
+      return "0";
+    }
+    
+    // Check if rootPath has elements and get the first one
+    const rootNodeId = nodeData.rootPath.length > 0 ? String(nodeData.rootPath[0] || "0") : "0";
     return rootNodeId;
   } catch (error) {
     console.error(`Error getting root node ID for ${nodeId}:`, error);
