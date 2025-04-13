@@ -1,6 +1,6 @@
 // This file exports event handlers for WillWe contract events
 import { ponder, type Event, type Context } from "ponder:registry";
-import { events, memberships, nodes, endpoints, nodeSignals, EventType } from "../ponder.schema";
+import { events, memberships, nodes, endpoints, nodeSignals, inflationSignals, EventType } from "../ponder.schema";
 import { createPublicClient, formatEther, http } from "viem";
 import { supportedChains } from "../ponder.config";
 import { NodeState } from "./types";
@@ -498,7 +498,7 @@ export async function handleUserNodeSignal({ event, context }) {
     const nodeId = event.args.nodeId.toString();
     const user = event.args.user;
     const signals = event.args.signals || [];
-    const strength = event.args.strength?.toString() || "0";
+    const strenght = event.args.strenght?.toString() || "0"; // Note: 'strenght' not 'strength' in the event args
     
     // Get root node ID
     let rootNodeId = "";
@@ -518,7 +518,7 @@ export async function handleUserNodeSignal({ event, context }) {
       const membraneSignal = signals[0]?.toString();
       if (membraneSignal && membraneSignal !== "0") {
         // Get the current user's balance to use as signal strength if not provided
-        let signalStrength = strength;
+        let signalStrength = strenght;
         if (signalStrength === "0") {
           try {
             const client = context.client || getPublicClient(networkName);
@@ -534,52 +534,66 @@ export async function handleUserNodeSignal({ event, context }) {
           }
         }
         
-        // Deactivate any existing membrane signals from this user for this node
-        await db.update(membraneSignals)
-          .set({ isActive: false })
-          .where(and(
-            eq(membraneSignals.nodeId, nodeId),
-            eq(membraneSignals.who, user),
-            eq(membraneSignals.isActive, true)
-          ));
+        // Deactivate any existing membrane signals from this user for this node using direct SQL query
+        try {
+          await db.execute({
+            sql: `UPDATE "membraneSignals" SET "isActive" = false WHERE "nodeId" = $1 AND "who" = $2 AND "isActive" = true`,
+            params: [nodeId, user]
+          });
+        } catch (error) {
+          console.error(`Error deactivating membrane signals: ${error.message}`);
+        }
         
         // Insert the new membrane signal
-        await db.insert(membraneSignals).values({
-          id: `${createEventId(event)}-membrane`,
-          nodeId: nodeId,
-          who: user,
-          signalOrigin: user,
-          membraneId: membraneSignal,
-          strength: signalStrength,
-          when: event.block.timestamp,
-          isActive: true,
-          network: networkName.toLowerCase(),
-          networkId: context.network?.id?.toString() || "11155420"
-        }).onConflictDoNothing();
+        try {
+          await db.insert("membraneSignals").values({
+            id: `${createEventId(event)}-membrane`,
+            nodeId: nodeId,
+            who: user,
+            signalOrigin: user,
+            membraneId: membraneSignal,
+            strength: signalStrength,
+            when: event.block.timestamp,
+            isActive: true,
+            network: networkName.toLowerCase(),
+            networkId: context.network?.chainId?.toString() || "11155420"
+          }).onConflictDoNothing();
+        } catch (error) {
+          console.error(`Error inserting membrane signal: ${error.message}`);
+        }
         
-        await saveEvent({
-          db,
-          event,
-          nodeId,
-          who: user,
-          eventName: "For Membrane Change",
-          eventType: "membraneSignal",
-          network: context.network,
-          rootNodeId: rootNodeId
-        });
+        // Save the event
+        try {
+          await saveEvent({
+            db,
+            event,
+            nodeId,
+            who: user,
+            eventName: "For Membrane Change",
+            eventType: "membraneSignal",
+            network: context.network,
+            rootNodeId: rootNodeId
+          });
+        } catch (error) {
+          console.error(`Error saving membrane change event: ${error.message}`);
+        }
         
         // Save as nodeSignal for backward compatibility
-        await db.insert(nodeSignals).values({
-          id: `${createEventId(event)}-membrane-signal`,
-          nodeId: nodeId,
-          who: user,
-          signalType: "membrane",
-          signalValue: membraneSignal,
-          currentPrevalence: signalStrength,
-          when: event.block.timestamp,
-          network: networkName.toLowerCase(),
-          networkId: context.network?.id?.toString() || "11155420"
-        }).onConflictDoNothing();
+        try {
+          await db.insert("nodeSignals").values({
+            id: `${createEventId(event)}-membrane-signal`,
+            nodeId: nodeId,
+            who: user,
+            signalType: "membrane",
+            signalValue: membraneSignal,
+            currentPrevalence: signalStrength,
+            when: event.block.timestamp,
+            network: networkName.toLowerCase(),
+            networkId: context.network?.chainId?.toString() || "11155420"
+          }).onConflictDoNothing();
+        } catch (error) {
+          console.error(`Error saving nodeSignal for membrane: ${error.message}`);
+        }
         
         console.log(`Inserted membrane signal for node ${nodeId} from ${user}`);
       }
@@ -588,7 +602,7 @@ export async function handleUserNodeSignal({ event, context }) {
       const inflationSignal = signals[1]?.toString();
       if (inflationSignal && inflationSignal !== "0") {
         // Get the current user's balance to use as signal strength if not provided
-        let signalStrength = strength;
+        let signalStrength = strenght;
         if (signalStrength === "0") {
           try {
             const client = context.client || getPublicClient(networkName);
@@ -604,55 +618,66 @@ export async function handleUserNodeSignal({ event, context }) {
           }
         }
 
-        // Define inflationSignals table if not already defined
-        const inflationSignals = db.inflationSignals || db.table("inflationSignals");
-
-        // Deactivate any existing inflation signals from this user for this node
-        await db.update(inflationSignals)
-          .set({ isActive: false })
-          .where(and(
-            eq(inflationSignals.nodeId, nodeId),
-            eq(inflationSignals.who, user),
-            eq(inflationSignals.isActive, true)
-          ));
+        // Deactivate any existing inflation signals from this user for this node using direct SQL query
+        try {
+          await db.execute({
+            sql: `UPDATE "inflationSignals" SET "isActive" = false WHERE "nodeId" = $1 AND "who" = $2 AND "isActive" = true`,
+            params: [nodeId, user]
+          });
+        } catch (error) {
+          console.error(`Error deactivating inflation signals: ${error.message}`);
+        }
 
         // Insert the new inflation signal
-        await db.insert(inflationSignals).values({
-          id: `${createEventId(event)}-inflation`,
-          nodeId: nodeId,
-          who: user,
-          signalOrigin: user,
-          inflationValue: inflationSignal,
-          strength: signalStrength,
-          when: event.block.timestamp,
-          isActive: true,
-          network: networkName.toLowerCase(),
-          networkId: context.network?.id?.toString() || "11155420"
-        }).onConflictDoNothing();
+        try {
+          await db.insert("inflationSignals").values({
+            id: `${createEventId(event)}-inflation`,
+            nodeId: nodeId,
+            who: user,
+            signalOrigin: user,
+            inflationValue: inflationSignal,
+            strength: signalStrength,
+            when: event.block.timestamp,
+            isActive: true,
+            network: networkName.toLowerCase(),
+            networkId: context.network?.chainId?.toString() || "11155420"
+          }).onConflictDoNothing();
+        } catch (error) {
+          console.error(`Error inserting inflation signal: ${error.message}`);
+        }
 
-        await saveEvent({
-          db,
-          event,
-          nodeId,
-          who: user,
-          eventName: "For Inflation Change",
-          eventType: "inflateSignal",
-          network: context.network,
-          rootNodeId: rootNodeId
-        });
+        // Save the event
+        try {
+          await saveEvent({
+            db,
+            event,
+            nodeId,
+            who: user,
+            eventName: "For Inflation Change",
+            eventType: "inflateSignal",
+            network: context.network,
+            rootNodeId: rootNodeId
+          });
+        } catch (error) {
+          console.error(`Error saving inflation change event: ${error.message}`);
+        }
 
         // Save as nodeSignal for backward compatibility
-        await db.insert(nodeSignals).values({
-          id: `${createEventId(event)}-inflation-signal`,
-          nodeId: nodeId,
-          who: user,
-          signalType: "inflation",
-          signalValue: inflationSignal,
-          currentPrevalence: signalStrength,
-          when: event.block.timestamp,
-          network: networkName.toLowerCase(),
-          networkId: context.network?.id?.toString() || "11155420"
-        }).onConflictDoNothing();
+        try {
+          await db.insert("nodeSignals").values({
+            id: `${createEventId(event)}-inflation-signal`,
+            nodeId: nodeId,
+            who: user,
+            signalType: "inflation",
+            signalValue: inflationSignal,
+            currentPrevalence: signalStrength,
+            when: event.block.timestamp,
+            network: networkName.toLowerCase(),
+            networkId: context.network?.chainId?.toString() || "11155420"
+          }).onConflictDoNothing();
+        } catch (error) {
+          console.error(`Error saving nodeSignal for inflation: ${error.message}`);
+        }
 
         console.log(`Inserted inflation signal for node ${nodeId} from ${user}`);
       }
@@ -671,29 +696,38 @@ export async function handleUserNodeSignal({ event, context }) {
             args: [user, BigInt(nodeId)]
           });
 
-          await saveEvent({
-            db,
-            event,
-            nodeId,
-            who: user,
-            eventName: "Changed Redistribution",
-            eventType: "redistributionSignal",
-            network: context.network,
-            rootNodeId: rootNodeId
-          });
+          // Save the event
+          try {
+            await saveEvent({
+              db,
+              event,
+              nodeId,
+              who: user,
+              eventName: "Changed Redistribution",
+              eventType: "redistributionSignal",
+              network: context.network,
+              rootNodeId: rootNodeId
+            });
+          } catch (error) {
+            console.error(`Error saving redistribution change event: ${error.message}`);
+          }
 
           // Save as nodeSignal with array of redistributionSignals
-          await db.insert(nodeSignals).values({
-            id: `${createEventId(event)}-redistribution`,
-            nodeId: nodeId,
-            who: user,
-            signalType: "redistribution",
-            signalValue: JSON.stringify(redistributionSignals),
-            currentPrevalence: formatEther(balanceOfUser).toString(),
-            when: event.block.timestamp,
-            network: networkName.toLowerCase(),
-            networkId: context.network?.id?.toString() || "11155420"
-          }).onConflictDoNothing();
+          try {
+            await db.insert("nodeSignals").values({
+              id: `${createEventId(event)}-redistribution`,
+              nodeId: nodeId,
+              who: user,
+              signalType: "redistribution",
+              signalValue: JSON.stringify(redistributionSignals),
+              currentPrevalence: formatEther(balanceOfUser).toString(),
+              when: event.block.timestamp,
+              network: networkName.toLowerCase(),
+              networkId: context.network?.chainId?.toString() || "11155420"
+            }).onConflictDoNothing();
+          } catch (error) {
+            console.error(`Error saving nodeSignal for redistribution: ${error.message}`);
+          }
           
           console.log(`Inserted redistribution signals for node ${nodeId} from ${user}`);
         } catch (signalError) {
@@ -1129,16 +1163,20 @@ export async function handleMembraneSignal({ event, context }) {
     }
     
     // Save the event
-    await saveEvent({
-      db,
-      event,
-      nodeId,
-      who: origin,
-      eventName: "Membrane Signal",
-      eventType: "membraneSignal",
-      network: context.network,
-      rootNodeId: rootNodeId
-    });
+    try {
+      await saveEvent({
+        db,
+        event,
+        nodeId,
+        who: origin,
+        eventName: "Membrane Signal",
+        eventType: "membraneSignal",
+        network: context.network,
+        rootNodeId: rootNodeId
+      });
+    } catch (error) {
+      console.error(`Error saving membrane signal event: ${error.message}`);
+    }
     
     // Get the current user's balance to use as signal strength if not provided
     let signalStrength = strength;
@@ -1157,41 +1195,50 @@ export async function handleMembraneSignal({ event, context }) {
       }
     }
     
-    // Deactivate any existing membrane signals from this user for this node
-    await db.update(membraneSignals)
-      .set({ isActive: false })
-      .where(and(
-        eq(membraneSignals.nodeId, nodeId),
-        eq(membraneSignals.who, origin),
-        eq(membraneSignals.isActive, true)
-      ));
+    // Deactivate any existing membrane signals from this user for this node using direct SQL query
+    try {
+      await db.execute({
+        sql: `UPDATE "membraneSignals" SET "isActive" = false WHERE "nodeId" = $1 AND "who" = $2 AND "isActive" = true`,
+        params: [nodeId, origin]
+      });
+    } catch (error) {
+      console.error(`Error deactivating membrane signals: ${error.message}`);
+    }
     
     // Insert the new membrane signal
-    await db.insert(membraneSignals).values({
-      id: `${createEventId(event)}-membrane`,
-      nodeId: nodeId,
-      who: origin,
-      signalOrigin: origin,
-      membraneId: membraneId,
-      strength: signalStrength,
-      when: event.block.timestamp,
-      isActive: true,
-      network: context.network?.name?.toLowerCase() || "optimismsepolia",
-      networkId: context.network?.id?.toString() || "11155420"
-    }).onConflictDoNothing();
+    try {
+      await db.insert("membraneSignals").values({
+        id: `${createEventId(event)}-membrane`,
+        nodeId: nodeId,
+        who: origin,
+        signalOrigin: origin,
+        membraneId: membraneId,
+        strength: signalStrength,
+        when: event.block.timestamp,
+        isActive: true,
+        network: context.network?.name?.toLowerCase() || "optimismsepolia",
+        networkId: context.network?.chainId?.toString() || "11155420"
+      }).onConflictDoNothing();
+    } catch (error) {
+      console.error(`Error inserting membrane signal: ${error.message}`);
+    }
     
     // Also save as a nodeSignal for backward compatibility
-    await db.insert(nodeSignals).values({
-      id: `${createEventId(event)}-membrane-signal`,
-      nodeId: nodeId,
-      who: origin,
-      signalType: "membrane",
-      signalValue: membraneId,
-      currentPrevalence: signalStrength,
-      when: event.block.timestamp,
-      network: context.network?.name?.toLowerCase() || "optimismsepolia",
-      networkId: context.network?.id?.toString() || "11155420"
-    }).onConflictDoNothing();
+    try {
+      await db.insert("nodeSignals").values({
+        id: `${createEventId(event)}-membrane-signal`,
+        nodeId: nodeId,
+        who: origin,
+        signalType: "membrane",
+        signalValue: membraneId,
+        currentPrevalence: signalStrength,
+        when: event.block.timestamp,
+        network: context.network?.name?.toLowerCase() || "optimismsepolia",
+        networkId: context.network?.chainId?.toString() || "11155420"
+      }).onConflictDoNothing();
+    } catch (error) {
+      console.error(`Error saving nodeSignal for membrane: ${error.message}`);
+    }
     
     console.log(`Inserted membrane signal for node ${nodeId} from ${origin}`);
   } catch (error) {
@@ -1219,16 +1266,20 @@ export async function handleInflationSignal({ event, context }) {
     }
     
     // Save the event
-    await saveEvent({
-      db,
-      event,
-      nodeId,
-      who: origin,
-      eventName: "Inflation Signal",
-      eventType: "inflateSignal",
-      network: context.network,
-      rootNodeId: rootNodeId
-    });
+    try {
+      await saveEvent({
+        db,
+        event,
+        nodeId,
+        who: origin,
+        eventName: "Inflation Signal",
+        eventType: "inflateSignal",
+        network: context.network,
+        rootNodeId: rootNodeId
+      });
+    } catch (error) {
+      console.error(`Error saving inflation signal event: ${error.message}`);
+    }
     
     // Get the current user's balance to use as signal strength if not provided
     let signalStrength = strength;
@@ -1247,41 +1298,50 @@ export async function handleInflationSignal({ event, context }) {
       }
     }
     
-    // Deactivate any existing inflation signals from this user for this node
-    await db.update(inflationSignals)
-      .set({ isActive: false })
-      .where(and(
-        eq(inflationSignals.nodeId, nodeId),
-        eq(inflationSignals.who, origin),
-        eq(inflationSignals.isActive, true)
-      ));
+    // Deactivate any existing inflation signals from this user for this node using direct SQL query
+    try {
+      await db.execute({
+        sql: `UPDATE "inflationSignals" SET "isActive" = false WHERE "nodeId" = $1 AND "who" = $2 AND "isActive" = true`,
+        params: [nodeId, origin]
+      });
+    } catch (error) {
+      console.error(`Error deactivating inflation signals: ${error.message}`);
+    }
     
     // Insert the new inflation signal
-    await db.insert(inflationSignals).values({
-      id: `${createEventId(event)}-inflation`,
-      nodeId: nodeId,
-      who: origin,
-      signalOrigin: origin,
-      inflationValue: inflationRate,
-      strength: signalStrength,
-      when: event.block.timestamp,
-      isActive: true,
-      network: context.network?.name?.toLowerCase() || "optimismsepolia",
-      networkId: context.network?.id?.toString() || "11155420"
-    }).onConflictDoNothing();
+    try {
+      await db.insert("inflationSignals").values({
+        id: `${createEventId(event)}-inflation`,
+        nodeId: nodeId,
+        who: origin,
+        signalOrigin: origin,
+        inflationValue: inflationRate,
+        strength: signalStrength,
+        when: event.block.timestamp,
+        isActive: true,
+        network: context.network?.name?.toLowerCase() || "optimismsepolia",
+        networkId: context.network?.chainId?.toString() || "11155420"
+      }).onConflictDoNothing();
+    } catch (error) {
+      console.error(`Error inserting inflation signal: ${error.message}`);
+    }
     
     // Also save as a nodeSignal for backward compatibility
-    await db.insert(nodeSignals).values({
-      id: `${createEventId(event)}-inflation-signal`,
-      nodeId: nodeId,
-      who: origin,
-      signalType: "inflation",
-      signalValue: inflationRate,
-      currentPrevalence: signalStrength,
-      when: event.block.timestamp,
-      network: context.network?.name?.toLowerCase() || "optimismsepolia",
-      networkId: context.network?.id?.toString() || "11155420"
-    }).onConflictDoNothing();
+    try {
+      await db.insert("nodeSignals").values({
+        id: `${createEventId(event)}-inflation-signal`,
+        nodeId: nodeId,
+        who: origin,
+        signalType: "inflation",
+        signalValue: inflationRate,
+        currentPrevalence: signalStrength,
+        when: event.block.timestamp,
+        network: context.network?.name?.toLowerCase() || "optimismsepolia",
+        networkId: context.network?.chainId?.toString() || "11155420"
+      }).onConflictDoNothing();
+    } catch (error) {
+      console.error(`Error saving nodeSignal for inflation: ${error.message}`);
+    }
     
     console.log(`Inserted inflation signal for node ${nodeId} from ${origin}`);
   } catch (error) {
