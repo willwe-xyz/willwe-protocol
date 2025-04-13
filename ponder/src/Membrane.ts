@@ -40,13 +40,13 @@ export const handleMembraneCreated = async ({ event, context }) => {
 
     console.log("Inserted Membrane:", membraneId);
     
-    // Save the event using the helper function
+    // Save the event using the helper function with more descriptive name
     await saveEvent({
       db,
       event,
       nodeId: "0", // Default nodeId since membranes aren't directly tied to nodes initially
       who: event.args.creator || event.transaction?.from || "unknown",
-      eventName: "MembraneCreated",
+      eventName: `@${(event.args.creator || event.transaction?.from || "unknown").slice(0, 6)}... created membrane ${membraneIdString}`,
       eventType: "membraneSignal",
       network: network
     });
@@ -76,19 +76,20 @@ export const handleWillWeSet = async ({ event, context }) => {
   console.log("WillWe Set:", event.args);
   
   try {
-    // Save the event using the helper function
+    // Save the event using the helper function with more descriptive name
     const network = context.network || { name: "optimismsepolia", id: "11155420" };
+    const willWeAddress = event.args.willWeAddress || event.transaction.from;
     await saveEvent({
       db,
       event,
       nodeId: "0", // Default nodeId
-      who: event.args.willWeAddress || event.transaction.from,
-      eventName: "WillWeSet",
+      who: willWeAddress,
+      eventName: `WillWe contract address set to ${willWeAddress.slice(0, 6)}...`,
       eventType: "configSignal",
       network: network
     });
     
-    console.log(`Recorded WillWeSet event for address ${event.args.willWeAddress || event.transaction.from}`);
+    console.log(`Recorded WillWeSet event for address ${willWeAddress}`);
   } catch (error) {
     console.error("Error in handleWillWeSet:", error);
   }

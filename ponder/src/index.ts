@@ -13,7 +13,7 @@ import './syncFoundry';
 ponder.on("WillWe-11155420:NewRootNode", WillWeHandlers.handleNewRootNode);
 ponder.on("WillWe-11155420:NewNode", WillWeHandlers.handleNewNode);
 ponder.on("WillWe-11155420:MembershipMinted", WillWeHandlers.handleMembershipMinted);
-ponder.on("WillWe-11155420:TransferSingle", WillWeHandlers.handleTransferSingle);
+// ponder.on("WillWe-11155420:TransferSingle", WillWeHandlers.handleTransferSingle);
 ponder.on("WillWe-11155420:UserNodeSignal", WillWeHandlers.handleUserNodeSignal);
 ponder.on("WillWe-11155420:CreatedEndpoint", WillWeHandlers.handleCreatedEndpoint);
 

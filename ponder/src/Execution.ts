@@ -119,25 +119,16 @@ export const handleNewMovementCreated = async ({ event, context }) => {
       console.error(`Error inserting movement record: ${insertError.message}`);
     }
     
-    // Use the helper function to save the event
-    try {
-      // Create custom event record without using saveEvent to avoid additional errors
-      await db.insert(events).values({
-        id: createEventId(event),
-        nodeId: nodeId,
-        who: initiator,
-        eventName: "New Movement Created",
-        eventType: "newmovement",
-        when: event.block.timestamp,
-        createdBlockNumber: event.block.number,
-        networkId: networkId,
-        network: networkName
-      }).onConflictDoNothing();
-      
-      console.log(`Saved NewMovementCreated event for node ${nodeId}`);
-    } catch (eventError) {
-      console.error(`Error saving event: ${eventError.message}`);
-    }
+    // Use the helper function to save the event with more descriptive name
+    await saveEvent({
+      db,
+      event,
+      nodeId: nodeId,
+      who: initiator,
+      eventName: `@${initiator.slice(0, 6)}... created new movement ${movementId.slice(0, 8)}... in node ${nodeId.slice(0, 8)}...`,
+      eventType: "newmovement",
+      network: network
+    });
     
     // Also record as a node signal for historical tracking
     try {
@@ -174,6 +165,7 @@ export const handleQueueExecuted = async ({ event, context }) => {
     const networkId = network.chainId.toString();
     const networkName = network.name.toLowerCase();
     const rootNodeId = await getRootNodeId(nodeId, context);
+    const executor = event.args.executor;
     
     // Find the queue first to see if it exists
     const existingQueue = await db.find(signatureQueues, { id: queueId });
@@ -188,13 +180,13 @@ export const handleQueueExecuted = async ({ event, context }) => {
       console.log(`Queue ${queueId} not found, cannot update state`);
     }
     
-    // Use the helper function to save the event
+    // Use the helper function to save the event with more descriptive name
     await saveEvent({
       db,
       event,
       nodeId,
-      who: event.args.executor,
-      eventName: "QueueExecuted",
+      who: executor,
+      eventName: `@${executor.slice(0, 6)}... executed queue ${queueId.slice(0, 8)}... in node ${nodeId.slice(0, 8)}...`,
       eventType: "configSignal",
       network: network,
       rootNodeId: rootNodeId
@@ -204,7 +196,7 @@ export const handleQueueExecuted = async ({ event, context }) => {
     await db.insert(nodeSignals).values({
       id: `${createEventId(event)}-queue-executed`,
       nodeId: nodeId,
-      who: event.args.executor,
+      who: executor,
       signalType: "redistribution", // Closest signal type for governance actions
       signalValue: queueId,
       currentPrevalence: "0", // Not applicable for queue execution
@@ -213,7 +205,7 @@ export const handleQueueExecuted = async ({ event, context }) => {
       networkId: networkId
     }).onConflictDoNothing();
     
-    console.log(`Saved queue execution signal from ${event.args.executor}`);
+    console.log(`Saved queue execution signal from ${executor}`);
   } catch (error) {
     console.error("Error in handleQueueExecuted:", error);
   }
@@ -269,13 +261,13 @@ export const handleNewSignaturesSubmitted = async ({ event, context }) => {
     
     console.log("Inserted signature:", signatureId);
     
-    // Use the helper function to save the event
+    // Use the helper function to save the event with more descriptive name
     await saveEvent({
       db,
       event,
       nodeId,
       who: event.args.signer,
-      eventName: "NewSignaturesSubmitted",
+      eventName: `@${event.args.signer.slice(0, 6)}... submitted signature for queue ${queueId.slice(0, 8)}... in node ${nodeId.slice(0, 8)}...`,
       eventType: "configSignal",
       network: network,
       rootNodeId: rootNodeId
@@ -327,13 +319,13 @@ export const handleSignatureRemoved = async ({ event, context }) => {
     
     console.log(`Updated ${matchingSignatures.length} signatures to submitted=false`);
     
-    // Use the helper function to save the event
+    // Use the helper function to save the event with more descriptive name
     await saveEvent({
       db,
       event,
       nodeId,
       who: signer,
-      eventName: "SignatureRemoved",
+      eventName: `@${signer.slice(0, 6)}... removed signature from queue ${queueId.slice(0, 8)}... in node ${nodeId.slice(0, 8)}...`,
       eventType: "configSignal",
       network: network,
       rootNodeId: rootNodeId

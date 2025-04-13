@@ -449,40 +449,55 @@ export async function handleMembershipMinted({ event, context }) {
   }
 }
 
-export async function handleTransferSingle({ event, context }) {
-  const { db } = context;
-  console.log("Transfer Single:", event.args);
+// export async function handleTransferSingle({ event, context }) {
+//   const { db } = context;
+//   console.log("Transfer Single:", event.args);
   
-  try {
-    const nodeId = event.args.id.toString();
-    const network = context.network || { name: "optimismsepolia", id: "11155420" };
+//   try {
+//     const nodeId = event.args.id.toString();
+//     const network = context.network || { name: "optimismsepolia", id: "11155420" };
     
-    let eventTypeName = event.args.from == "0x0000000000000000000000000000000000000000" ? "mint" : "transfer";
-    if  (eventTypeName === "transfer" && event.args.to === "0x0000000000000000000000000000000000000000") eventTypeName = "burn";
+//     let eventTypeName = event.args.from == "0x0000000000000000000000000000000000000000" ? "mint" : "transfer";
+//     if  (eventTypeName === "transfer" && event.args.to === "0x0000000000000000000000000000000000000000") eventTypeName = "burn";
 
-    // Get the root node ID for this node
-    let rootNodeId = '';
-    try {
-      const nodeData = await getNodeData(nodeId, context);
-      rootNodeId = nodeData?.rootPath?.[0]?.toString() || '';
-    } catch (error) {
-      console.log(`Could not get root node ID for node ${nodeId}:`, error);
-    }
+//     // Get the root node ID for this node
+//     let rootNodeId = '';
+//     try {
+//       const nodeData = await getNodeData(nodeId, context);
+//       rootNodeId = nodeData?.rootPath?.[0]?.toString() || '';
+//     } catch (error) {
+//       console.log(`Could not get root node ID for node ${nodeId}:`, error);
+//     }
 
-    await saveEvent({
-      db,
-      event,
-      nodeId,
-      who: event.args.to,
-      eventName: "TransferSingle",
-      eventType: eventTypeName,
-      network: network,
-      rootNodeId: rootNodeId
-    });
-  } catch (error) {
-    console.error("Error in handleTransferSingle:", error);
-  }
-}
+//     // Create a more descriptive event name based on the type
+//     let eventName = "";
+//     const amount = event.args.amount?.toString();
+    
+//     if (eventTypeName === "mint") {
+//       // Minting - from address is zero
+//       eventName = `@${event.args.to.slice(0, 6)}... received ${amount} new shares in node ${nodeId.slice(0, 8)}...`;
+//     } else if (eventTypeName === "burn") {
+//       // Burning - to address is zero
+//       eventName = `@${event.args.from.slice(0, 6)}... burned ${amount} shares from node ${nodeId.slice(0, 8)}...`;
+//     } else {
+//       // Regular transfer
+//       eventName = `@${event.args.from.slice(0, 6)}... transferred ${amount} shares to @${event.args.to.slice(0, 6)}... in node ${nodeId.slice(0, 8)}...`;
+//     }
+    
+//     await saveEvent({
+//       db,
+//       event,
+//       nodeId,
+//       who: event.args.to,
+//       eventName: eventName,
+//       eventType: eventTypeName,
+//       network: network,
+//       rootNodeId: rootNodeId
+//     });
+//   } catch (error) {
+//     console.error("Error in handleTransferSingle:", error);
+//   }
+// }
 
 export async function handleUserNodeSignal({ event, context }) {
   try {
@@ -961,13 +976,13 @@ export async function handleInflationRateChanged({ event, context }) {
       console.error(`Error updating node inflation rate: ${error.message}`);
     }
       
-    // Use the helper function to save the event
+    // Use the helper function to save the event with more descriptive name
     await saveEvent({
       db,
       event,
       nodeId,
       who: event.transaction.from,
-      eventName: "InflationRateChanged",
+      eventName: `Inflation rate changed from ${oldInflationRate} to ${newInflationRate}`,
       eventType: "inflationRateChanged",
       network: context.network,
       rootNodeId: rootNodeId
@@ -1042,14 +1057,15 @@ export async function handleSharesGenerated({ event, context }) {
       console.error(`Error updating node: ${error.message}`);
     }
       
-    // Use the helper function to save the event with a valid event type
+    // Use the helper function to save the event with a valid event type and more descriptive name
     try {
+      const formattedAmount = formatEther(amount);
       await saveEvent({
         db,
         event,
         nodeId,
         who: event.transaction.from,
-        eventName: `${formatEther(amount)} Shares Generated`,
+        eventName: `Node generated ${formattedAmount} new shares through inflation`,
         eventType: "inflationMinted", // Changed from "inflation" to a valid enum value
         network: network,
         rootNodeId: rootNodeId
@@ -1111,13 +1127,13 @@ export async function handleMinted({ event, context }) {
         });
     }
       
-    // Use the helper function to save the event
+    // Use the helper function to save the event with more descriptive name
     await saveEvent({
       db,
       event,
       nodeId,
       who: event.args.fromAddressOrNode,
-      eventName: "Minted",
+      eventName: `@${event.args.fromAddressOrNode.slice(0, 6)}... minted ${amount} shares to node ${nodeId.slice(0, 8)}...`,
       eventType: "mint",
       network: network,
       rootNodeId: rootNodeId 
@@ -1161,13 +1177,14 @@ export async function handleBurned({ event, context }) {
         });
     }
       
-    // Use the helper function to save the event
+    // Use the helper function to save the event with more descriptive name
+    const burnAmount = event.args.amount.toString();
     await saveEvent({
       db,
       event,
       nodeId,
       who: event.args.fromAddressOrNode,
-      eventName: "Burned",
+      eventName: `@${event.args.fromAddressOrNode.slice(0, 6)}... burned ${burnAmount} shares from node ${nodeId.slice(0, 8)}...`,
       eventType: "burn",
       network: context.network,
       rootNodeId: rootNodeId
@@ -1187,13 +1204,13 @@ export async function handleSignaled({ event, context }) {
     const origin = event.args.origin;
     const rootNodeId = await getRootNodeId(nodeId, context);
 
-    // Use the helper function to save the event
+    // Use the helper function to save the event with more descriptive name
     await saveEvent({
       db,
       event,
       nodeId,
       who: sender,
-      eventName: "Signaled",
+      eventName: `@${sender.slice(0, 6)}... sent a configuration signal to node ${nodeId.slice(0, 8)}...`,
       eventType: "configSignal",
       network: context.network,
       rootNodeId: rootNodeId
@@ -1215,13 +1232,13 @@ export async function handleResignaled({ event, context }) {
     const from = event.args.from || event.transaction.from;
     const rootNodeId = await getRootNodeId(nodeId, context);
 
-    // Use the helper function to save the event
+    // Use the helper function to save the event with more descriptive name
     await saveEvent({
       db,
       event,
       nodeId,
       who: from,
-      eventName: "Resignaled",
+      eventName: `@${from.slice(0, 6)}... re-sent a configuration signal to node ${nodeId.slice(0, 8)}...`,
       eventType: "configSignal",
       network: context.network,
       rootNodeId: rootNodeId
@@ -1251,14 +1268,14 @@ export async function handleMembraneSignal({ event, context }) {
       console.log(`Could not get root node ID for node ${nodeId}:`, error);
     }
     
-    // Save the event
+    // Save the event with more descriptive name
     try {
       await saveEvent({
         db,
         event,
         nodeId,
         who: origin,
-        eventName: "Membrane Signal",
+        eventName: `@${origin.slice(0, 6)}... signaled for membrane ${membraneId} with strength ${strength}`,
         eventType: "membraneSignal",
         network: context.network,
         rootNodeId: rootNodeId
@@ -1362,14 +1379,14 @@ export async function handleInflationSignal({ event, context }) {
       // Continue processing - this is non-critical
     }
     
-    // Save the event
+    // Save the event with a more descriptive name
     try {
       await saveEvent({
         db,
         event,
         nodeId,
         who: origin,
-        eventName: "Inflation Signal",
+        eventName: `@${origin.slice(0, 6)}... signaled inflation rate of ${inflationRate} with strength ${strength}`,
         eventType: "inflateSignal",
         network: context.network,
         rootNodeId: rootNodeId
