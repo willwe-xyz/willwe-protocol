@@ -2374,30 +2374,6 @@ export const ABIs: ABIKP = {
     },
     {
         "type": "function",
-        "name": "getChangePrevalence",
-        "inputs": [
-            {
-                "name": "nodeId_",
-                "type": "uint256",
-                "internalType": "uint256"
-            },
-            {
-                "name": "signal_",
-                "type": "uint256",
-                "internalType": "uint256"
-            }
-        ],
-        "outputs": [
-            {
-                "name": "",
-                "type": "uint256",
-                "internalType": "uint256"
-            }
-        ],
-        "stateMutability": "view"
-    },
-    {
-        "type": "function",
         "name": "getChildrenOf",
         "inputs": [
             {
@@ -2473,84 +2449,6 @@ export const ABIs: ABIKP = {
                 "name": "nodeData",
                 "type": "tuple",
                 "internalType": "struct NodeState",
-                "components": [
-                    {
-                        "name": "basicInfo",
-                        "type": "string[12]",
-                        "internalType": "string[12]"
-                    },
-                    {
-                        "name": "membraneMeta",
-                        "type": "string",
-                        "internalType": "string"
-                    },
-                    {
-                        "name": "membersOfNode",
-                        "type": "address[]",
-                        "internalType": "address[]"
-                    },
-                    {
-                        "name": "childrenNodes",
-                        "type": "string[]",
-                        "internalType": "string[]"
-                    },
-                    {
-                        "name": "movementEndpoints",
-                        "type": "address[]",
-                        "internalType": "address[]"
-                    },
-                    {
-                        "name": "rootPath",
-                        "type": "string[]",
-                        "internalType": "string[]"
-                    },
-                    {
-                        "name": "nodeSignals",
-                        "type": "tuple",
-                        "internalType": "struct AllNodeSignals",
-                        "components": [
-                            {
-                                "name": "signalers",
-                                "type": "address[]",
-                                "internalType": "address[]"
-                            },
-                            {
-                                "name": "inflationSignals",
-                                "type": "uint256[2][]",
-                                "internalType": "uint256[2][]"
-                            },
-                            {
-                                "name": "membraneSignals",
-                                "type": "uint256[2][]",
-                                "internalType": "uint256[2][]"
-                            },
-                            {
-                                "name": "redistributionSignals",
-                                "type": "uint256[][]",
-                                "internalType": "uint256[][]"
-                            }
-                        ]
-                    }
-                ]
-            }
-        ],
-        "stateMutability": "view"
-    },
-    {
-        "type": "function",
-        "name": "getNodes",
-        "inputs": [
-            {
-                "name": "nodeIds",
-                "type": "uint256[]",
-                "internalType": "uint256[]"
-            }
-        ],
-        "outputs": [
-            {
-                "name": "nodes",
-                "type": "tuple[]",
-                "internalType": "struct NodeState[]",
                 "components": [
                     {
                         "name": "basicInfo",

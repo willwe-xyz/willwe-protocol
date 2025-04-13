@@ -35,40 +35,7 @@ interface EventWithTransaction {
   };
 }
 
-// Helper function to get signal prevalence from contract
-const getSignalPrevalence = async (nodeId, signalValue, contractAddress, network, context) => {
-  try {
-    const client = context.client || getPublicClient(network);
-    
-    if (!client) {
-      console.error("Failed to create client for network:", network);
-      return "0";
-    }
-    
-    const prevalence = await client.readContract({
-      address: contractAddress,
-      abi: [
-        {
-          name: "getChangePrevalence",
-          type: "function",
-          stateMutability: "view",
-          inputs: [
-            { name: "nodeId_", type: "uint256" },
-            { name: "signal_", type: "uint256" }
-          ],
-          outputs: [{ type: "uint256" }]
-        }
-      ],
-      functionName: "getChangePrevalence",
-      args: [BigInt(nodeId), BigInt(signalValue)]
-    });
-    
-    return prevalence.toString();
-  } catch (error) {
-    console.error("Error getting signal prevalence:", error);
-    return "0";
-  }
-};
+
 
 // Helper function to ensure a node exists before updating it
 const ensureNodeExists = async (db, nodeId, timestamp, networkName, networkId) => {

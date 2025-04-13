@@ -65,12 +65,10 @@ interface IFun is IERC1155, IExecution {
 
     // Data Access
     function getNodeData(uint256 nodeId, address user) external view returns (NodeState memory);
-    function getNodes(uint256[] memory nodeIds) external view returns (NodeState[] memory nodes);
     function getAllNodesForRoot(address rootAddress, address userIfAny)
         external
         view
         returns (NodeState[] memory nodes);
-    function getChangePrevalence(uint256 nodeId_, uint256 signal_) external view returns (uint256);
 
     // Utility Functions
     function toID(address x) external pure returns (uint256);
