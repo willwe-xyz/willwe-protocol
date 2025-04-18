@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity >=0.8.3;
+pragma solidity 0.8.25;
 
 import {ERC1155} from "solady/tokens/ERC1155.sol";
 
@@ -573,9 +573,9 @@ contract Fungido is ERC1155, PureUtils {
         /// Timestamp of last redistribution
         NodeData.basicInfo[8] = inflSec[nodeId][2].toString();
         /// Balance of user
-        /// basicInfo[9];
+        NodeData.basicInfo[9] = "0";
         /// Endpoint of user for node if any
-        /// basicInfo[10];
+        NodeData.basicInfo[10] = "0";
 
         /// total supply of node token
         NodeData.basicInfo[11] = totalSupplyOf[nodeId].toString();
@@ -592,8 +592,6 @@ contract Fungido is ERC1155, PureUtils {
         NodeData.rootPath = uintArrayToStringArray(getFidPath(nodeId));
     }
 
-
-    ///
     function getAllNodesForRoot(address rootAddress, address userIfAny)
         external
         view

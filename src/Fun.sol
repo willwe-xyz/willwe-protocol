@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity >=0.8.3;
+pragma solidity 0.8.25;
 
 import {Fungido} from "./Fungido.sol";
 import {IExecution} from "./interfaces/IExecution.sol";
@@ -98,10 +98,10 @@ contract Fun is Fungido {
 
         if (impersonatingAddress == address(0)) {
             uint256[] memory lastSignals = userNodeSignals[signalsKey];
-            if (lastSignals.length >=2) {
-            if (signals[0] == 0) signals[0] = lastSignals[0];
-            if (signals[1] == 0) signals[1] = lastSignals[1];
-        }
+            if (lastSignals.length >= 2) {
+                if (signals[0] == 0) signals[0] = lastSignals[0];
+                if (signals[1] == 0) signals[1] = lastSignals[1];
+            }
             userNodeSignals[signalsKey] = signals;
         }
     }
@@ -167,12 +167,12 @@ contract Fun is Fungido {
         }
     }
 
-    function _handleInflationUpdate(uint256 nodeId, uint256 oldRate, uint256 newRate) private {
-        uint256[] memory children = childrenOf[nodeId];
+    function _handleInflationUpdate(uint256 targetNode_, uint256 oldRate, uint256 newRate) private {
+        uint256[] memory children = childrenOf[targetNode_];
         if (children.length == 0) return;
         uint256 oldTotalEligibilitySum;
         for (uint256 i = 0; i < children.length; i++) {
-            bytes32 childParentEligibility = keccak256(abi.encodePacked(children[i], nodeId));
+            bytes32 childParentEligibility = keccak256(abi.encodePacked(children[i], targetNode_));
             uint256 currentEligibility = options[childParentEligibility][0];
             oldTotalEligibilitySum += currentEligibility;
 
@@ -183,15 +183,15 @@ contract Fun is Fungido {
             }
         }
 
-        if ((oldTotalEligibilitySum > 1) && (oldTotalEligibilitySum / 100000) < (inflSec[nodeId][0] / 100000)) {
+        if (
+            (oldTotalEligibilitySum >= 2 gwei) && (oldTotalEligibilitySum / 1 gwei) < (inflSec[targetNode_][0] / 1 gwei)
+        ) {
             uint256 surplusAmount =
-                balanceOf(toAddress(nodeId), nodeId) - balanceOf(toAddress(nodeId), parentOf[nodeId]);
-            _burn(toAddress(nodeId), nodeId, surplusAmount);
+                totalSupplyOf[targetNode_] - balanceOf(toAddress(targetNode_), parentOf[targetNode_]);
+            _burn(toAddress(targetNode_), targetNode_, surplusAmount);
         }
 
-        inflSec[nodeId] = [newRate, block.timestamp, block.timestamp];
-
-        emit InflationRateChanged(nodeId, oldRate, newRate);
+        emit InflationRateChanged(targetNode_, oldRate, newRate);
     }
 
     function _handleRegularSignals(
@@ -288,10 +288,18 @@ contract Fun is Fungido {
 
         options[childParentEligibility][1] = block.timestamp;
 
-        if (distributedAmt > 0) {
+        if (distributedAmt >= 100000) {
             _safeTransfer(
                 toAddress(parent), toAddress(nodeId_), parent, distributedAmt, abi.encodePacked("redistribution")
             );
+            if (totalSupplyOf[nodeId_] < balanceOf(toAddress(nodeId_), parent)) {
+                _mint(
+                    toAddress(nodeId_),
+                    nodeId_,
+                    balanceOf(toAddress(nodeId_), parent) - totalSupplyOf[nodeId_],
+                    abi.encodePacked("redistribution_mint")
+                );
+            }
         }
     }
 
