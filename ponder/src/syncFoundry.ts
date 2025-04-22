@@ -137,9 +137,9 @@ export function readFoundryDeployments(): Deployments {
     console.warn(`Error reading broadcast directory: ${err}`);
   }
 
-  // Manual deployment overrides for debugging
-  // Add the WillWe contract address for OP Sepolia
-  deployments.WillWe["11155420"] = "0xD31ED23C4D4E53AB87Ec4a4d8dFc42e2b4df4920";
+  // // Manual deployment overrides for debugging
+  // // Add the WillWe contract address for OP Sepolia
+  // deployments.WillWe["11155420"] = "0xD31ED23C4D4E53AB87Ec4a4d8dFc42e2b4df4920";
 
   return deployments;
 }
