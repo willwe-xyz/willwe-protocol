@@ -318,7 +318,7 @@ contract Fun is Fungido {
 
     function _burn(address who_, uint256 fid_, uint256 amount_) internal override {
         super._burn(who_, fid_, amount_);
-        if (totalSupplyOf[toID(who_)] >= 1) return;
+        if (totalSupplyOf[toID(who_)] >= 1 || msg.sig == this.sendSignal.selector) return;
         resignal(fid_, who_);
     }
 
