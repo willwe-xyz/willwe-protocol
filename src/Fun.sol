@@ -67,7 +67,7 @@ contract Fun is Fungido {
         if (!isMember) revert Noise();
 
         uint256 balanceOfSender = balanceOf(_msgSender(), targetNode_);
-        if (balanceOfSender < totalSupplyOf[targetNode_] / 100_00) revert NoiseNotVoice();
+        if (balanceOfSender < totalSupplyOf[targetNode_] / 100_00_00) revert NoiseNotVoice();
 
         mintInflation(targetNode_);
 
