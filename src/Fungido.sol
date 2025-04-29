@@ -310,12 +310,11 @@ contract Fungido is ERC1155, PureUtils {
 
     function localizeEndpoint(address endpoint_, uint256 endpointParent_, address owner_) external {
         if (msg.sender != executionAddress) revert ExecutionOnly();
-        if (owner == executionAddress || isMember(owner_, endpointParent_)) {
-            members[toID(owner_)].push(endpoint_);
-            members[toID(owner_) + endpointParent_].push(endpoint_);
+        members[toID(owner_)].push(endpoint_);
+        members[toID(owner_) + endpointParent_].push(endpoint_);
 
-            totalSupplyOf[toID(endpoint_)] = type(uint256).max;
-        }
+        totalSupplyOf[toID(endpoint_)] = type(uint256).max;
+
         _localizeNode(toID(endpoint_), endpointParent_);
     }
 
