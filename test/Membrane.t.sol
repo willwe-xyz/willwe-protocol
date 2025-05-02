@@ -257,4 +257,64 @@ contract MembraneTests is Test, InitTest {
         // Verify membrane changed
         assertTrue(F.getMembraneOf(B1) == membrane2, "membrane should be updated");
     }
+
+    function testNodeBalanceMembrane() public {
+        // Create nodes
+        vm.prank(A1);
+        F.mintPath(B1, 2 ether); // Mint 2 ether to B1
+        vm.prank(A1);
+        F.mintPath(B2, 1 ether); // Mint 1 ether to B2
+
+        // Create a membrane that requires:
+        // 1. 1 ether balance in B1
+        // 2. 0.5 ether balance in B2
+        address[] memory tokens = new address[](2);
+        uint256[] memory balances = new uint256[](2);
+        
+        // First condition: 1 ether in B1
+        tokens[0] = address(uint160(B1));
+        balances[0] = 1 ether;
+        
+        // Second condition: 0.5 ether in B2
+        tokens[1] = address(uint160(B2));
+        balances[1] = 0.5 ether;
+        
+        uint256 membraneId = M.createMembrane(tokens, balances, "Node Balance Requirements");
+
+        // Set membrane for B1
+        uint256[] memory signal = new uint256[](F.getChildrenOf(B1).length + 2);
+        signal[0] = membraneId;
+        vm.prank(A1);
+        F.sendSignal(B1, signal);
+
+        // A1 is already a member (as creator), so we don't need to mint membership
+        assertTrue(F.isMember(A1, B1), "A1 should be a member");
+
+        // A2 should not be able to mint membership (no balances)
+        vm.startPrank(A2);
+        vm.expectRevert();
+        F.mintMembership(B1);
+        vm.stopPrank();
+        assertFalse(F.isMember(A2, B1), "A2 should not be a member");
+
+        // Transfer some balances to A2
+        vm.prank(A1);
+        F.safeTransferFrom(A1, A2, B1, 1 ether, "");
+        vm.prank(A1);
+        F.safeTransferFrom(A1, A2, B2, 0.5 ether, "");
+
+        // Now A2 should be able to mint membership
+        vm.prank(A2);
+        F.mintMembership(B1);
+        assertTrue(F.isMember(A2, B1), "A2 should now be a member");
+
+        // Test enforcement - if A2 loses balance in B1
+        vm.prank(A2);
+        F.safeTransferFrom(A2, A1, B1, 1 ether, "");
+        
+        // A2 should be removable from membership
+        vm.prank(A1);
+        F.membershipEnforce(A2, B1);
+        assertFalse(F.isMember(A2, B1), "A2 should be removed from membership");
+    }
 }

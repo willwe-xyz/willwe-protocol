@@ -23,6 +23,7 @@ contract Membranes is IMembrane {
     /// @param tokens_ ERC20 or ERC721 token addresses array. Each is used as a constituent item of the membrane and condition for
     /// @param tokens_ at [x] can also be a user address that is whitelisted or blacklisted. for whitelist uint256(uint160(address of user)). any other (0) for blacklist.
     /// @param tokens_ at [x] if it is willwe address the balancce_ at [x] is the node id of which the user is required to already be a member of
+    /// @param tokens_ at [x] can also be a WillWe node address (converted from node ID) to check minimum balance in that node
     /// @param tokens_ belonging or not. Membership is established by a chain of binary claims whereby
     /// @param tokens_ the balance of address checked needs to satisfy all balances_ of all tokens_ stated as benchmark for belonging
     /// @param balances_ amounts required of each of tokens_. The order of required balances needs to map to token addresses.
@@ -68,6 +69,14 @@ contract Membranes is IMembrane {
             if (M.tokens[i] == who_) {
                 if (M.balances[i] == uint256(uint160(who_))) return true;
                 return false;
+            }
+
+            uint256 nodeId = uint256(uint160(M.tokens[i]));
+            uint256 parent = willWe.getParentOf(nodeId);
+            if (parent >= 2 && nodeId != parent) {
+                uint256 balance = willWe.balanceOf(who_, nodeId);
+                s = s && (balance >= M.balances[i]);
+                continue;
             }
 
             if (M.tokens[i].code.length == 0) continue;
