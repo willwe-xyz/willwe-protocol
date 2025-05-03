@@ -270,15 +270,15 @@ contract MembraneTests is Test, InitTest {
         // 2. 0.5 ether balance in B2
         address[] memory tokens = new address[](2);
         uint256[] memory balances = new uint256[](2);
-        
+
         // First condition: 1 ether in B1
         tokens[0] = address(uint160(B1));
         balances[0] = 1 ether;
-        
+
         // Second condition: 0.5 ether in B2
         tokens[1] = address(uint160(B2));
         balances[1] = 0.5 ether;
-        
+
         uint256 membraneId = M.createMembrane(tokens, balances, "Node Balance Requirements");
 
         // Set membrane for B1
@@ -311,7 +311,7 @@ contract MembraneTests is Test, InitTest {
         // Test enforcement - if A2 loses balance in B1
         vm.prank(A2);
         F.safeTransferFrom(A2, A1, B1, 1 ether, "");
-        
+
         // A2 should be removable from membership
         vm.prank(A1);
         F.membershipEnforce(A2, B1);
