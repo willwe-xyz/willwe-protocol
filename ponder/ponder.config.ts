@@ -29,12 +29,12 @@ export const supportedChains: viemChains.Chain[] = [
 
 // Default RPC URLs for development environment
 const defaultRpcUrls: Record<number, string> = {
-  1: "https://eth.llamarpc.com",
-  10: "https://optimism.llamarpc.com",
-  11155420: "https://sepolia.optimism.io", // OP Sepolia
-  8453: "https://base.llamarpc.com",
-  84532: "https://sepolia.base.org", // Base Sepolia
-  167009: "https://rpc.katla.taiko.xyz", // Taiko Katla 
+  1: process.env.MAINNET_RPC_URL || "https://eth.llamarpc.com",
+  10: process.env.OPTIMISM_RPC_URL || "https://optimism.llamarpc.com",
+  11155420: process.env.OPTIMISM_SEPOLIA_RPC_URL || "https://sepolia.optimism.io", // OP Sepolia
+  8453: process.env.BASE_RPC_URL || "https://base.llamarpc.com",
+  84532: process.env.BASE_SEPOLIA_RPC_URL || "https://sepolia.base.org", // Base Sepolia
+  167009: process.env.TAIKO_HEKLA_RPC_URL || "https://rpc.katla.taiko.xyz", // Taiko Katla 
 };
 
 // Create a safe empty ABI to use as a fallback
