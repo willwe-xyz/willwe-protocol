@@ -39,8 +39,7 @@ const defaultRpcUrls: Record<number, string> = {
 
 // Create a safe empty ABI to use as a fallback
 const emptyAbi: Abi = [];
-export const startBlock = 25050000;
-
+export const startBlock = 28123456;
 // Get all available chainIds from deployments
 const availableChainIds = Object.keys(Object.values(deployments)[0] || {}).map(Number);
 
