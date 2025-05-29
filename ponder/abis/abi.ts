@@ -6,23 +6,19 @@ type ABIKP = { [key: string]: Abi };
 export const deployments: Deployments = {
   "Will": {
     "8453": "0xcba568d1b4a109dd27cdfd0e6912371757228d5e",
-    "84532": "0x912ecd9e3460ac06a58203548fcf251d16905996",
-    "11155420": "0x0b0bf864988c9f9bb101360c12247a5fffcbcc99"
+
   },
   "Membranes": {
     "8453": "0x46a6be8a6919f6a73db80827844009a238462a0e",
-    "84532": "0x7c2120cf9ba204cc3c7a3546c3f1f683e2b3484d",
-    "11155420": "0x2fd4af362a6cf34236b9b12056c23946d1be10d5"
+
   },
   "Execution": {
     "8453": "0x3eebc8acb1a784c2acea5b5bc7f13c8984cd0e16",
-    "84532": "0x7cbc260971afa9f748ef530396a77c1cb6ab8925",
-    "11155420": "0xd488915b3ea8707a87d278928029dd1cd46c00c2"
+
   },
   "WillWe": {
     "8453": "0x5edac1162c0799e41142935124e78ead8729a4c6",
-    "84532": "0x81fc83ef76eadfb6653ec77bfd10bb2926f4b2ff",
-    "11155420": "0xbb3388475f387d93d5e8ba709f05717c5ee8c344"
+
   }
 };
 
