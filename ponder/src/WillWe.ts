@@ -109,8 +109,8 @@ export async function handleNewRootNode({ event, context }) {
     }
     
     // Network info with fallbacks
-    const networkName = context.network?.name?.toLowerCase() || "optimismsepolia";
-    const networkId = context.network?.chainId.toString() || "11155420";
+    const networkName = context.network?.name?.toLowerCase() || "base-mainnet";
+    const networkId = context.network?.chainId.toString() || "5432";
     
     // Insert the new root node
     await db.insert(nodes).values({
@@ -207,7 +207,7 @@ export async function handleNewNode({ event, context }) {
     
     // Network info with fallbacks
     const networkName = context.network?.name?.toLowerCase() || "optimismsepolia";
-    const networkId = context.network?.chainId.toString() || "11155420";
+    const networkId = context.network?.chainId.toString() || "5432";
     
     // Safely get node data with proper error handling
     let nodeData : NodeState | null = null;
@@ -455,7 +455,7 @@ export async function handleMembershipMinted({ event, context }) {
   
 //   try {
 //     const nodeId = event.args.id.toString();
-//     const network = context.network || { name: "optimismsepolia", id: "11155420" };
+//     const network = context.network || { name: "optimismsepolia", id: "5432" };
     
 //     let eventTypeName = event.args.from == "0x0000000000000000000000000000000000000000" ? "mint" : "transfer";
 //     if  (eventTypeName === "transfer" && event.args.to === "0x0000000000000000000000000000000000000000") eventTypeName = "burn";
@@ -577,7 +577,7 @@ export async function handleUserNodeSignal({ event, context }) {
             when: event.block.timestamp,
             isActive: true,
             network: networkName.toLowerCase(),
-            networkId: context.network?.chainId?.toString() || "11155420"
+            networkId: context.network?.chainId?.toString() || "5432"
           }).onConflictDoNothing();
         } catch (error) {
           console.error(`Error inserting membrane signal: Cannot use 'in' operator to search for 'Symbol(ponder:onchain)' in membraneSignals`);
@@ -603,7 +603,7 @@ export async function handleUserNodeSignal({ event, context }) {
         try {
           const id = `${createEventId(event)}-membrane-signal`;
           await db.sql`INSERT INTO nodeSignals ("id", "nodeId", "who", "signalType", "signalValue", "currentPrevalence", "when", "network", "networkId")
-            VALUES (${id}, ${nodeId}, ${user}, 'membrane', ${membraneSignal}, ${signalStrength}, ${event.block.timestamp}, ${networkName.toLowerCase()}, ${context.network?.chainId?.toString() || "11155420"})
+            VALUES (${id}, ${nodeId}, ${user}, 'membrane', ${membraneSignal}, ${signalStrength}, ${event.block.timestamp}, ${networkName.toLowerCase()}, ${context.network?.chainId?.toString() || "5432"})
             ON CONFLICT ("id") DO NOTHING`;
         } catch (error) {
           console.error(`Error saving nodeSignal for membrane: ${error.message}`);
@@ -652,7 +652,7 @@ export async function handleUserNodeSignal({ event, context }) {
             when: event.block.timestamp,
             isActive: true,
             network: networkName.toLowerCase(),
-            networkId: context.network?.chainId?.toString() || "11155420"
+            networkId: context.network?.chainId?.toString() || "5432"
           }).onConflictDoNothing();
           
           console.log(`Successfully inserted inflation signal for ${nodeId} from ${user}`);
@@ -693,7 +693,7 @@ export async function handleUserNodeSignal({ event, context }) {
             currentPrevalence: signalStrength,
             when: event.block.timestamp,
             network: networkName.toLowerCase(),
-            networkId: context.network?.chainId?.toString() || "11155420"
+            networkId: context.network?.chainId?.toString() || "5432"
           }).onConflictDoNothing();
           
           console.log(`Successfully saved nodeSignal for inflation for ${nodeId} from ${user}`);
@@ -749,7 +749,7 @@ export async function handleUserNodeSignal({ event, context }) {
               currentPrevalence: prevalence,
               when: event.block.timestamp,
               network: networkName.toLowerCase(),
-              networkId: context.network?.chainId?.toString() || "11155420"
+              networkId: context.network?.chainId?.toString() || "5432"
             }).onConflictDoNothing();
             
             console.log(`Successfully saved nodeSignal for redistribution for ${nodeId} from ${user}`);
@@ -808,9 +808,9 @@ export async function handleCreatedEndpoint({ event, context }) {
     }
     
     // Network info with fallbacks - use safe access patterns
-    const network = context.network || { name: "optimismsepolia", id: "11155420" };
+    const network = context.network || { name: "optimismsepolia", id: "5432" };
     const networkName = (network.name || "optimismsepolia").toLowerCase();
-    const networkId = (network.chainId || "11155420").toString();
+    const networkId = (network.chainId || "5432").toString();
     
     // Handle endpoint type safely
     let endpointType = "userOwned"; // default
@@ -875,7 +875,7 @@ export async function handleMembraneChanged({ event, context }) {
     const newMembraneId = event.args.newMembrane.toString();
     const previousMembraneId = event.args.previousMembrane.toString();
     const network = context.network?.name?.toLowerCase() || "optimismsepolia";
-    const networkId = context.network?.chainId.toString() || "11155420"; // optimismSepolia id
+    const networkId = context.network?.chainId.toString() || "5432"; // optimismSepolia id
     
     // Ensure the node exists before updating
     await ensureNodeExists(db, nodeId, event.block.timestamp, network, networkId);
@@ -945,7 +945,7 @@ export async function handleInflationRateChanged({ event, context }) {
     const newInflationRate = event.args.newInflationRate.toString();
     const oldInflationRate = event.args.oldInflationRate.toString();
     const network = context.network?.name?.toLowerCase() || "optimismsepolia";
-    const networkId = context.network?.chainId.toString() || "11155420"; // optimismSepolia id
+    const networkId = context.network?.chainId.toString() || "5432"; // optimismSepolia id
     const rootNodeId = await getRootNodeId(nodeId, context);
 
     // Ensure the node exists before updating
@@ -1019,7 +1019,7 @@ export async function handleSharesGenerated({ event, context }) {
     }
     
     const nodeId = event?.args?.nodeId.toString();
-    const network = context?.network || { name: "optimismsepolia", id: "11155420" };
+    const network = context?.network || { name: "optimismsepolia", id: "5432" };
     const networkId = network?.chainId.toString();
     const networkName = network?.name.toLowerCase();
     const amount = event?.args?.amount?.toString() || "0";
@@ -1098,7 +1098,7 @@ export async function handleMinted({ event, context }) {
     const network = context.network;
     
     // Fix: Safely access network id with proper fallbacks
-    const networkId = network?.chainId.toString() || network?.chainId?.toString() || "11155420";
+    const networkId = network?.chainId.toString() || network?.chainId?.toString() || "5432";
     const networkName = network?.name?.toLowerCase() || "optimismsepolia";
     
     // Safely get amount
@@ -1155,7 +1155,7 @@ export async function handleBurned({ event, context }) {
   try {
     const nodeId = event.args.nodeId.toString();
     const network = context.network?.name?.toLowerCase() || "optimismsepolia";
-    const networkId = context.network?.chainId.toString() || "11155420"; // optimismSepolia id
+    const networkId = context.network?.chainId.toString() || "5432"; // optimismSepolia id
     
     // Ensure the node exists before updating
     await ensureNodeExists(db, nodeId, event.block.timestamp, network, networkId);
@@ -1323,7 +1323,7 @@ export async function handleMembraneSignal({ event, context }) {
         when: event.block.timestamp,
         isActive: true,
         network: context.network?.name?.toLowerCase() || "optimismsepolia",
-        networkId: context.network?.chainId?.toString() || "11155420"
+        networkId: context.network?.chainId?.toString() || "5432"
       }).onConflictDoNothing();
     } catch (error) {
       console.error(`Error inserting membrane signal: ${error.message}`);
@@ -1340,7 +1340,7 @@ export async function handleMembraneSignal({ event, context }) {
         currentPrevalence: signalStrength,
         when: event.block.timestamp,
         network: context.network?.name?.toLowerCase() || "optimismsepolia",
-        networkId: context.network?.chainId?.toString() || "11155420"
+        networkId: context.network?.chainId?.toString() || "5432"
       }).onConflictDoNothing();
     } catch (error) {
       console.error(`Error saving nodeSignal for membrane: ${error.message}`);
@@ -1429,7 +1429,7 @@ export async function handleInflationSignal({ event, context }) {
         when: event.block.timestamp,
         isActive: true,
         network: context.network?.name?.toLowerCase() || "optimismsepolia",
-        networkId: context.network?.chainId?.toString() || "11155420"
+        networkId: context.network?.chainId?.toString() || "5432"
       }).onConflictDoNothing();
       
       console.log(`Successfully inserted inflation signal for ${nodeId} from ${origin}`);
@@ -1452,7 +1452,7 @@ export async function handleInflationSignal({ event, context }) {
         currentPrevalence: signalStrength,
         when: event.block.timestamp,
         network: context.network?.name?.toLowerCase() || "optimismsepolia",
-        networkId: context.network?.chainId?.toString() || "11155420"
+        networkId: context.network?.chainId?.toString() || "5432"
       }).onConflictDoNothing();
       
       console.log(`Successfully saved nodeSignal for inflation for ${nodeId} from ${origin}`);

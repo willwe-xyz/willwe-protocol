@@ -140,17 +140,7 @@ export const getNodeData = async (nodeId, context) : Promise<NodeState | null> =
       return defaultResponse;
     }
     
-    // // Skip RPC call if we know it's likely to fail and just return default data
-    // // This allows the rest of the handler to continue working
-    // let skipContractCall = false;
-    // if (context.network?.name === "optimismsepolia" || context.network?.chainId?.toString() === "11155420") {
-    //   skipContractCall = true; // Optimism Sepolia seems to be having issues
-    //   console.log(`Skipping contract call for nodeId ${nodeId} on network ${context.network.name} to avoid RPC errors`);
-    // }
-    
-    // if (skipContractCall) {
-    //   return defaultResponse;
-    // }
+
     
     const client = context.client || getPublicClient(context?.network?.name);
     if (!client) {

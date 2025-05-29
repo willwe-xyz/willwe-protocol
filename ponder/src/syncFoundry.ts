@@ -49,7 +49,6 @@ export function readFoundryDeployments(): Deployments {
   try {
     // Check broadcast directory for latest deployments
     if (existsSync(broadcastDir)) {
-      // Process script deployment directories like WillWeDeploy2.s.sol/11155420/run-latest.json
       const broadcastEntries = readdirSync(broadcastDir, { withFileTypes: true })
         .filter(entry => entry.isDirectory() && entry.name.endsWith('.s.sol'))
         .map(entry => entry.name);

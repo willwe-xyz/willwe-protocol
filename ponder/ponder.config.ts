@@ -154,7 +154,7 @@ export default createConfig({
   database: {
     kind: "postgres",
     connectionString: process.env.PONDER_DATABASE_URL || "postgres://postgres:postgres@localhost:5432/ponder",
-    schema: "willwedsfsddsfsdas"
+    schema: "willwedfbfbsfsddsfsdas"
   },
 });
 
