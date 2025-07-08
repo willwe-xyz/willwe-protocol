@@ -3,6 +3,7 @@ import { http, Abi } from "viem";
 import * as viemChains from "viem/chains";
 import { ABIs, deployments } from "./abis/abi";
 import "./src/syncFoundry";
+import { interval } from "date-fns";
 
 // Collection of all chains that could be supported
 export const supportedChains: viemChains.Chain[] = [
@@ -71,6 +72,7 @@ export const getAllContracts = () => {
     address: string;
     network: string;
     startBlock: number;
+    interval?: number;
   }> = {};
   
   // For each chainId that has deployments
@@ -93,7 +95,8 @@ export const getAllContracts = () => {
           abi: ABIs.WillWe as Abi,
           address: deployments.WillWe[chainIdStr],
           network: networkName,
-          startBlock: startBlock
+          startBlock: startBlock,
+          interval: 10,
         };
       }
       
@@ -107,7 +110,9 @@ export const getAllContracts = () => {
           abi: ABIs.Membranes as Abi,
           address: deployments.Membranes[chainIdStr],
           network: networkName,
-          startBlock: startBlock
+          startBlock: startBlock,
+          interval: 20,
+
         };
       }
       
@@ -121,7 +126,8 @@ export const getAllContracts = () => {
           abi: ABIs.Execution as Abi,
           address: deployments.Execution[chainIdStr],
           network: networkName,
-          startBlock: startBlock
+          startBlock: startBlock,
+          interval:20
         };
       }
       
@@ -135,7 +141,8 @@ export const getAllContracts = () => {
           abi: ABIs.Will as Abi,
           address: deployments.Will[chainIdStr],
           network: networkName,
-          startBlock: startBlock
+          startBlock: startBlock,
+          interval: 10
         };
       }
     }
